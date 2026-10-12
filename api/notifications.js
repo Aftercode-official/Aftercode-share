@@ -2,7 +2,7 @@ import { logApiError, requireMethod, sendJson } from "../server/http.js";
 import { createAdminClient, getAuthenticatedUser } from "../server/supabase.js";
 
 const NOTIFICATION_FIELDS =
-  "id, actor_id, actor_name, notification_type, project_id, project_title, is_read, created_at";
+  "id, actor_id, actor_name, actor_avatar, notification_type, project_id, project_title, is_read, created_at";
 
 export default async function handler(req, res) {
   if (!requireMethod(req, res, ["GET", "PATCH"])) {

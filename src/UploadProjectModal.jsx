@@ -5,9 +5,12 @@ import { supabase } from "./supabase.js";
 import "./UploadProjectModal.css";
 
 const MAX_PROJECT_SIZE = 50 * 1024 * 1024;
+const MAX_THUMB_SIZE = 2 * 1024 * 1024;
 
 export default function UploadProjectModal({ user, onClose, onPublished }) {
   const [file, setFile] = useState(null);
+  const [thumbnail, setThumbnail] = useState(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState("");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Games");
   const [description, setDescription] = useState("");
@@ -32,6 +35,24 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
     if (!title) setTitle(nextFile.name.replace(/\.sb3$/i, ""));
   };
 
+  const chooseThumbnail = (event) => {
+    const nextFile = event.currentTarget.files?.[0] ?? null;
+    setError("");
+    if (!nextFile) return;
+    if (!nextFile.type.startsWith("image/")) {
+      setError("Thumbnail must be an image file.");
+      return;
+    }
+    if (nextFile.size > MAX_THUMB_SIZE) {
+      setError("Thumbnail must be under 2 MB.");
+      return;
+    }
+    setThumbnail(nextFile);
+    const reader = new FileReader();
+    reader.onload = () => setThumbnailPreview(reader.result);
+    reader.readAsDataURL(nextFile);
+  };
+
   const publishProject = async (event) => {
     event.preventDefault();
     setError("");
@@ -42,6 +63,8 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
 
     setIsPublishing(true);
     let uploadedPath;
+    let uploadedThumbPath;
+
     try {
       const archiveHeader = new Uint8Array(await file.slice(0, 4).arrayBuffer());
       if (archiveHeader[0] !== 0x50 || archiveHeader[1] !== 0x4b) {
@@ -62,6 +85,7 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
         throw new Error("This file does not contain any Scratch sprites or stage.");
       }
 
+      // Upload .sb3
       uploadedPath = `${user.id}/${crypto.randomUUID()}.sb3`;
       const { error: uploadError } = await supabase.storage
         .from("project-files")
@@ -70,6 +94,19 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
           upsert: false
         });
       if (uploadError) throw uploadError;
+
+      // Upload thumbnail (nếu có)
+      if (thumbnail) {
+        const ext = thumbnail.name.split(".").pop() || "png";
+        uploadedThumbPath = `${user.id}/thumb-${crypto.randomUUID()}.${ext}`;
+        const { error: thumbError } = await supabase.storage
+          .from("project-files")
+          .upload(uploadedThumbPath, thumbnail, {
+            contentType: thumbnail.type,
+            upsert: false
+          });
+        if (thumbError) throw thumbError;
+      }
 
       await apiRequest("/api/projects", {
         method: "POST",
@@ -80,21 +117,21 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
           category,
           tags: tags.split(",").map((tag) => tag.trim()).filter(Boolean),
           assetPath: uploadedPath,
+          thumbnailPath: uploadedThumbPath,
           isPublic: true
         }
       });
 
       uploadedPath = null;
+      uploadedThumbPath = null;
       await onPublished();
       onClose();
     } catch (publishError) {
       if (uploadedPath) {
-        const { error: cleanupError } = await supabase.storage
-          .from("project-files")
-          .remove([uploadedPath]);
-        if (cleanupError) {
-          console.error("Unable to clean up an unpublished project upload.", cleanupError);
-        }
+        await supabase.storage.from("project-files").remove([uploadedPath]);
+      }
+      if (uploadedThumbPath) {
+        await supabase.storage.from("project-files").remove([uploadedThumbPath]);
       }
       setError(publishError.message || "Unable to publish this project.");
     } finally {
@@ -136,6 +173,20 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
             <input type="file" accept=".sb3,application/octet-stream" required onChange={chooseFile} />
             <span>{file ? `${file.name} · ${(file.size / (1024 * 1024)).toFixed(2)} MB` : "Choose an .sb3 file (max 50 MB)"}</span>
           </label>
+
+          <label>
+            Thumbnail (optional)
+            <input type="file" accept="image/*" onChange={chooseThumbnail} />
+            {thumbnailPreview && (
+              <img
+                className="customize-image-preview customize-banner-preview"
+                src={thumbnailPreview}
+                alt="Thumbnail preview"
+              />
+            )}
+            <span className="upload-label-hint">PNG/JPG, max 2 MB. Nếu không chọn, web sẽ dùng ảnh mặc định.</span>
+          </label>
+
           <label>
             Project title
             <input required maxLength={120} value={title} onChange={(event) => setTitle(event.target.value)} />

@@ -861,3 +861,44 @@ body {
     font-size: 0.55rem;
   }
 }
+
+.avatar-img {
+  object-fit: cover;
+  background-color: transparent;
+}
+
+.avatar-xs {
+  width: 18px;
+  height: 18px;
+  font-size: 0.6rem;
+  flex: 0 0 18px;
+}
+
+.avatar-sm {
+  width: 24px;
+  height: 24px;
+  font-size: 0.7rem;
+  flex: 0 0 24px;
+}
+
+.featured-author {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.dropdown-item-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.dropdown-item-row .avatar {
+  flex: 0 0 auto;
+}
+
+.timeline-card .feed-list {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}

@@ -124,6 +124,14 @@ export default async function handler(req, res) {
       user.email?.split("@")[0] ||
       "Aftercode user";
 
+    // Lấy avatar từ profile
+    const { data: actorProfile } = await client
+      .from("profiles")
+      .select("avatar_url")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const actorAvatar = actorProfile?.avatar_url || "";
+
     if (enabled) {
       const { data: existing } = await client
         .from("follows")
@@ -145,6 +153,7 @@ export default async function handler(req, res) {
           recipient_id: targetId,
           actor_id: user.id,
           actor_name: actorName,
+          actor_avatar: actorAvatar,
           notification_type: "follow",
           project_id: null,
           project_title: null
@@ -153,6 +162,7 @@ export default async function handler(req, res) {
         await client.from("activities").insert({
           actor_id: user.id,
           actor_name: actorName,
+          actor_avatar: actorAvatar,
           activity_type: "follow",
           project_id: null,
           project_title: null

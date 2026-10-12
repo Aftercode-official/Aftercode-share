@@ -6,7 +6,7 @@ async function loadInteractions(client, projectId, userId) {
     client.from("project_likes").select("project_id", { count: "exact", head: true }).eq("project_id", projectId),
     client.from("project_favorites").select("project_id", { count: "exact", head: true }).eq("project_id", projectId),
     client.from("project_comments")
-      .select("id, author, avatar_url, text, created_at")
+      .select("id, user_id, author, avatar_url, text, created_at")
       .eq("project_id", projectId)
       .order("created_at", { ascending: true })
       .limit(100),
@@ -28,6 +28,7 @@ async function loadInteractions(client, projectId, userId) {
     favorited: Boolean(favorited.data),
     comments: comments.data.map((comment) => ({
       id: comment.id,
+      userId: comment.user_id,
       author: comment.author,
       avatarUrl: comment.avatar_url,
       text: comment.text,
@@ -100,11 +101,18 @@ export default async function handler(req, res) {
       const displayName = typeof metadata.display_name === "string" && metadata.display_name.trim()
         ? metadata.display_name.trim().slice(0, 80)
         : user.email?.split("@")[0] ?? "Aftercode user";
+
+      const { data: userProfile } = await client
+        .from("profiles")
+        .select("avatar_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
       const { error } = await client.from("project_comments").insert({
         project_id: projectId,
         user_id: user.id,
         author: displayName,
-        avatar_url: typeof metadata.avatar_url === "string" ? metadata.avatar_url : "",
+        avatar_url: userProfile?.avatar_url || "",
         text
       });
       if (error) throw error;

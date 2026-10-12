@@ -16,7 +16,7 @@ export default async function handler(req, res) {
 
     const { data, error } = await client
       .from("activities")
-      .select("id, actor_id, actor_name, activity_type, project_id, project_title, created_at")
+      .select("id, actor_id, actor_name, actor_avatar, activity_type, project_id, project_title, created_at")
       .order("created_at", { ascending: false })
       .limit(100);
 
@@ -34,7 +34,6 @@ export default async function handler(req, res) {
     }
     const publicProjectIds = new Set(publicProjects.map((project) => project.id));
 
-    // Giữ activity không có project (như follow), và activity có project public
     sendJson(res, 200, {
       activities: data
         .filter((activity) => !activity.project_id || publicProjectIds.has(activity.project_id))

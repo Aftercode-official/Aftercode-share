@@ -513,3 +513,13 @@
     flex-wrap: wrap;
   }
 }
+
+.project-comment-avatar-btn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  flex: 0 0 30px;
+  display: flex;
+  align-items: center;
+}

@@ -33,6 +33,11 @@ function toProject(record) {
   const projectUrl = record.asset_path
     ? supabase.storage.from("project-files").getPublicUrl(record.asset_path).data.publicUrl
     : null;
+  const thumb = record.thumbnail_url
+    ? supabase.storage.from("project-files").getPublicUrl(record.thumbnail_url).data.publicUrl
+    : (record.scratch_project_id
+      ? `https://uploads.scratch.mit.edu/get_image/project/${record.scratch_project_id}_480x360.png`
+      : null);
   return {
     id: record.id,
     databaseId: record.id,
@@ -41,9 +46,8 @@ function toProject(record) {
     projectUrl,
     title: record.title,
     author: record.author,
-    thumb: record.scratch_project_id
-      ? `https://uploads.scratch.mit.edu/get_image/project/${record.scratch_project_id}_480x360.png`
-      : null,
+    authorAvatar: record.authorAvatar || "",
+    thumb,
     category: record.category,
     description: record.description,
     tags: record.tags,
@@ -517,13 +521,20 @@ export default function App() {
                     }
                   }}
                 >
-                  <strong>{notification.actor_name}</strong>{" "}
-                  {notification.notification_type === "follow"
-                    ? "started following you"
-                    : notification.notification_type === "project_liked"
-                      ? <>liked <em>{notification.project_title}</em></>
-                      : <>commented on <em>{notification.project_title}</em></>}
-                  <p>{new Date(notification.created_at).toLocaleString()}</p>
+                  <div className="dropdown-item-row">
+                    {notification.actor_avatar
+                      ? <img className="avatar avatar-sm avatar-img" src={notification.actor_avatar} alt="" />
+                      : <div className="avatar avatar-sm">{notification.actor_name.slice(0, 1).toUpperCase()}</div>}
+                    <div>
+                      <strong>{notification.actor_name}</strong>{" "}
+                      {notification.notification_type === "follow"
+                        ? "started following you"
+                        : notification.notification_type === "project_liked"
+                          ? <>liked <em>{notification.project_title}</em></>
+                          : <>commented on <em>{notification.project_title}</em></>}
+                      <p>{new Date(notification.created_at).toLocaleString()}</p>
+                    </div>
+                  </div>
                 </button>
               ))
               : <p className="dropdown-empty">No notifications yet.</p>}
@@ -646,7 +657,9 @@ export default function App() {
                               }
                             }}
                           >
-                            <div className="avatar">{activity.actor_name.slice(0, 1).toUpperCase()}</div>
+                            {activity.actor_avatar
+                              ? <img className="avatar avatar-img" src={activity.actor_avatar} alt="" />
+                              : <div className="avatar">{activity.actor_name.slice(0, 1).toUpperCase()}</div>}
                             <div>
                               <p className="feed-text">
                                 <strong>{activity.actor_name}</strong>{" "}
@@ -727,7 +740,12 @@ function ProjectCard({ project, index, onOpenProject }) {
       </div>
       <div className="featured-info">
         <h3>{project.title}</h3>
-        <p>by {project.author}</p>
+        <p className="featured-author">
+          {project.authorAvatar
+            ? <img className="avatar avatar-xs avatar-img" src={project.authorAvatar} alt="" />
+            : <span className="avatar avatar-xs">{project.author.slice(0, 1).toUpperCase()}</span>}
+          <span>by {project.author}</span>
+        </p>
       </div>
     </button>
   );

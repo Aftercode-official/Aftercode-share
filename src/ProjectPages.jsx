@@ -248,11 +248,23 @@ export default function ProjectPages({
               <div className="project-comment-list">
                 {currentInteraction.comments.map((comment) => (
                   <article className="project-comment" key={comment.id}>
-                    {comment.avatarUrl
-                      ? <img className="project-comment-avatar" src={comment.avatarUrl} alt="" />
-                      : <div className="avatar">{comment.author.slice(0, 1)}</div>}
+                    <button
+                      type="button"
+                      className="project-comment-avatar-btn"
+                      onClick={() => comment.userId && onOpenUserProfile?.(comment.userId)}
+                    >
+                      {comment.avatarUrl
+                        ? <img className="project-comment-avatar" src={comment.avatarUrl} alt="" />
+                        : <div className="avatar">{comment.author.slice(0, 1)}</div>}
+                    </button>
                     <div>
-                      <strong>{comment.author}</strong>
+                      <button
+                        type="button"
+                        className="project-author-link"
+                        onClick={() => comment.userId && onOpenUserProfile?.(comment.userId)}
+                      >
+                        <strong>{comment.author}</strong>
+                      </button>
                       <p>{comment.text}</p>
                     </div>
                   </article>
