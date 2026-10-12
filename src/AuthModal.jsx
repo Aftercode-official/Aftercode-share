@@ -45,7 +45,6 @@ export default function AuthModal({ onClose, onAuthenticated }) {
         if (authError) throw authError;
 
         if (data.user) {
-          // Lưu username vào profiles ngay sau khi tạo tài khoản
           const { data: sessionData } = await supabase.auth.getSession();
           const token = sessionData.session?.access_token;
           if (token) {
@@ -75,26 +74,35 @@ export default function AuthModal({ onClose, onAuthenticated }) {
           throw new Error("Enter your username.");
         }
 
-        // Bước 1: tra email từ username
-        const lookupRes = await fetch(
-          `/api/profiles/lookup?username=${encodeURIComponent(trimmedUsername)}`
-        );
-        if (!lookupRes.ok) {
-          const payload = await lookupRes.json().catch(() => ({}));
-          throw new Error(payload.error || "No account found with that username.");
-        }
-        const { email: foundEmail } = await lookupRes.json();
-        if (!foundEmail) {
-          throw new Error("No account found with that username.");
+        // Sign in qua server — KHÔNG lộ email
+        const signInRes = await fetch("/api/auth/sign-in", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: trimmedUsername, password })
+        });
+
+        if (!signInRes.ok) {
+          const payload = await signInRes.json().catch(() => ({}));
+          throw new Error(payload.error || "Invalid username or password.");
         }
 
-        // Bước 2: sign in bằng email tìm được
-        const { data, error: authError } = await supabase.auth.signInWithPassword({
-          email: foundEmail,
-          password
+        const { session } = await signInRes.json();
+        if (!session) {
+          throw new Error("Unable to sign in.");
+        }
+
+        // Set session vào Supabase client
+        const { error: setError } = await supabase.auth.setSession({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token
         });
-        if (authError) throw authError;
-        onAuthenticated(data.user);
+        if (setError) throw setError;
+
+        const { data: { user: signedInUser } } = await supabase.auth.getUser();
+        if (!signedInUser) {
+          throw new Error("Unable to retrieve user.");
+        }
+        onAuthenticated(signedInUser);
       }
     } catch (authError) {
       setError(authError.message || "Unable to authenticate. Please try again.");

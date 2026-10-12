@@ -122,7 +122,7 @@ export default function ProjectPages({
                 : (
                   <iframe
                     title={`${selectedProject.title} interactive project`}
-                    src={`https://scratch.mit.edu/projects/${selectedProject.scratchProjectId ?? selectedProject.id}/embed`}
+                    src={`https://aftercode-web-wheat.vercel.app/embed.html?project_url=${encodeURIComponent(selectedProject.projectUrl)}&project_title=${encodeURIComponent(selectedProject.title)}`}
                     allowFullScreen
                     loading="lazy"
                   />

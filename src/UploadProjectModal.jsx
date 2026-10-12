@@ -62,8 +62,8 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
     }
 
     setIsPublishing(true);
-    let uploadedPath;
-    let uploadedThumbPath;
+    let uploadedPath;              // 👈 khai báo
+    let uploadedThumbPath;         // 👈 khai báo
 
     try {
       const archiveHeader = new Uint8Array(await file.slice(0, 4).arrayBuffer());
@@ -85,7 +85,7 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
         throw new Error("This file does not contain any Scratch sprites or stage.");
       }
 
-      // Upload .sb3
+      // 1. Upload .sb3
       uploadedPath = `${user.id}/${crypto.randomUUID()}.sb3`;
       const { error: uploadError } = await supabase.storage
         .from("project-files")
@@ -95,9 +95,9 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
         });
       if (uploadError) throw uploadError;
 
-      // Upload thumbnail (nếu có)
+      // 2. Upload thumbnail (nếu có)              👈 đoạn upload
       if (thumbnail) {
-        const ext = thumbnail.name.split(".").pop() || "png";
+        const ext = (thumbnail.name.split(".").pop() || "png").toLowerCase();
         uploadedThumbPath = `${user.id}/thumb-${crypto.randomUUID()}.${ext}`;
         const { error: thumbError } = await supabase.storage
           .from("project-files")
@@ -108,6 +108,7 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
         if (thumbError) throw thumbError;
       }
 
+      // 3. Gửi API
       await apiRequest("/api/projects", {
         method: "POST",
         authenticated: true,
@@ -117,7 +118,7 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
           category,
           tags: tags.split(",").map((tag) => tag.trim()).filter(Boolean),
           assetPath: uploadedPath,
-          thumbnailPath: uploadedThumbPath,
+          thumbnailPath: uploadedThumbPath,     // 👈 gửi
           isPublic: true
         }
       });
@@ -175,7 +176,7 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
           </label>
 
           <label>
-            Thumbnail (optional)
+            Thumbnail (optional)                     👈 input
             <input type="file" accept="image/*" onChange={chooseThumbnail} />
             {thumbnailPreview && (
               <img
@@ -184,7 +185,7 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
                 alt="Thumbnail preview"
               />
             )}
-            <span className="upload-label-hint">PNG/JPG, max 2 MB. Nếu không chọn, web sẽ dùng ảnh mặc định.</span>
+            <span className="upload-label-hint">PNG/JPG, max 2 MB.</span>
           </label>
 
           <label>
