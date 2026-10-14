@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { isSupabaseConfigured, supabase } from "./supabase.js";
 import "./AuthModal.css";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 export default function AuthModal({ onClose, onAuthenticated }) {
   const [mode, setMode] = useState("sign-in");
@@ -11,6 +12,7 @@ export default function AuthModal({ onClose, onAuthenticated }) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -109,6 +111,14 @@ export default function AuthModal({ onClose, onAuthenticated }) {
     } finally {
       setIsSubmitting(false);
     }
+    const { data, error } = await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    data: { display_name: displayName },
+    captchaToken
+  }
+});
   };
 
   return (
@@ -157,6 +167,10 @@ export default function AuthModal({ onClose, onAuthenticated }) {
           >
             Create Account
           </button>
+          <HCaptcha
+            sitekey="3052ee80-e7ac-4b88-a35e-f64ca4fe8bc8"
+            onVerify={setCaptchaToken}
+          />
         </div>
 
         {!isSupabaseConfigured && (

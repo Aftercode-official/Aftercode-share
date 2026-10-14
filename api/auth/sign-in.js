@@ -62,4 +62,12 @@ export default async function handler(req, res) {
     logApiError("Unable to sign in.", error);
     sendJson(res, 500, { error: "Unable to sign in." });
   }
+  // Trong api/auth/sign-in.js hoặc api/auth/sign-up.js
+const ip = getClientIp(req);
+const limit = await checkRateLimit(client, `signup:${ip}`, 2, 60 * 60_000);  // 2 acc/giờ/IP
+if (!limit.ok) {
+  res.setHeader("Retry-After", limit.retryAfter);
+  sendJson(res, 429, { error: "Too many accounts from your network." });
+  return;
+}
 }

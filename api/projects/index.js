@@ -1,5 +1,6 @@
 import { logApiError, readJsonBody, requireMethod, sendJson } from "../../server/http.js";
 import { createAdminClient, getAuthenticatedUser } from "../../server/supabase.js";
+import { checkRateLimit, getClientIp } from "../../server/rateLimit.js";
 
 const MAX_TAGS = 10;
 const MAX_TAG_LENGTH = 30;
@@ -141,4 +142,37 @@ export default async function handler(req, res) {
     logApiError("Unable to process projects request.", error);
     sendJson(res, 500, { error: "Unable to process the projects request." });
   }
+
+      const user = await getAuthenticatedUser(client, req);
+    if (!user) {
+      sendJson(res, 401, { error: "Sign in before creating a project." });
+      return;
+    }
+
+    // 🔥 RATE LIMIT — 3 project / 10 phút / user
+    const limitUser = await checkRateLimit(client, `create-project:${user.id}`, 3, 10 * 60_000);
+    if (!limitUser.ok) {
+      res.setHeader("Retry-After", limitUser.retryAfter);
+      sendJson(res, 429, { error: "You're uploading too fast. Please wait before creating more projects." });
+      return;
+    }
+
+    // 🔥 RATE LIMIT — 10 project / 10 phút / IP
+    const ip = getClientIp(req);
+    const limitIp = await checkRateLimit(client, `create-project-ip:${ip}`, 10, 10 * 60_000);
+    if (!limitIp.ok) {
+      res.setHeader("Retry-After", limitIp.retryAfter);
+      sendJson(res, 429, { error: "Too many projects from your network. Please try again later." });
+      return;
+    }
+    // Đếm số project hiện có của user
+const { count: projectCount } = await client
+  .from("projects")
+  .select("*", { count: "exact", head: true })
+  .eq("user_id", user.id);
+
+if (projectCount >= 20) {
+  sendJson(res, 403, { error: "You've reached the maximum number of projects (20). Delete some before uploading new ones." });
+  return;
+}
 }
