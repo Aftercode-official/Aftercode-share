@@ -76,7 +76,7 @@ export default async function handler(req, res) {
     if (req.method === "GET") {
       const { data, error } = await client
         .from("projects")
-        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, created_at, updated_at, profiles:user_id(avatar_url)")
+        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, created_at, updated_at")
         .eq("is_public", true)
         .order("created_at", { ascending: false })
         .limit(100);
@@ -100,10 +100,19 @@ export default async function handler(req, res) {
         return counts;
       }, {});
 
+      // Lấy avatar riêng từ profiles — KHÔNG dùng FK join
+      const userIds = [...new Set(data.map((p) => p.user_id))];
+      const { data: profiles } = await client
+        .from("profiles")
+        .select("user_id, avatar_url")
+        .in("user_id", userIds);
+
+      const avatarMap = new Map((profiles ?? []).map((p) => [p.user_id, p.avatar_url]));
+
       sendJson(res, 200, {
         projects: data.map((project) => ({
           ...project,
-          authorAvatar: project.profiles?.avatar_url || "",
+          authorAvatar: avatarMap.get(project.user_id) || "",
           likes: likeCounts[project.id] ?? 0
         }))
       });
@@ -117,7 +126,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    // 🔥 Rate limit per user — 3 project / 10 phút
+    // Rate limit per user — 3 project / 10 phút
     const limitUser = await checkRateLimit(client, `create-project:${user.id}`, 3, 10 * 60_000);
     if (!limitUser.ok) {
       res.setHeader("Retry-After", limitUser.retryAfter);
@@ -125,7 +134,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    // 🔥 Rate limit per IP — 10 project / 10 phút
+    // Rate limit per IP — 10 project / 10 phút
     const ip = getClientIp(req);
     const limitIp = await checkRateLimit(client, `create-project-ip:${ip}`, 10, 10 * 60_000);
     if (!limitIp.ok) {
@@ -134,7 +143,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    // 🔥 Max 20 project / user
+    // Max 20 project / user
     const { count: projectCount } = await client
       .from("projects")
       .select("*", { count: "exact", head: true })
