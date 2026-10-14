@@ -5,6 +5,7 @@ import { checkRateLimit, getClientIp } from "../../server/rateLimit.js";
 const MAX_TAGS = 10;
 const MAX_TAG_LENGTH = 30;
 const SCRATCH_PROJECT_ID = /^\d{1,20}$/;
+const MAX_PROJECTS_PER_USER = 20;
 
 function validateProject(body) {
   const title = typeof body.title === "string" ? body.title.trim() : "";
@@ -12,6 +13,7 @@ function validateProject(body) {
     ? body.scratchProjectId.trim()
     : null;
   const assetPath = typeof body.assetPath === "string" ? body.assetPath.trim() : null;
+  const thumbnailPath = typeof body.thumbnailPath === "string" ? body.thumbnailPath.trim() : null;
   const description = typeof body.description === "string" ? body.description.trim() : "";
   const category = typeof body.category === "string" ? body.category.trim() : "";
   const tags = body.tags ?? [];
@@ -45,6 +47,7 @@ function validateProject(body) {
       title,
       scratch_project_id: scratchProjectId,
       asset_path: assetPath,
+      thumbnail_url: thumbnailPath,
       description,
       category,
       tags: tags.map((tag) => tag.trim()),
@@ -69,42 +72,78 @@ export default async function handler(req, res) {
   try {
     const client = createAdminClient();
 
+    // ==================== GET ====================
     if (req.method === "GET") {
       const { data, error } = await client
         .from("projects")
-        .select("id, user_id, title, author, scratch_project_id, asset_path, description, category, tags, is_public, created_at, updated_at")
+        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, created_at, updated_at, profiles:user_id(avatar_url)")
         .eq("is_public", true)
         .order("created_at", { ascending: false })
         .limit(100);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
+
       if (data.length === 0) {
         sendJson(res, 200, { projects: [] });
         return;
       }
+
       const { data: likes, error: likesError } = await client
         .from("project_likes")
         .select("project_id")
         .in("project_id", data.map((project) => project.id));
 
-      if (likesError) {
-        throw likesError;
-      }
+      if (likesError) throw likesError;
+
       const likeCounts = (likes ?? []).reduce((counts, like) => {
         counts[like.project_id] = (counts[like.project_id] ?? 0) + 1;
         return counts;
       }, {});
+
       sendJson(res, 200, {
-        projects: data.map((project) => ({ ...project, likes: likeCounts[project.id] ?? 0 }))
+        projects: data.map((project) => ({
+          ...project,
+          authorAvatar: project.profiles?.avatar_url || "",
+          likes: likeCounts[project.id] ?? 0
+        }))
       });
       return;
     }
 
+    // ==================== POST ====================
     const user = await getAuthenticatedUser(client, req);
     if (!user) {
       sendJson(res, 401, { error: "Sign in before creating a project." });
+      return;
+    }
+
+    // 🔥 Rate limit per user — 3 project / 10 phút
+    const limitUser = await checkRateLimit(client, `create-project:${user.id}`, 3, 10 * 60_000);
+    if (!limitUser.ok) {
+      res.setHeader("Retry-After", limitUser.retryAfter);
+      sendJson(res, 429, { error: "You're uploading too fast. Please wait before creating more projects." });
+      return;
+    }
+
+    // 🔥 Rate limit per IP — 10 project / 10 phút
+    const ip = getClientIp(req);
+    const limitIp = await checkRateLimit(client, `create-project-ip:${ip}`, 10, 10 * 60_000);
+    if (!limitIp.ok) {
+      res.setHeader("Retry-After", limitIp.retryAfter);
+      sendJson(res, 429, { error: "Too many projects from your network. Please try again later." });
+      return;
+    }
+
+    // 🔥 Max 20 project / user
+    const { count: projectCount } = await client
+      .from("projects")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    if ((projectCount ?? 0) >= MAX_PROJECTS_PER_USER) {
+      sendJson(res, 403, {
+        error: `You've reached the maximum number of projects (${MAX_PROJECTS_PER_USER}). Delete some before uploading new ones.`
+      });
       return;
     }
 
@@ -113,11 +152,13 @@ export default async function handler(req, res) {
       sendJson(res, 400, { error: "A JSON object is required." });
       return;
     }
+
     const validation = validateProject(body);
     if (validation.error) {
       sendJson(res, 400, { error: validation.error });
       return;
     }
+
     if (validation.project.asset_path
       && !validation.project.asset_path.startsWith(`${user.id}/`)) {
       sendJson(res, 403, { error: "You can only publish .sb3 files uploaded to your own account." });
@@ -131,48 +172,14 @@ export default async function handler(req, res) {
         user_id: user.id,
         author: displayNameFor(user)
       })
-      .select("id, user_id, title, author, scratch_project_id, asset_path, description, category, tags, is_public, created_at, updated_at")
+      .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, created_at, updated_at")
       .single();
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
+
     sendJson(res, 201, { project: data });
   } catch (error) {
     logApiError("Unable to process projects request.", error);
     sendJson(res, 500, { error: "Unable to process the projects request." });
   }
-
-      const user = await getAuthenticatedUser(client, req);
-    if (!user) {
-      sendJson(res, 401, { error: "Sign in before creating a project." });
-      return;
-    }
-
-    // 🔥 RATE LIMIT — 3 project / 10 phút / user
-    const limitUser = await checkRateLimit(client, `create-project:${user.id}`, 3, 10 * 60_000);
-    if (!limitUser.ok) {
-      res.setHeader("Retry-After", limitUser.retryAfter);
-      sendJson(res, 429, { error: "You're uploading too fast. Please wait before creating more projects." });
-      return;
-    }
-
-    // 🔥 RATE LIMIT — 10 project / 10 phút / IP
-    const ip = getClientIp(req);
-    const limitIp = await checkRateLimit(client, `create-project-ip:${ip}`, 10, 10 * 60_000);
-    if (!limitIp.ok) {
-      res.setHeader("Retry-After", limitIp.retryAfter);
-      sendJson(res, 429, { error: "Too many projects from your network. Please try again later." });
-      return;
-    }
-    // Đếm số project hiện có của user
-const { count: projectCount } = await client
-  .from("projects")
-  .select("*", { count: "exact", head: true })
-  .eq("user_id", user.id);
-
-if (projectCount >= 20) {
-  sendJson(res, 403, { error: "You've reached the maximum number of projects (20). Delete some before uploading new ones." });
-  return;
-}
 }
