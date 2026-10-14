@@ -21,7 +21,15 @@
   color: var(--text-primary);
   box-shadow: 0 24px 80px rgb(0 0 0 / 28%);
 }
+.auth-captcha {
+  display: flex;
+  justify-content: center;
+  margin: 0.5rem 0;
+}
 
+.auth-captcha > div {
+  transform-origin: center;
+}
 .auth-close {
   position: absolute;
   top: 0.8rem;

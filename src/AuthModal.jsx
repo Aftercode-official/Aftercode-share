@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { isSupabaseConfigured, supabase } from "./supabase.js";
 import "./AuthModal.css";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
@@ -13,6 +13,7 @@ export default function AuthModal({ onClose, onAuthenticated }) {
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
+  const captchaRef = useRef(null);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -26,12 +27,21 @@ export default function AuthModal({ onClose, onAuthenticated }) {
     setMode(nextMode);
     setError("");
     setMessage("");
+    setCaptchaToken("");
+    if (captchaRef.current) captchaRef.current.resetCaptcha();
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
     setMessage("");
+
+    // Bắt buộc phải có captcha
+    if (!captchaToken) {
+      setError("Please complete the captcha.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -42,7 +52,10 @@ export default function AuthModal({ onClose, onAuthenticated }) {
         const { data, error: authError } = await supabase.auth.signUp({
           email: trimmedEmail,
           password,
-          options: { data: { display_name: trimmedName } }
+          options: {
+            data: { display_name: trimmedName },
+            captchaToken
+          }
         });
         if (authError) throw authError;
 
@@ -76,7 +89,6 @@ export default function AuthModal({ onClose, onAuthenticated }) {
           throw new Error("Enter your username.");
         }
 
-        // Sign in qua server — KHÔNG lộ email
         const signInRes = await fetch("/api/auth/sign-in", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -93,12 +105,11 @@ export default function AuthModal({ onClose, onAuthenticated }) {
           throw new Error("Unable to sign in.");
         }
 
-        // Set session vào Supabase client
-        const { error: setError } = await supabase.auth.setSession({
+        const { error: setSessionError } = await supabase.auth.setSession({
           access_token: session.access_token,
           refresh_token: session.refresh_token
         });
-        if (setError) throw setError;
+        if (setSessionError) throw setSessionError;
 
         const { data: { user: signedInUser } } = await supabase.auth.getUser();
         if (!signedInUser) {
@@ -108,17 +119,11 @@ export default function AuthModal({ onClose, onAuthenticated }) {
       }
     } catch (authError) {
       setError(authError.message || "Unable to authenticate. Please try again.");
+      if (captchaRef.current) captchaRef.current.resetCaptcha();
+      setCaptchaToken("");
     } finally {
       setIsSubmitting(false);
     }
-    const { data, error } = await supabase.auth.signUp({
-  email,
-  password,
-  options: {
-    data: { display_name: displayName },
-    captchaToken
-  }
-});
   };
 
   return (
@@ -167,10 +172,6 @@ export default function AuthModal({ onClose, onAuthenticated }) {
           >
             Create Account
           </button>
-          <HCaptcha
-            sitekey="3052ee80-e7ac-4b88-a35e-f64ca4fe8bc8"
-            onVerify={setCaptchaToken}
-          />
         </div>
 
         {!isSupabaseConfigured && (
@@ -234,10 +235,20 @@ export default function AuthModal({ onClose, onAuthenticated }) {
             />
           </label>
 
+          <div className="auth-captcha">
+            <HCaptcha
+              ref={captchaRef}
+              sitekey="3052ee80-e7ac-4b88-a35e-f64ca4fe8bc8"
+              onVerify={setCaptchaToken}
+              onExpire={() => setCaptchaToken("")}
+              onError={() => setCaptchaToken("")}
+            />
+          </div>
+
           <button
             className="signin-btn auth-submit"
             type="submit"
-            disabled={!isSupabaseConfigured || isSubmitting}
+            disabled={!isSupabaseConfigured || isSubmitting || !captchaToken}
           >
             {isSubmitting
               ? "Please wait..."
