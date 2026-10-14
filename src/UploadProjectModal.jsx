@@ -17,6 +17,8 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
   const [tags, setTags] = useState("");
   const [error, setError] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStage, setUploadStage] = useState("");
 
   const chooseFile = (event) => {
     const nextFile = event.currentTarget.files?.[0] ?? null;
@@ -53,6 +55,51 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
     reader.readAsDataURL(nextFile);
   };
 
+  // Upload file với progress tracking dùng XHR
+  const uploadWithProgress = (path, fileToUpload, contentType, onProgress) => {
+    return new Promise(async (resolve, reject) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        reject(new Error("Sign in to upload."));
+        return;
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const url = `${supabaseUrl}/storage/v1/object/project-files/${path}`;
+
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable && onProgress) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      });
+
+      xhr.addEventListener("load", () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          let message = `Upload failed (${xhr.status})`;
+          try {
+            const parsed = JSON.parse(xhr.responseText);
+            if (parsed.message) message = parsed.message;
+          } catch {}
+          reject(new Error(message));
+        }
+      });
+
+      xhr.addEventListener("error", () => reject(new Error("Network error during upload.")));
+      xhr.addEventListener("abort", () => reject(new Error("Upload cancelled.")));
+
+      xhr.open("POST", url);
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      xhr.setRequestHeader("Content-Type", contentType);
+      xhr.setRequestHeader("x-upsert", "false");
+      xhr.send(fileToUpload);
+    });
+  };
+
   const publishProject = async (event) => {
     event.preventDefault();
     setError("");
@@ -62,10 +109,14 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
     }
 
     setIsPublishing(true);
-    let uploadedPath;              // 👈 khai báo
-    let uploadedThumbPath;         // 👈 khai báo
+    setUploadProgress(0);
+    setUploadStage("Validating archive...");
+
+    let uploadedPath;
+    let uploadedThumbPath;
 
     try {
+      // Validate .sb3
       const archiveHeader = new Uint8Array(await file.slice(0, 4).arrayBuffer());
       if (archiveHeader[0] !== 0x50 || archiveHeader[1] !== 0x4b) {
         throw new Error("This file does not look like a valid Scratch .sb3 archive.");
@@ -85,30 +136,34 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
         throw new Error("This file does not contain any Scratch sprites or stage.");
       }
 
-      // 1. Upload .sb3
+      // 1. Upload .sb3 với progress
+      setUploadStage("Uploading project file...");
+      setUploadProgress(0);
       uploadedPath = `${user.id}/${crypto.randomUUID()}.sb3`;
-      const { error: uploadError } = await supabase.storage
-        .from("project-files")
-        .upload(uploadedPath, file, {
-          contentType: "application/octet-stream",
-          upsert: false
-        });
-      if (uploadError) throw uploadError;
+      await uploadWithProgress(
+        uploadedPath,
+        file,
+        "application/octet-stream",
+        (percent) => setUploadProgress(percent)
+      );
 
-      // 2. Upload thumbnail (nếu có)              👈 đoạn upload
+      // 2. Upload thumbnail
       if (thumbnail) {
+        setUploadStage("Uploading thumbnail...");
+        setUploadProgress(0);
         const ext = (thumbnail.name.split(".").pop() || "png").toLowerCase();
         uploadedThumbPath = `${user.id}/thumb-${crypto.randomUUID()}.${ext}`;
-        const { error: thumbError } = await supabase.storage
-          .from("project-files")
-          .upload(uploadedThumbPath, thumbnail, {
-            contentType: thumbnail.type,
-            upsert: false
-          });
-        if (thumbError) throw thumbError;
+        await uploadWithProgress(
+          uploadedThumbPath,
+          thumbnail,
+          thumbnail.type || "image/png",
+          (percent) => setUploadProgress(percent)
+        );
       }
 
       // 3. Gửi API
+      setUploadStage("Saving project info...");
+      setUploadProgress(100);
       await apiRequest("/api/projects", {
         method: "POST",
         authenticated: true,
@@ -118,7 +173,7 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
           category,
           tags: tags.split(",").map((tag) => tag.trim()).filter(Boolean),
           assetPath: uploadedPath,
-          thumbnailPath: uploadedThumbPath,     // 👈 gửi
+          thumbnailPath: uploadedThumbPath,
           isPublic: true
         }
       });
@@ -128,6 +183,7 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
       await onPublished();
       onClose();
     } catch (publishError) {
+      // Cleanup
       if (uploadedPath) {
         await supabase.storage.from("project-files").remove([uploadedPath]);
       }
@@ -137,6 +193,8 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
       setError(publishError.message || "Unable to publish this project.");
     } finally {
       setIsPublishing(false);
+      setUploadProgress(0);
+      setUploadStage("");
     }
   };
 
@@ -176,7 +234,7 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
           </label>
 
           <label>
-            Thumbnail (optional)                     👈 input
+            Thumbnail (optional)
             <input type="file" accept="image/*" onChange={chooseThumbnail} />
             {thumbnailPreview && (
               <img
@@ -211,9 +269,26 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
             Tags <span className="upload-label-hint">comma separated, up to 10</span>
             <input maxLength={320} placeholder="platformer, art, music" value={tags} onChange={(event) => setTags(event.target.value)} />
           </label>
+
+          {isPublishing && (
+            <div className="upload-progress">
+              <div className="upload-progress-info">
+                <span>{uploadStage}</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <div className="upload-progress-track">
+                <div
+                  className="upload-progress-fill"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           {error && <p className="auth-error" role="alert">{error}</p>}
+
           <button className="signin-btn upload-submit" type="submit" disabled={isPublishing || !file}>
-            {isPublishing ? "Uploading..." : "Publish project"}
+            {isPublishing ? `Uploading... ${uploadProgress}%` : "Publish project"}
           </button>
         </form>
       </section>
