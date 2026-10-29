@@ -4,7 +4,62 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    {
+      "source": "/api/activity",
+      "destination": "/api?path=activity"
+    },
+    {
+      "source": "/api/auth/me",
+      "destination": "/api?path=auth/me"
+    },
+    {
+      "source": "/api/auth/sign-in",
+      "destination": "/api?path=auth/sign-in"
+    },
+    {
+      "source": "/api/chat",
+      "destination": "/api?path=chat"
+    },
+    {
+      "source": "/api/events",
+      "destination": "/api?path=events"
+    },
+    {
+      "source": "/api/follows",
+      "destination": "/api?path=follows"
+    },
+    {
+      "source": "/api/notifications",
+      "destination": "/api?path=notifications"
+    },
+    {
+      "source": "/api/project-interactions",
+      "destination": "/api?path=project-interactions"
+    },
+    {
+      "source": "/api/profiles/me",
+      "destination": "/api?path=profiles/me"
+    },
+    {
+      "source": "/api/profiles/lookup",
+      "destination": "/api?path=profiles/lookup"
+    },
+    {
+      "source": "/api/profiles/:id",
+      "destination": "/api?path=profiles/:id"
+    },
+    {
+      "source": "/api/projects",
+      "destination": "/api?path=projects"
+    },
+    {
+      "source": "/api/projects/:id",
+      "destination": "/api?path=projects/:id"
+    },
+    {
+      "source": "/((?!api(?:/|$)|src/|@vite/|@react-refresh|@id/|@fs/|node_modules/|.*\\.[^/]+$).*)",
+      "destination": "/index.html"
+    }
   ]
 }
 

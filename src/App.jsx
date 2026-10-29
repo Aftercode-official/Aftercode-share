@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import User from "./User.jsx";
 import ProjectPages from "./ProjectPages.jsx";
@@ -9,6 +9,8 @@ import { apiRequest } from "./api.js";
 import UploadProjectModal from "./UploadProjectModal.jsx";
 import LogoIcon from "./assets/Logo.png";
 import LoadingScreen from "./LoadingScreen.jsx";
+import ChatCenter from "./ChatCenter.jsx";
+import { getProjectIdFromUrl, projectShareUrl } from "./projectLinks.js";
 
 const THEME_STORAGE_KEY = "aftercode-share-theme";
 const CUSTOMIZATION_STORAGE_KEY = "aftercode-share-customization";
@@ -43,6 +45,7 @@ function toProject(record) {
     databaseId: record.id,
     userId: record.user_id,
     scratchProjectId: record.scratch_project_id,
+    assetPath: record.asset_path,
     projectUrl,
     title: record.title,
     author: record.author,
@@ -51,6 +54,7 @@ function toProject(record) {
     category: record.category,
     description: record.description,
     tags: record.tags,
+    isPublic: record.is_public,
     views: 0,
     likes: record.likes
   };
@@ -68,7 +72,7 @@ export default function App() {
   const [events, setEvents] = useState([]);
   const [dataError, setDataError] = useState("");
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
-  const [page, setPage] = useState("home");
+  const [page, setPage] = useState(() => getProjectIdFromUrl(window.location.href) ? "project" : "home");
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [projectSearch, setProjectSearch] = useState("");
@@ -134,14 +138,14 @@ export default function App() {
     setEvents(records);
   };
 
-  const loadProjectInteraction = async (project) => {
+  const loadProjectInteraction = useCallback(async (project) => {
     if (!project.databaseId) return;
     const { interaction } = await apiRequest(
       `/api/project-interactions?projectId=${encodeURIComponent(project.databaseId)}`,
       { authenticated: Boolean(user) }
     );
     setProjectInteractions((current) => ({ ...current, [project.databaseId]: interaction }));
-  };
+  }, [user]);
 
   const handleAuthentication = (authenticatedUser) => {
     setUser(authenticatedUser);
@@ -168,6 +172,11 @@ export default function App() {
       setIsCustomizeOpen(false);
       setPage("home");
       setSelectedProject(null);
+      const url = new URL(window.location.href);
+      url.pathname = "/";
+      url.searchParams.delete("projectId");
+      url.searchParams.delete("project");
+      window.history.replaceState({}, "", url);
     } catch (error) {
       setAuthError(`Unable to sign out: ${error.message}`);
     }
@@ -183,6 +192,13 @@ export default function App() {
     setSelectedProject(options.project ?? null);
     setSelectedUserId(options.userId ?? null);
     setActiveDropdown(null);
+    if (nextPage !== "project") {
+      const url = new URL(window.location.href);
+      url.pathname = "/";
+      url.searchParams.delete("projectId");
+      url.searchParams.delete("project");
+      window.history.replaceState({}, "", url);
+    }
     if (!window.matchMedia("(min-width: 761px)").matches) {
       setIsSidebarOpen(false);
     }
@@ -192,9 +208,28 @@ export default function App() {
     setSelectedProject(project);
     setSelectedUserId(null);
     setPage("project");
+    window.history.replaceState({}, "", projectShareUrl(project.databaseId));
     setDataError("");
     loadProjectInteraction(project).catch((error) => setDataError(error.message));
   };
+
+  useEffect(() => {
+    const projectId = getProjectIdFromUrl(window.location.href);
+    if (!projectId) return undefined;
+    let isActive = true;
+    apiRequest(`/api/projects/${encodeURIComponent(projectId)}`, { authenticated: Boolean(user) })
+      .then(({ project: record }) => {
+        if (!isActive) return;
+        const project = toProject({ ...record, likes: 0 });
+        setSelectedProject(project);
+        setPage("project");
+        loadProjectInteraction(project).catch((error) => setDataError(error.message));
+      })
+      .catch((error) => {
+        if (isActive) setDataError(error.message);
+      });
+    return () => { isActive = false; };
+  }, [loadProjectInteraction, user]);
 
   const openUserProfile = (userId) => {
     if (!userId) return;
@@ -398,6 +433,7 @@ export default function App() {
           <nav className="sidebar-nav" aria-label="Account navigation">
             <button className="sidebar-nav-btn" type="button" onClick={() => navigateTo("home")}>⌂ <span>Home</span></button>
             <button className="sidebar-nav-btn" type="button" onClick={() => navigateTo("home")}>★ <span>Featured Projects</span></button>
+            <button className="sidebar-nav-btn" type="button" onClick={() => navigateTo("chat")}>◌ <span>Community Chat</span></button>
             <button className="sidebar-nav-btn" type="button" onClick={() => navigateTo("profile")}>◉ <span>View Profile</span></button>
             <button className="sidebar-nav-btn" type="button" onClick={openCustomizer}>⚙ <span>Customize Page</span></button>
           </nav>
@@ -444,6 +480,7 @@ export default function App() {
               ＋ Create
             </a>
             <button className="icon-btn" type="button" onClick={() => navigateTo("explore")}>⌕ Explore</button>
+            <button className={`icon-btn${page === "chat" ? " is-active" : ""}`} type="button" onClick={() => navigateTo("chat")}>Chat</button>
             <button
               className="icon-btn upload-project-trigger"
               type="button"
@@ -570,7 +607,7 @@ export default function App() {
           </div>
         </header>
         <main
-          className={`main-feed-container${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}`}
+          className={`main-feed-container${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}`}
         >
           <User
           key={`${page}-${isCustomizeOpen}-${selectedUserId ?? ""}`}
@@ -604,6 +641,29 @@ export default function App() {
                 await loadProjects();
                 setPage("explore");
                 setSelectedProject(null);
+              }}
+              onProjectUpdated={async (record) => {
+                setSelectedProject((current) => current?.databaseId === record.id
+                  ? {
+                    ...current,
+                    title: record.title,
+                    author: record.author,
+                    description: record.description,
+                    category: record.category,
+                    tags: record.tags,
+                    isPublic: record.is_public,
+                    scratchProjectId: record.scratch_project_id,
+                    assetPath: record.asset_path,
+                    projectUrl: record.asset_path
+                      ? supabase.storage.from("project-files").getPublicUrl(record.asset_path).data.publicUrl
+                      : null
+                  }
+                  : current);
+                try {
+                  await loadProjects();
+                } catch (error) {
+                  setDataError(error.message);
+                }
               }}
               interaction={selectedProject
                 ? projectInteractions[selectedProject.databaseId] ?? {
@@ -701,6 +761,7 @@ export default function App() {
               )}
             </>
           )}
+          {page === "chat" && <ChatCenter user={user} onSignIn={openAuthModal} onOpenProject={openProject} />}
         </main>
       </div>
       {isAuthModalOpen && (

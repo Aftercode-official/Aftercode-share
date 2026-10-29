@@ -5,8 +5,12 @@ const MAX_TAGS = 10;
 const MAX_TAG_LENGTH = 30;
 const SCRATCH_PROJECT_ID = /^\d{1,20}$/;
 
-function validateUpdates(body) {
+function validateUpdates(body, userId) {
   const updates = {};
+
+  if (Object.hasOwn(body, "scratchProjectId") && Object.hasOwn(body, "assetPath")) {
+    return { error: "Provide either a Scratch project ID or an uploaded .sb3 file path, not both." };
+  }
 
   if (Object.hasOwn(body, "title")) {
     const title = typeof body.title === "string" ? body.title.trim() : "";
@@ -23,6 +27,16 @@ function validateUpdates(body) {
       return { error: "A valid Scratch project ID is required." };
     }
     updates.scratch_project_id = scratchProjectId;
+    updates.asset_path = null;
+  }
+  if (Object.hasOwn(body, "assetPath")) {
+    const assetPath = typeof body.assetPath === "string" ? body.assetPath.trim() : "";
+    if (!assetPath.endsWith(".sb3") || assetPath.includes("..") || assetPath.includes("\\")
+      || !assetPath.startsWith(`${userId}/`)) {
+      return { error: "Upload a valid .sb3 file to your own project-files folder." };
+    }
+    updates.asset_path = assetPath;
+    updates.scratch_project_id = null;
   }
   if (Object.hasOwn(body, "description")) {
     if (typeof body.description !== "string" || body.description.trim().length > 2000) {
@@ -74,7 +88,7 @@ export default async function handler(req, res) {
     if (req.method === "GET") {
       const { data, error } = await client
         .from("projects")
-        .select("id, user_id, title, author, scratch_project_id, asset_path, description, category, tags, is_public, created_at, updated_at")
+        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, created_at, updated_at")
         .eq("id", id)
         .maybeSingle();
 
@@ -92,7 +106,19 @@ export default async function handler(req, res) {
           return;
         }
       }
-      sendJson(res, 200, { project: data });
+      const [profileResult, likesResult] = await Promise.all([
+        client.from("profiles").select("avatar_url").eq("user_id", data.user_id).maybeSingle(),
+        client.from("project_likes").select("project_id", { count: "exact", head: true }).eq("project_id", id)
+      ]);
+      if (profileResult.error) throw profileResult.error;
+      if (likesResult.error) throw likesResult.error;
+      sendJson(res, 200, {
+        project: {
+          ...data,
+          authorAvatar: profileResult.data?.avatar_url || "",
+          likes: likesResult.count ?? 0
+        }
+      });
       return;
     }
 
@@ -135,9 +161,22 @@ export default async function handler(req, res) {
       sendJson(res, 400, { error: "A JSON object is required." });
       return;
     }
-    const validation = validateUpdates(body);
+    const validation = validateUpdates(body, user.id);
     if (validation.error) {
       sendJson(res, 400, { error: validation.error });
+      return;
+    }
+
+    const { data: previous, error: previousError } = await client
+      .from("projects")
+      .select("asset_path")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (previousError) throw previousError;
+    if (!previous) {
+      sendJson(res, 404, { error: "Project not found." });
       return;
     }
 
@@ -146,7 +185,7 @@ export default async function handler(req, res) {
       .update(validation.updates)
       .eq("id", id)
       .eq("user_id", user.id)
-      .select("id, user_id, title, author, scratch_project_id, asset_path, description, category, tags, is_public, created_at, updated_at")
+      .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, created_at, updated_at")
       .maybeSingle();
 
     if (error) {
@@ -155,6 +194,12 @@ export default async function handler(req, res) {
     if (!data) {
       sendJson(res, 404, { error: "Project not found." });
       return;
+    }
+    if (previous.asset_path && previous.asset_path !== data.asset_path) {
+      const { error: cleanupError } = await client.storage
+        .from("project-files")
+        .remove([previous.asset_path]);
+      if (cleanupError) logApiError("Unable to clean up replaced project file.", cleanupError);
     }
     sendJson(res, 200, { project: data });
   } catch (error) {

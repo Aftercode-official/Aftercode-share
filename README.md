@@ -7,7 +7,8 @@ Aftercode Share is a React + Vite app for discovering and sharing Scratch projec
 1. Create a Supabase project and enable email/password sign-in under **Authentication → Providers**.
 2. Run [`supabase/migrations/20261011000000_create_projects.sql`](./supabase/migrations/20261011000000_create_projects.sql) in the Supabase SQL Editor.
 3. Run [`supabase/migrations/20261012000000_add_community_features.sql`](./supabase/migrations/20261012000000_add_community_features.sql) to add project interactions, activity, notifications, and events.
-4. Copy `.env.example` to `.env.local` and fill in the values:
+4. Run [`supabase/migrations/20261014000000_add_global_chat.sql`](./supabase/migrations/20261014000000_add_global_chat.sql) to add the shared community chat.
+5. Copy `.env.example` to `.env.local` and fill in the values:
    - `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are public client settings. Use these with Supabase Auth in the browser.
    - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are server-only settings used by Vercel Functions. Never expose or prefix the service role key with `VITE_`.
    - `EVENT_ADMIN_USER_IDS` is a comma-separated list of Supabase user UUIDs allowed to create events. Leave it unset to disable event creation through the API.
@@ -62,6 +63,10 @@ All responses use JSON except a successful delete, which returns `204 No Content
 | `PATCH` | `/api/notifications` | Mark the signed-in user's notifications as read |
 | `GET` | `/api/events` | List upcoming public events |
 | `POST` | `/api/events` | Create an upcoming public event (configured event administrators only) |
+| `GET` | `/api/chat` | List the latest 100 messages in the global community chat |
+| `POST` | `/api/chat` | Send a chat message as the signed-in user |
+
+All API URLs are rewritten to a single Vercel function in `api/index.js` and dispatched by `serverless-handlers/dispatcher.js`, keeping the deployment within the Hobby plan's serverless-function limit.
 
 Create a project with:
 
@@ -76,8 +81,12 @@ Create a project with:
 }
 ```
 
+To replace an uploaded Scratch project, upload the validated `.sb3` file into the signed-in user's `project-files` folder, then include its storage path as `assetPath` in `PATCH /api/projects/:id`. The API verifies the owner folder, switches the project source to the uploaded file, and removes the previous `.sb3` after the update succeeds.
+
 The API derives the author from the authenticated Supabase user; clients cannot choose an owner. Database row-level security permits public reads while writes go through the ownership-checking API.
 
 Project creation, likes, and comments automatically add community activity; likes and comments also notify the project owner. The frontend loads public projects and signed-in activity/notifications from the API. Vercel Functions are not served by plain `npm run dev`; use `npx vercel dev` locally or deploy the project to Vercel.
+
+The Community Chat is shared by all visitors. Anyone can read recent messages; signed-in users can post messages up to 1,000 characters. It refreshes automatically while the chat view is open. Share a project from its detail page to copy an `?projectId=` link; posting that link in chat creates a clickable card with the project thumbnail and details.
 
 The header's **Sign In** and home page's **Get Started** buttons open the email sign-in / account creation dialog. Account creation may require email confirmation depending on the Supabase project's Authentication settings. Scratch account verification is not included yet.

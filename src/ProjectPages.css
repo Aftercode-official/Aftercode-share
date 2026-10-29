@@ -31,6 +31,105 @@
   color: #e53e3e;
 }
 
+.project-detail-heading > div > .project-action {
+  margin-top: 0.6rem;
+  margin-right: 0.4rem;
+}
+
+.project-edit-backdrop {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 1rem;
+  background: rgb(15 15 15 / 62%);
+}
+
+.project-edit-dialog {
+  display: flex;
+  width: min(100%, 520px);
+  max-height: min(90vh, 760px);
+  flex-direction: column;
+  gap: 0.9rem;
+  overflow-y: auto;
+  padding: clamp(1rem, 4vw, 1.5rem);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--bg-main);
+  color: var(--text-primary);
+}
+
+.project-edit-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.project-edit-heading h2 { margin-top: 0.2rem; font-size: 1.35rem; }
+
+.project-edit-close {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.project-edit-dialog > label:not(.project-edit-visibility) {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.project-edit-dialog input:not([type="checkbox"]),
+.project-edit-dialog textarea {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  outline: none;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.86rem;
+}
+
+.project-edit-dialog input:focus,
+.project-edit-dialog textarea:focus { border-color: var(--accent-orange); }
+.project-edit-dialog textarea { resize: vertical; }
+.project-edit-hint { margin-left: 0.25rem; font-weight: 400; }
+
+.project-edit-visibility {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-primary);
+  font-size: 0.84rem;
+}
+
+.project-edit-visibility input { accent-color: var(--accent-orange); }
+.project-edit-error { color: #d23d32; font-size: 0.82rem; }
+
+.project-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  padding-top: 0.25rem;
+}
+
+.project-edit-actions .signin-btn { background: var(--text-primary); color: var(--bg-main); }
+
 .explore-heading {
   display: flex;
   align-items: flex-end;
@@ -146,6 +245,22 @@
   font-weight: 700;
   text-decoration: none;
 }
+
+.project-share-button {
+  margin-top: 0.7rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.project-share-button:hover { border-color: var(--accent-orange); }
+.project-share-status { margin-left: 0.55rem; color: var(--text-muted); font-size: 0.75rem; }
 
 /* === PROJECT DETAIL === */
 .project-detail-page {

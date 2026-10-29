@@ -1,10 +1,9 @@
 import { useState } from "react";
-import JSZip from "jszip";
 import { apiRequest } from "./api.js";
 import { supabase } from "./supabase.js";
+import { MAX_SCRATCH_PROJECT_SIZE, validateScratchProjectFile } from "./scratchProjectFile.js";
 import "./UploadProjectModal.css";
 
-const MAX_PROJECT_SIZE = 50 * 1024 * 1024;
 const MAX_THUMB_SIZE = 2 * 1024 * 1024;
 
 export default function UploadProjectModal({ user, onClose, onPublished }) {
@@ -29,7 +28,7 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
       setError("Choose a Scratch project file ending in .sb3.");
       return;
     }
-    if (nextFile.size === 0 || nextFile.size > MAX_PROJECT_SIZE) {
+    if (nextFile.size === 0 || nextFile.size > MAX_SCRATCH_PROJECT_SIZE) {
       setError("The .sb3 file must be between 1 byte and 50 MB.");
       return;
     }
@@ -116,25 +115,7 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
     let uploadedThumbPath;
 
     try {
-      // Validate .sb3
-      const archiveHeader = new Uint8Array(await file.slice(0, 4).arrayBuffer());
-      if (archiveHeader[0] !== 0x50 || archiveHeader[1] !== 0x4b) {
-        throw new Error("This file does not look like a valid Scratch .sb3 archive.");
-      }
-      const archive = await JSZip.loadAsync(file);
-      const projectFile = archive.file("project.json");
-      if (!projectFile) {
-        throw new Error("This .sb3 archive does not contain a Scratch project.json file.");
-      }
-      let projectData;
-      try {
-        projectData = JSON.parse(await projectFile.async("string"));
-      } catch {
-        throw new Error("The project.json file in this .sb3 archive is invalid.");
-      }
-      if (!Array.isArray(projectData.targets) || projectData.targets.length === 0) {
-        throw new Error("This file does not contain any Scratch sprites or stage.");
-      }
+      await validateScratchProjectFile(file);
 
       // 1. Upload .sb3 với progress
       setUploadStage("Uploading project file...");
