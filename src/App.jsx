@@ -12,6 +12,7 @@ import LoadingScreen from "./LoadingScreen.jsx";
 import ChatCenter from "./ChatCenter.jsx";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
 import AdminPanel from "./AdminPanel.jsx";
+import NotificationsPage from "./NotificationsPage.jsx";
 import { getProjectIdFromUrl, projectShareUrl } from "./projectLinks.js";
 
 const THEME_STORAGE_KEY = "aftercode-share-theme";
@@ -74,6 +75,8 @@ export default function App() {
   const [projects, setProjects] = useState([]);
   const [activities, setActivities] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+  const unreadNotificationCount = notifications.filter((notification) => !notification.is_read).length;
   const [events, setEvents] = useState([]);
   const [dataError, setDataError] = useState("");
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
@@ -102,12 +105,7 @@ export default function App() {
     setActiveDropdown(nextDropdown);
     if (nextDropdown) {
       setDataError("");
-      const loadDropdown = nextDropdown === "notif"
-        ? async () => {
-          await loadNotifications();
-          await markNotificationsRead();
-        }
-        : loadEvents;
+      const loadDropdown = loadEvents;
       loadDropdown().catch((error) => setDataError(error.message));
     }
   };
@@ -128,8 +126,13 @@ export default function App() {
 
   const loadNotifications = async () => {
     if (!user) return;
-    const { notifications: records } = await apiRequest("/api/notifications", { authenticated: true });
-    setNotifications(records);
+    setIsLoadingNotifications(true);
+    try {
+      const { notifications: records } = await apiRequest("/api/notifications", { authenticated: true });
+      setNotifications(records);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
   };
 
   const markNotificationsRead = async () => {
@@ -388,6 +391,20 @@ export default function App() {
   }, [user?.id]);
 
   useEffect(() => {
+    if (!user) return undefined;
+    const refreshUnreadNotifications = async () => {
+      try {
+        const { notifications: records } = await apiRequest("/api/notifications", { authenticated: true });
+        setNotifications(records);
+      } catch {
+        // Keep the last known badge count if a background refresh temporarily fails.
+      }
+    };
+    const timer = window.setInterval(refreshUnreadNotifications, 30000);
+    return () => window.clearInterval(timer);
+  }, [user?.id]);
+
+  useEffect(() => {
     let isActive = true;
 
     const restoreCustomization = async () => {
@@ -533,10 +550,13 @@ export default function App() {
               <button
                 className="icon-btn notifications-trigger"
                 type="button"
-                onClick={() => toggleDropdown("notif")}
+                onClick={() => {
+                  navigateTo("notifications");
+                  loadNotifications().catch((error) => setDataError(error.message));
+                }}
               >
                 Notifications
-                {notifications.some((notification) => !notification.is_read) && <span className="badge-dot" />}
+                {unreadNotificationCount > 0 && <span className="notification-count-badge">{unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}</span>}
               </button>
               <button
                 className="icon-btn events-trigger"
@@ -562,41 +582,6 @@ export default function App() {
               Sign In
             </button>
           )}
-
-          {isLoggedIn && activeDropdown === "notif" && (
-          <div className="dropdown-menu">
-            {notifications.length > 0
-              ? notifications.map((notification) => (
-                <button
-                  type="button"
-                  className="dropdown-item dropdown-item-button"
-                  key={notification.id}
-                  onClick={() => {
-                    if (notification.actor_id) {
-                      setActiveDropdown(null);
-                      openUserProfile(notification.actor_id);
-                    }
-                  }}
-                >
-                  <div className="dropdown-item-row">
-                    {notification.actor_avatar
-                      ? <img className="avatar avatar-sm avatar-img" src={notification.actor_avatar} alt="" />
-                      : <div className="avatar avatar-sm">{notification.actor_name.slice(0, 1).toUpperCase()}</div>}
-                    <div>
-                      <strong>{notification.actor_name}</strong>{" "}
-                      {notification.notification_type === "follow"
-                        ? "started following you"
-                        : notification.notification_type === "project_liked"
-                          ? <>liked <em>{notification.project_title}</em></>
-                          : <>commented on <em>{notification.project_title}</em></>}
-                      <p>{new Date(notification.created_at).toLocaleString()}</p>
-                    </div>
-                  </div>
-                </button>
-              ))
-              : <p className="dropdown-empty">No notifications yet.</p>}
-          </div>
-        )}
 
           {isLoggedIn && activeDropdown === "events" && (
             <div className="dropdown-menu">
@@ -807,6 +792,17 @@ export default function App() {
             </>
           )}
           {page === "chat" && <ChatCenter user={user} onSignIn={openAuthModal} onOpenProject={openProject} />}
+          {page === "notifications" && user && (
+            <NotificationsPage
+              notifications={notifications}
+              isLoading={isLoadingNotifications}
+              onMarkAllRead={() => markNotificationsRead().catch((error) => setDataError(error.message))}
+              onOpenProject={(notification) => {
+                const project = projects.find((item) => item.databaseId === notification.project_id);
+                if (project) openProject(project);
+              }}
+            />
+          )}
           {page === "admin" && isProjectAdmin && (
             <AdminPanel
               projects={projects}
