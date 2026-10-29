@@ -1,7 +1,11 @@
 import { logApiError, readJsonBody, requireMethod, sendJson } from "../server/http.js";
 import { createAdminClient, getAuthenticatedUser } from "../server/supabase.js";
 
-const CHAT_FIELDS = "id, user_id, author, avatar_url, text, created_at";
+const CHAT_FIELDS = "id, user_id, author, avatar_url, text, media_path, media_type, created_at";
+const ALLOWED_MEDIA_TYPES = new Set([
+  "image/jpeg", "image/png", "image/webp", "image/gif",
+  "video/mp4", "video/webm"
+]);
 
 export default async function handler(req, res) {
   if (!requireMethod(req, res, ["GET", "POST"])) return;
@@ -38,8 +42,16 @@ export default async function handler(req, res) {
     }
     const body = readJsonBody(req);
     const text = typeof body?.text === "string" ? body.text.trim() : "";
-    if (!text || text.length > 1000) {
-      sendJson(res, 400, { error: "Message must contain 1 to 1000 characters." });
+    const mediaPath = typeof body?.mediaPath === "string" ? body.mediaPath.trim() : "";
+    const mediaType = typeof body?.mediaType === "string" ? body.mediaType.trim().toLowerCase() : "";
+    if (text.length > 1000 || (!text && !mediaPath)) {
+      sendJson(res, 400, { error: "Write a message or attach a photo/video. Messages can be up to 1000 characters." });
+      return;
+    }
+    if (Boolean(mediaPath) !== Boolean(mediaType)
+      || (mediaPath && (!mediaPath.startsWith(`${user.id}/`) || mediaPath.includes("..")))
+      || (mediaType && !ALLOWED_MEDIA_TYPES.has(mediaType))) {
+      sendJson(res, 400, { error: "Invalid chat attachment." });
       return;
     }
 
@@ -54,7 +66,14 @@ export default async function handler(req, res) {
       ? metadata.avatar_url.slice(0, 2048)
       : "";
     const { data, error } = await client.from("chat_messages")
-      .insert({ user_id: user.id, author, avatar_url: avatarUrl, text })
+      .insert({
+        user_id: user.id,
+        author,
+        avatar_url: avatarUrl,
+        text,
+        media_path: mediaPath || null,
+        media_type: mediaType || null
+      })
       .select(CHAT_FIELDS).single();
     if (error) throw error;
     sendJson(res, 201, { message: data });

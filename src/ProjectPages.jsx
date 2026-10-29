@@ -4,6 +4,7 @@ import { apiRequest } from "./api.js";
 import { supabase } from "./supabase.js";
 import { validateScratchProjectFile } from "./scratchProjectFile.js";
 import { projectShareUrl } from "./projectLinks.js";
+import ProjectThumbnail from "./ProjectThumbnail.jsx";
 
 const EMOJI_GROUPS = [
   { name: "Smileys", emojis: ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😍", "🥰", "😘", "😋", "😎", "🤩", "🥳", "😏", "😢", "😭", "😡", "🤔", "🤯", "🥺", "😴", "🤗", "🤭", "🫡", "🫠"] },
@@ -15,6 +16,12 @@ const EMOJI_GROUPS = [
 ];
 
 const EMPTY_INTERACTION = { liked: false, favorited: false, comments: [] };
+
+const normalizeSearchText = (value) => String(value ?? "")
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/#/g, "")
+  .toLocaleLowerCase();
 
 export default function ProjectPages({
   view,
@@ -45,10 +52,19 @@ export default function ProjectPages({
   const [editDraft, setEditDraft] = useState({ title: "", description: "", category: "", tags: "", isPublic: true });
 
   const filteredProjects = useMemo(() => {
-    const normalizedSearch = searchQuery.trim().toLowerCase();
+    const searchTerms = normalizeSearchText(searchQuery).split(/\s+/).filter(Boolean);
     const results = projects.filter((project) => {
-      const matchesSearch = !normalizedSearch
-        || `${project.title} ${project.author} ${project.category} ${project.description} ${project.tags.join(" ")}`.toLowerCase().includes(normalizedSearch);
+      const tags = Array.isArray(project.tags) ? project.tags : [];
+      const searchableContent = normalizeSearchText([
+        project.title,
+        project.author,
+        project.category,
+        project.description,
+        project.id,
+        ...tags,
+        ...tags.map((tag) => `#${tag}`)
+      ].join(" "));
+      const matchesSearch = searchTerms.every((term) => searchableContent.includes(term));
       const matchesCategory = category === "All" || project.category === category;
       return matchesSearch && matchesCategory;
     });
@@ -375,16 +391,12 @@ export default function ProjectPages({
             </section>
           </div>
           <aside className="project-detail-aside">
-            <h2>About this project</h2>
-            <p>{selectedProject.description}</p>
+            <h2>Project info</h2>
             <dl>
               <div><dt>Views</dt><dd>{selectedProject.views.toLocaleString()}</dd></div>
               <div><dt>Category</dt><dd>{selectedProject.category}</dd></div>
               <div><dt>Creator</dt><dd>{selectedProject.author}</dd></div>
             </dl>
-            <a href={`https://scratch.mit.edu/projects/${selectedProject.id}/`} target="_blank" rel="noreferrer">
-              Open on Scratch ↗
-            </a>
           </aside>
         </div>
         {isEditOpen && (
@@ -455,11 +467,11 @@ export default function ProjectPages({
           <p>Discover games, art, animations, and experiments from the community.</p>
         </div>
         <label className="explore-search">
-          <span>Search projects</span>
+          <span>Search all project content</span>
           <input
             className="search-input"
             type="search"
-            placeholder="Search by title, creator, or tag..."
+            placeholder="Search titles, descriptions, creators, #tags..."
             value={searchQuery}
             onChange={(event) => onSearchQueryChange(event.target.value)}
           />
@@ -492,9 +504,7 @@ export default function ProjectPages({
               onClick={() => onOpenProject(project)}
             >
               <span className="featured-thumb-wrapper">
-                {project.thumb
-                  ? <img src={project.thumb} alt="" className="featured-thumb" />
-                  : <span className="sb3-thumbnail" aria-label="Scratch project file">SB3</span>}
+                <ProjectThumbnail project={project} />
                 <span className="featured-badge">{project.category}</span>
               </span>
               <span className="featured-info">

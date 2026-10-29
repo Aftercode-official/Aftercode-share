@@ -324,6 +324,7 @@
   border-radius: 12px;
   background-color: var(--bg-card);
   max-width: 720px;
+  min-width: 0;
 }
 
 .project-detail-aside {
@@ -349,6 +350,10 @@
   color: var(--text-muted);
   line-height: 1.5;
   font-size: 0.85rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .project-category {

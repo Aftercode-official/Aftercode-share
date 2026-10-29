@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { loadPublicProfile, apiFollow, loadFollowList, loadFollowState } from "./userStorage.js";
+import { supabase } from "./supabase.js";
+import ProjectThumbnail from "./ProjectThumbnail.jsx";
 import "./User.css";
 
 export default function User({
@@ -56,8 +58,10 @@ export default function User({
           category: record.category,
           description: record.description,
           tags: record.tags,
-          thumb: record.scratch_project_id
-            ? `https://uploads.scratch.mit.edu/get_image/project/${record.scratch_project_id}_480x360.png`
+          thumb: record.thumbnail_url
+            ? (record.thumbnail_url.startsWith("http")
+              ? record.thumbnail_url
+              : supabase?.storage.from("project-files").getPublicUrl(record.thumbnail_url).data.publicUrl ?? null)
             : null,
           views: 0
         })));
@@ -164,7 +168,20 @@ export default function User({
             return;
           }
           const image = new Image();
-          image.onload = () => resolve(reader.result);
+          image.onload = () => {
+            const maxDimension = field === "avatarUrl" ? 256 : 1600;
+            const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+            canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+            const context = canvas.getContext("2d");
+            if (!context) {
+              reject(new Error("Unable to process the image file."));
+              return;
+            }
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL("image/webp", field === "avatarUrl" ? 0.76 : 0.8));
+          };
           image.onerror = () => reject(new Error("Please choose a valid image file."));
           image.src = reader.result;
         };
@@ -266,9 +283,7 @@ export default function User({
                     onClick={() => onProjectOpen(project)}
                   >
                     <div className="featured-thumb-wrapper">
-                      {project.thumb
-                        ? <img src={project.thumb} alt={project.title} className="featured-thumb" />
-                        : <span className="sb3-thumbnail" aria-label="Scratch project file">SB3</span>}
+                      <ProjectThumbnail project={project} alt={project.title} />
                       <span className="featured-badge">FEATURED</span>
                     </div>
                     <div className="featured-info">
@@ -358,9 +373,7 @@ export default function User({
                       onClick={() => onProjectOpen(project)}
                     >
                       <div className="featured-thumb-wrapper">
-                        {project.thumb
-                          ? <img src={project.thumb} alt={project.title} className="featured-thumb" />
-                          : <span className="sb3-thumbnail" aria-label="Scratch project file">SB3</span>}
+                        <ProjectThumbnail project={project} alt={project.title} />
                         <span className="featured-badge">{project.category}</span>
                       </div>
                       <div className="featured-info">

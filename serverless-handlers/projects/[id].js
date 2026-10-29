@@ -4,6 +4,7 @@ import { createAdminClient, getAuthenticatedUser } from "../../server/supabase.j
 const MAX_TAGS = 10;
 const MAX_TAG_LENGTH = 30;
 const SCRATCH_PROJECT_ID = /^\d{1,20}$/;
+const FEATURED_PROJECT_ADMIN_ID = "5c7667c5-7119-44fc-bd62-28ba3d4507d0";
 
 function validateUpdates(body, userId) {
   const updates = {};
@@ -88,7 +89,7 @@ export default async function handler(req, res) {
     if (req.method === "GET") {
       const { data, error } = await client
         .from("projects")
-        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, created_at, updated_at")
+        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, is_featured, created_at, updated_at")
         .eq("id", id)
         .maybeSingle();
 
@@ -161,6 +162,29 @@ export default async function handler(req, res) {
       sendJson(res, 400, { error: "A JSON object is required." });
       return;
     }
+    if (Object.hasOwn(body, "isFeatured")) {
+      if (user.id !== FEATURED_PROJECT_ADMIN_ID) {
+        sendJson(res, 403, { error: "Only project administrators can feature projects." });
+        return;
+      }
+      if (Object.keys(body).length !== 1 || typeof body.isFeatured !== "boolean") {
+        sendJson(res, 400, { error: "Provide only a boolean isFeatured value." });
+        return;
+      }
+      const { data, error } = await client
+        .from("projects")
+        .update({ is_featured: body.isFeatured, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, is_featured, created_at, updated_at")
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        sendJson(res, 404, { error: "Project not found." });
+        return;
+      }
+      sendJson(res, 200, { project: data });
+      return;
+    }
     const validation = validateUpdates(body, user.id);
     if (validation.error) {
       sendJson(res, 400, { error: validation.error });
@@ -185,7 +209,7 @@ export default async function handler(req, res) {
       .update(validation.updates)
       .eq("id", id)
       .eq("user_id", user.id)
-      .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, created_at, updated_at")
+      .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, is_featured, created_at, updated_at")
       .maybeSingle();
 
     if (error) {

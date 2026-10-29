@@ -8,11 +8,14 @@ Aftercode Share is a React + Vite app for discovering and sharing Scratch projec
 2. Run [`supabase/migrations/20261011000000_create_projects.sql`](./supabase/migrations/20261011000000_create_projects.sql) in the Supabase SQL Editor.
 3. Run [`supabase/migrations/20261012000000_add_community_features.sql`](./supabase/migrations/20261012000000_add_community_features.sql) to add project interactions, activity, notifications, and events.
 4. Run [`supabase/migrations/20261014000000_add_global_chat.sql`](./supabase/migrations/20261014000000_add_global_chat.sql) to add the shared community chat.
-5. Copy `.env.example` to `.env.local` and fill in the values:
+5. Run [`supabase/migrations/20261015000000_add_chat_media.sql`](./supabase/migrations/20261015000000_add_chat_media.sql) to enable public chat image and video attachments.
+6. Run [`supabase/migrations/20261029000000_add_featured_projects.sql`](./supabase/migrations/20261029000000_add_featured_projects.sql) to add admin-managed featured projects.
+7. Copy `.env.example` to `.env.local` and fill in the values:
    - `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are public client settings. Use these with Supabase Auth in the browser.
    - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are server-only settings used by Vercel Functions. Never expose or prefix the service role key with `VITE_`.
    - `EVENT_ADMIN_USER_IDS` is a comma-separated list of Supabase user UUIDs allowed to create events. Leave it unset to disable event creation through the API.
-5. Add the same variables to the Vercel project's Environment Variables. Deploy the project to make the `api/` functions available.
+8. The Admin Panel and featured-project API are restricted to the `katboizz` account UUID `5c7667c5-7119-44fc-bd62-28ba3d4507d0`. If that account is recreated, update `FEATURED_PROJECT_ADMIN_ID` in `serverless-handlers/projects/[id].js` and the matching ID check in `src/App.jsx`.
+9. Add the same variables to the Vercel project's Environment Variables. Deploy the project to make the `api/` functions available.
 
 `npm run dev` starts the Vite frontend only. To run the Vercel Functions locally, use `npx vercel dev` after configuring the Vercel project and its local environment variables.
 

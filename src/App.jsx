@@ -10,6 +10,8 @@ import UploadProjectModal from "./UploadProjectModal.jsx";
 import LogoIcon from "./assets/Logo.png";
 import LoadingScreen from "./LoadingScreen.jsx";
 import ChatCenter from "./ChatCenter.jsx";
+import ProjectThumbnail from "./ProjectThumbnail.jsx";
+import AdminPanel from "./AdminPanel.jsx";
 import { getProjectIdFromUrl, projectShareUrl } from "./projectLinks.js";
 
 const THEME_STORAGE_KEY = "aftercode-share-theme";
@@ -36,7 +38,9 @@ function toProject(record) {
     ? supabase.storage.from("project-files").getPublicUrl(record.asset_path).data.publicUrl
     : null;
   const thumb = record.thumbnail_url
-    ? supabase.storage.from("project-files").getPublicUrl(record.thumbnail_url).data.publicUrl
+    ? (record.thumbnail_url.startsWith("http")
+      ? record.thumbnail_url
+      : supabase.storage.from("project-files").getPublicUrl(record.thumbnail_url).data.publicUrl)
     : (record.scratch_project_id
       ? `https://uploads.scratch.mit.edu/get_image/project/${record.scratch_project_id}_480x360.png`
       : null);
@@ -51,6 +55,7 @@ function toProject(record) {
     author: record.author,
     authorAvatar: record.authorAvatar || "",
     thumb,
+    isFeatured: record.is_featured === true,
     category: record.category,
     description: record.description,
     tags: record.tags,
@@ -89,8 +94,8 @@ export default function App() {
   const [customization, setCustomization] = useState(DEFAULT_CUSTOMIZATION);
   const [customizationError, setCustomizationError] = useState("");
   const [isBooting, setIsBooting] = useState(true);
-  const [dataReady, setDataReady] = useState(false);
-  const [profileReady, setProfileReady] = useState(false);
+  const isProjectAdmin = user?.id === "5c7667c5-7119-44fc-bd62-28ba3d4507d0";
+  const featuredProjects = projects.filter((project) => project.isFeatured);
 
   const toggleDropdown = (name) => {
     const nextDropdown = activeDropdown === name ? null : name;
@@ -152,6 +157,21 @@ export default function App() {
     setIsAuthModalOpen(false);
     setAuthError("");
     setIsSidebarOpen(window.matchMedia("(min-width: 761px)").matches);
+  };
+
+  const toggleProjectFeatured = async (project) => {
+    try {
+      const { project: updated } = await apiRequest(`/api/projects/${project.databaseId}`, {
+        method: "PATCH",
+        authenticated: true,
+        body: { isFeatured: !project.isFeatured }
+      });
+      setProjects((current) => current.map((item) => item.databaseId === updated.id
+        ? { ...item, isFeatured: updated.is_featured }
+        : item));
+    } catch (error) {
+      setDataError(error.message);
+    }
   };
 
   const handleSignOut = async () => {
@@ -280,16 +300,15 @@ export default function App() {
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
 
-  // Safety net: tự tắt loading sau 8s nếu có gì treo
   useEffect(() => {
     if (!isBooting) return undefined;
     const timer = setTimeout(() => setIsBooting(false), 8000);
     return () => clearTimeout(timer);
   }, [isBooting]);
 
+  // Safety net: tự tắt loading sau 8s nếu có gì treo
   useEffect(() => {
     if (!supabase) {
-      setIsBooting(false);
       return undefined;
     }
 
@@ -319,21 +338,32 @@ export default function App() {
     const userId = user?.id;
 
     const load = async () => {
-      setDataReady(false);
-      setIsBooting(true);
+      const extrasPromise = userId
+        ? Promise.all([
+          apiRequest("/api/activity", { authenticated: true }),
+          apiRequest("/api/notifications", { authenticated: true })
+        ]).catch((error) => {
+          if (isActive) setDataError(error.message);
+          return null;
+        })
+        : Promise.resolve(null);
+
       try {
         const { projects: records } = await apiRequest("/api/projects");
         if (!isActive) return;
         setProjects(records.map(toProject));
+        setDataError("");
+        setIsLoadingProjects(false);
+        setIsBooting(false);
 
         if (userId) {
-          const [activityResult, notificationResult] = await Promise.all([
-            apiRequest("/api/activity", { authenticated: true }),
-            apiRequest("/api/notifications", { authenticated: true })
-          ]);
+          const results = await extrasPromise;
           if (!isActive) return;
-          setActivities(activityResult.activities);
-          setNotifications(notificationResult.notifications);
+          if (results) {
+            const [activityResult, notificationResult] = results;
+            setActivities(activityResult.activities);
+            setNotifications(notificationResult.notifications);
+          }
         } else {
           setActivities([]);
           setNotifications([]);
@@ -342,12 +372,11 @@ export default function App() {
       } catch (error) {
         if (isActive) {
           setDataError(error.message);
-          setDataReady(true);
         }
       } finally {
         if (isActive) {
           setIsLoadingProjects(false);
-          setDataReady(true);
+          setIsBooting(false);
         }
       }
     };
@@ -362,8 +391,6 @@ export default function App() {
     let isActive = true;
 
     const restoreCustomization = async () => {
-      setProfileReady(false);
-      setIsBooting(true);
       try {
         const saved = await loadCustomization();
         if (!isActive) return;
@@ -378,11 +405,9 @@ export default function App() {
             setCustomization(migrated);
           }
         }
-        if (isActive) setProfileReady(true);
       } catch (error) {
         if (isActive) {
           setCustomizationError(`Unable to load settings: ${error.message}`);
-          setProfileReady(true);
         }
       }
     };
@@ -392,12 +417,6 @@ export default function App() {
       isActive = false;
     };
   }, [user?.id]);
-
-  useEffect(() => {
-    if (dataReady && profileReady) {
-      setIsBooting(false);
-    }
-  }, [dataReady, profileReady]);
 
   if (isBooting) {
     return <LoadingScreen />;
@@ -434,6 +453,7 @@ export default function App() {
             <button className="sidebar-nav-btn" type="button" onClick={() => navigateTo("home")}>⌂ <span>Home</span></button>
             <button className="sidebar-nav-btn" type="button" onClick={() => navigateTo("home")}>★ <span>Featured Projects</span></button>
             <button className="sidebar-nav-btn" type="button" onClick={() => navigateTo("chat")}>◌ <span>Community Chat</span></button>
+            {isProjectAdmin && <button className={`sidebar-nav-btn${page === "admin" ? " is-active" : ""}`} type="button" onClick={() => navigateTo("admin")}>⚙ <span>Admin Panel</span></button>}
             <button className="sidebar-nav-btn" type="button" onClick={() => navigateTo("profile")}>◉ <span>View Profile</span></button>
             <button className="sidebar-nav-btn" type="button" onClick={openCustomizer}>⚙ <span>Customize Page</span></button>
           </nav>
@@ -498,7 +518,7 @@ export default function App() {
             <input
               className="search-input"
               type="search"
-              placeholder="Search projects..."
+              placeholder="Search projects, descriptions, #tags..."
               value={projectSearch}
               onChange={(event) => setProjectSearch(event.target.value)}
               onKeyDown={(event) => {
@@ -743,25 +763,58 @@ export default function App() {
               {customization.showFeatured && (
                 <section className="featured-hero" id="featured-projects">
                   <h2 className="section-title">Featured Projects</h2>
-                  {projects.length > 0 ? (
+                  {featuredProjects.length > 0 ? (
                     <div className="featured-grid">
-                      {projects.map((project, index) => (
+                      {featuredProjects.map((project, index) => (
                         <ProjectCard
                           key={project.id}
                           project={project}
                           index={index}
                           onOpenProject={openProject}
+                          showFeaturedBadge
                         />
                       ))}
                     </div>
                   ) : (
-                    <p className="featured-empty">{dataError || (isLoadingProjects ? "Loading projects..." : "No featured projects yet.")}</p>
+                    <p className="featured-empty">
+                      {dataError || (isLoadingProjects
+                        ? "Loading projects..."
+                        : isProjectAdmin
+                          ? "No featured projects yet. Choose projects in Recent Projects below."
+                          : "No featured projects have been selected yet.")}
+                    </p>
                   )}
                 </section>
               )}
+
+              <section className="featured-hero recent-projects-section" id="recent-projects">
+                <h2 className="section-title">Recent Projects</h2>
+                {projects.length > 0 ? (
+                  <div className="featured-grid">
+                    {projects.map((project, index) => (
+                      <ProjectCard
+                        key={project.id}
+                        project={project}
+                        index={index}
+                        onOpenProject={openProject}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="featured-empty">{dataError || (isLoadingProjects ? "Loading projects..." : "No projects have been uploaded yet.")}</p>
+                )}
+              </section>
             </>
           )}
           {page === "chat" && <ChatCenter user={user} onSignIn={openAuthModal} onOpenProject={openProject} />}
+          {page === "admin" && isProjectAdmin && (
+            <AdminPanel
+              projects={projects}
+              onToggleFeatured={toggleProjectFeatured}
+              onOpenProject={openProject}
+              error={dataError}
+            />
+          )}
         </main>
       </div>
       {isAuthModalOpen && (
@@ -785,29 +838,24 @@ export default function App() {
   );
 }
 
-function ProjectCard({ project, index, onOpenProject }) {
+function ProjectCard({ project, index, onOpenProject, showFeaturedBadge = false }) {
   return (
-    <button
-      className="featured-card home-project-card"
-      type="button"
-      style={{ "--delay": index + 1 }}
-      onClick={() => onOpenProject(project)}
-    >
-      <div className="featured-thumb-wrapper">
-        {project.thumb
-          ? <img src={project.thumb} alt={project.title} className="featured-thumb" />
-          : <span className="sb3-thumbnail" aria-label="Scratch project file">SB3</span>}
-        <span className="featured-badge">FEATURED</span>
-      </div>
-      <div className="featured-info">
-        <h3>{project.title}</h3>
-        <p className="featured-author">
-          {project.authorAvatar
-            ? <img className="avatar avatar-xs avatar-img" src={project.authorAvatar} alt="" />
-            : <span className="avatar avatar-xs">{project.author.slice(0, 1).toUpperCase()}</span>}
-          <span>by {project.author}</span>
-        </p>
-      </div>
-    </button>
+    <article className="featured-card home-project-card" style={{ "--delay": index + 1 }}>
+      <button className="home-project-open" type="button" onClick={() => onOpenProject(project)}>
+        <div className="featured-thumb-wrapper">
+          <ProjectThumbnail project={project} alt={project.title} />
+          {showFeaturedBadge && <span className="featured-badge">FEATURED</span>}
+        </div>
+        <div className="featured-info">
+          <h3>{project.title}</h3>
+          <p className="featured-author">
+            {project.authorAvatar
+              ? <img className="avatar avatar-xs avatar-img" src={project.authorAvatar} alt="" />
+              : <span className="avatar avatar-xs">{project.author.slice(0, 1).toUpperCase()}</span>}
+            <span>by {project.author}</span>
+          </p>
+        </div>
+      </button>
+    </article>
   );
 }

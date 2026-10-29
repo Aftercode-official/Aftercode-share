@@ -76,7 +76,7 @@ export default async function handler(req, res) {
     if (req.method === "GET") {
       const { data, error } = await client
         .from("projects")
-        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, created_at, updated_at")
+        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, is_featured, created_at, updated_at")
         .eq("is_public", true)
         .order("created_at", { ascending: false })
         .limit(100);
@@ -88,12 +88,20 @@ export default async function handler(req, res) {
         return;
       }
 
-      const { data: likes, error: likesError } = await client
-        .from("project_likes")
-        .select("project_id")
-        .in("project_id", data.map((project) => project.id));
+      const userIds = [...new Set(data.map((project) => project.user_id))];
+      const [likesResult, profilesResult] = await Promise.all([
+        client.from("project_likes")
+          .select("project_id")
+          .in("project_id", data.map((project) => project.id)),
+        client.from("profiles")
+          .select("user_id, avatar_url")
+          .in("user_id", userIds)
+      ]);
 
-      if (likesError) throw likesError;
+      if (likesResult.error) throw likesResult.error;
+      const { data: likes } = likesResult;
+      const { data: profiles, error: profilesError } = profilesResult;
+      if (profilesError) throw profilesError;
 
       const likeCounts = (likes ?? []).reduce((counts, like) => {
         counts[like.project_id] = (counts[like.project_id] ?? 0) + 1;
@@ -101,14 +109,9 @@ export default async function handler(req, res) {
       }, {});
 
       // Lấy avatar riêng từ profiles — KHÔNG dùng FK join
-      const userIds = [...new Set(data.map((p) => p.user_id))];
-      const { data: profiles } = await client
-        .from("profiles")
-        .select("user_id, avatar_url")
-        .in("user_id", userIds);
-
       const avatarMap = new Map((profiles ?? []).map((p) => [p.user_id, p.avatar_url]));
 
+      res.setHeader("Cache-Control", "public, max-age=0, s-maxage=10, stale-while-revalidate=60");
       sendJson(res, 200, {
         projects: data.map((project) => ({
           ...project,

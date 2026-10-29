@@ -27,7 +27,7 @@ export default async function handler(req, res) {
 
     const { data: projects, error: projectsError } = await client
       .from("projects")
-      .select("id, user_id, title, author, scratch_project_id, asset_path, description, category, tags, is_public, created_at")
+      .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, created_at")
       .eq("user_id", id)
       .eq("is_public", true)
       .order("created_at", { ascending: false })
