@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 const User = lazy(() => import("./User.jsx"));
 const ProjectPages = lazy(() => import("./ProjectPages.jsx"));
@@ -138,6 +138,8 @@ export default function App() {
   const [initialPublicCache] = useState(readPublicDataCache);
   const [user, setUser] = useState(null);
   const [isRestoringSession, setIsRestoringSession] = useState(Boolean(supabase));
+  const [isInitialDataLoading, setIsInitialDataLoading] = useState(true);
+  const hasCompletedInitialDataLoad = useRef(false);
   const [accountBanNotice, setAccountBanNotice] = useState("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -548,15 +550,31 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (isRestoringSession) return undefined;
+
     let isActive = true;
     const userId = user?.id;
+    const isFirstDataLoad = !hasCompletedInitialDataLoad.current;
     setDataError("");
-    loadPublicUpdates().catch((error) => {
+    const publicUpdatesPromise = loadPublicUpdates().catch((error) => {
       if (isActive) setDataError(error.message);
     });
+    const projectsPromise = apiRequest("/api/projects")
+      .then(({ projects: records }) => {
+        if (!isActive) return;
+        setProjects(records.map(toProject));
+        writePublicDataCache({ projects: records });
+      })
+      .catch((error) => {
+        if (isActive) setDataError(error.message);
+      })
+      .finally(() => {
+        if (isActive) setIsLoadingProjects(false);
+      });
 
+    let accountDataPromise = Promise.resolve();
     if (userId) {
-      Promise.all([
+      accountDataPromise = Promise.all([
         apiRequest("/api/activity", { authenticated: true }),
         apiRequest("/api/notifications", { authenticated: true })
       ]).then(([activityResult, notificationResult]) => {
@@ -571,29 +589,38 @@ export default function App() {
       setNotifications([]);
     }
 
-    const load = async () => {
+    const customizationPromise = userId ? (async () => {
+      setCustomization(DEFAULT_CUSTOMIZATION);
       try {
-        const { projects: records } = await apiRequest("/api/projects");
+        const saved = await loadCustomization();
         if (!isActive) return;
-        setProjects(records.map(toProject));
-        writePublicDataCache({ projects: records });
-        setIsLoadingProjects(false);
-      } catch (error) {
-        if (isActive) {
-          setDataError(error.message);
+        if (saved) {
+          setCustomization(normalizeCustomization(saved));
+          return;
         }
-      } finally {
-        if (isActive) {
-          setIsLoadingProjects(false);
-        }
-      }
-    };
 
-    load();
+        const legacySaved = window.localStorage.getItem(CUSTOMIZATION_STORAGE_KEY);
+        if (legacySaved) {
+          const migrated = normalizeCustomization(JSON.parse(legacySaved));
+          await persistCustomization(migrated);
+          if (isActive) setCustomization(migrated);
+        }
+      } catch (error) {
+        if (isActive) setCustomizationError(`Unable to load settings: ${error.message}`);
+      }
+    })() : Promise.resolve();
+
+    Promise.allSettled([publicUpdatesPromise, projectsPromise, accountDataPromise, customizationPromise])
+      .then(() => {
+        if (!isActive || !isFirstDataLoad) return;
+        hasCompletedInitialDataLoad.current = true;
+        setIsInitialDataLoading(false);
+      });
+
     return () => {
       isActive = false;
     };
-  }, [user?.id]);
+  }, [isRestoringSession, user?.id]);
 
   useEffect(() => {
     if (!user) return undefined;
@@ -621,38 +648,7 @@ export default function App() {
     };
   }, [user?.id]);
 
-  useEffect(() => {
-    let isActive = true;
-
-    const restoreCustomization = async () => {
-      try {
-        const saved = await loadCustomization();
-        if (!isActive) return;
-        if (saved) {
-          setCustomization(normalizeCustomization(saved));
-        } else {
-          const legacySaved = window.localStorage.getItem(CUSTOMIZATION_STORAGE_KEY);
-          if (legacySaved) {
-            const migrated = normalizeCustomization(JSON.parse(legacySaved));
-            await persistCustomization(migrated);
-            if (!isActive) return;
-            setCustomization(migrated);
-          }
-        }
-      } catch (error) {
-        if (isActive) {
-          setCustomizationError(`Unable to load settings: ${error.message}`);
-        }
-      }
-    };
-
-    restoreCustomization();
-    return () => {
-      isActive = false;
-    };
-  }, [user?.id]);
-
-  if (isRestoringSession) return <LoadingScreen />;
+  if (isRestoringSession || isInitialDataLoading) return <LoadingScreen />;
 
   if (accountBanNotice) {
     return (
