@@ -28,7 +28,7 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
     try {
       const result = await onCreateAnnouncement(announcement);
       setAnnouncement({ title: "", message: "" });
-      setSuccessMessage("Announcement published on the Aftercode home page.");
+      setSuccessMessage("Announcement published and replaced the previous one.");
     } catch (submitError) {
       setFormError(submitError.message);
     } finally {
@@ -57,6 +57,7 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
       thumbnailPath = `${user.id}/event-thumbnails/${crypto.randomUUID()}.${extension}`;
       const { error: uploadError } = await supabase.storage.from("project-files").upload(thumbnailPath, eventImage, {
         contentType: eventImage.type || "image/jpeg",
+        cacheControl: "31536000",
         upsert: false
       });
       if (uploadError) throw uploadError;
@@ -106,6 +107,7 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
       <div className="admin-tools-grid">
         <form className="admin-tool-card admin-announcement-tool" onSubmit={submitAnnouncement}>
           <h2>Global announcement</h2>
+          <p className="admin-tool-description">Sending a new announcement replaces the current one.</p>
           <p>Send a general site message. This is separate from event notifications.</p>
           <label>Title<input required maxLength={120} value={announcement.title} onChange={(event) => setAnnouncement((current) => ({ ...current, title: event.target.value }))} /></label>
           <label>Message<textarea required maxLength={2000} rows={4} value={announcement.message} onChange={(event) => setAnnouncement((current) => ({ ...current, message: event.target.value }))} /></label>
@@ -135,7 +137,7 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
         <h2>Manage events</h2>
         {events.length ? events.map((event) => (
           <article className="admin-event-row" key={event.id}>
-            {event.thumbnail_url && <img src={supabase.storage.from("project-files").getPublicUrl(event.thumbnail_url).data.publicUrl} alt="" />}
+            {event.thumbnail_url && <img src={supabase.storage.from("project-files").getPublicUrl(event.thumbnail_url).data.publicUrl} alt="" loading="lazy" decoding="async" />}
             <div className="admin-event-row-copy">
               <strong>{event.title}</strong>
               <span>{new Date(event.starts_at).toLocaleString()}{event.location ? ` · ${event.location}` : ""}</span>

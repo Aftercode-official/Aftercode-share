@@ -31,6 +31,14 @@
   color: inherit;
 }
 
+.people-modal-item > .project-comment-avatar {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .people-modal-item:hover {
   border-color: var(--accent-orange);
   background-color: var(--bg-hover);

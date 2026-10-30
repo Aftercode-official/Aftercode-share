@@ -94,6 +94,7 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
       xhr.open("POST", url);
       xhr.setRequestHeader("Authorization", `Bearer ${token}`);
       xhr.setRequestHeader("Content-Type", contentType);
+      xhr.setRequestHeader("Cache-Control", "max-age=31536000");
       xhr.setRequestHeader("x-upsert", "false");
       xhr.send(fileToUpload);
     });

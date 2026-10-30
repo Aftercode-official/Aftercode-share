@@ -1,23 +1,23 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import "./App.css";
-import User from "./User.jsx";
-import ProjectPages from "./ProjectPages.jsx";
-import { loadCustomization, saveCustomization as persistCustomization } from "./userStorage.js";
+const User = lazy(() => import("./User.jsx"));
+const ProjectPages = lazy(() => import("./ProjectPages.jsx"));
+import { getCachedPublicProfileByUsername, loadCustomization, saveCustomization as persistCustomization } from "./userStorage.js";
 import { supabase } from "./supabase.js";
-import AuthModal from "./AuthModal.jsx";
 import { apiRequest } from "./api.js";
-import UploadProjectModal from "./UploadProjectModal.jsx";
+const AuthModal = lazy(() => import("./AuthModal.jsx"));
+const UploadProjectModal = lazy(() => import("./UploadProjectModal.jsx"));
 import LogoIcon from "./assets/Logo.png";
-import LoadingScreen from "./LoadingScreen.jsx";
-import ChatCenter from "./ChatCenter.jsx";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
-import AdminPanel from "./AdminPanel.jsx";
-import NotificationsPage from "./NotificationsPage.jsx";
+const ChatCenter = lazy(() => import("./ChatCenter.jsx"));
+const AdminPanel = lazy(() => import("./AdminPanel.jsx"));
+const NotificationsPage = lazy(() => import("./NotificationsPage.jsx"));
 import { getProjectIdFromUrl, projectShareUrl } from "./projectLinks.js";
 import "./ClassicTheme.css";
 
 const THEME_STORAGE_KEY = "aftercode-share-theme";
 const CUSTOMIZATION_STORAGE_KEY = "aftercode-share-customization";
+const PUBLIC_DATA_CACHE_KEY = "aftercode-share-public-data-v1";
 const DEFAULT_CUSTOMIZATION = {
   displayName: "Name",
   username: "@IDName",
@@ -52,6 +52,7 @@ function toProject(record) {
     userId: record.user_id,
     scratchProjectId: record.scratch_project_id,
     assetPath: record.asset_path,
+    thumbnailPath: record.thumbnail_url || "",
     projectUrl,
     title: record.title,
     author: record.author,
@@ -98,26 +99,55 @@ function userPagePath(username, peopleList = null) {
   return `/user/${slug}`;
 }
 
+function readPublicDataCache() {
+  try {
+    const cached = JSON.parse(window.localStorage.getItem(PUBLIC_DATA_CACHE_KEY) || "null");
+    if (!cached || typeof cached !== "object") return null;
+    return {
+      projects: Array.isArray(cached.projects) ? cached.projects : [],
+      announcements: Array.isArray(cached.announcements) ? cached.announcements : [],
+      events: Array.isArray(cached.events) ? cached.events : []
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writePublicDataCache(updates) {
+  try {
+    const cached = readPublicDataCache() ?? { projects: [], announcements: [], events: [] };
+    window.localStorage.setItem(PUBLIC_DATA_CACHE_KEY, JSON.stringify({ ...cached, ...updates }));
+  } catch {
+    // The live API remains the source of truth if browser storage is unavailable.
+  }
+}
+
 export default function App() {
   const initialRoute = getInitialRoute();
+  const cachedRouteProfile = getCachedPublicProfileByUsername(initialRoute.username);
+  const [initialPublicCache] = useState(readPublicDataCache);
   const [user, setUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [authError, setAuthError] = useState("");
   const isLoggedIn = Boolean(user);
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState(() => (initialPublicCache?.projects ?? []).map(toProject));
   const [activities, setActivities] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [announcements, setAnnouncements] = useState([]);
+  const [announcements, setAnnouncements] = useState(initialPublicCache?.announcements ?? []);
   const [dismissedAnnouncementIds, setDismissedAnnouncementIds] = useState([]);
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState(initialPublicCache?.events ?? []);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const unreadNotificationCount = notifications.filter((notification) => !notification.is_read).length;
   const [dataError, setDataError] = useState("");
-  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(!initialPublicCache);
   const [page, setPage] = useState(initialRoute.page);
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [selectedProject, setSelectedProject] = useState(() => {
+    const projectId = getProjectIdFromUrl(window.location.href);
+    const cachedRecord = initialPublicCache?.projects.find((project) => String(project.id) === projectId);
+    return cachedRecord ? toProject(cachedRecord) : null;
+  });
+  const [selectedUserId, setSelectedUserId] = useState(cachedRouteProfile?.userId ?? null);
   const [profileRouteUsername, setProfileRouteUsername] = useState(initialRoute.username);
   const [peopleListRoute, setPeopleListRoute] = useState(initialRoute.peopleList);
   const [projectSearch, setProjectSearch] = useState("");
@@ -132,12 +162,12 @@ export default function App() {
   });
   const [customization, setCustomization] = useState(DEFAULT_CUSTOMIZATION);
   const [customizationError, setCustomizationError] = useState("");
-  const [isBooting, setIsBooting] = useState(true);
   const isProjectAdmin = user?.id === "5c7667c5-7119-44fc-bd62-28ba3d4507d0";
   const featuredProjects = projects.filter((project) => project.isFeatured);
 
   const loadProjects = async () => {
     const { projects: records } = await apiRequest("/api/projects");
+    writePublicDataCache({ projects: records });
     setProjects(records.map(toProject));
   };
 
@@ -148,6 +178,7 @@ export default function App() {
       apiRequest(user ? "/api/announcements?viewer=auth" : "/api/announcements", { authenticated: Boolean(user) }),
       apiRequest("/api/events")
     ]);
+    writePublicDataCache({ announcements: announcementResult.announcements, events: eventResult.events });
     setAnnouncements(announcementResult.announcements);
     setDismissedAnnouncementIds([...new Set([...(announcementResult.dismissedIds ?? []).map(String), ...localDismissed.map(String)])]);
     setEvents(eventResult.events);
@@ -371,6 +402,7 @@ export default function App() {
 
   useEffect(() => {
     if (!profileRouteUsername || (page !== "user" && page !== "profile")) return undefined;
+    if (selectedUserId) return undefined;
     let isActive = true;
     apiRequest(`/api/profiles/lookup?username=${encodeURIComponent(profileRouteUsername)}`)
       .then(({ userId }) => {
@@ -382,7 +414,7 @@ export default function App() {
         if (isActive) setDataError(error.message);
       });
     return () => { isActive = false; };
-  }, [profileRouteUsername, page, user?.id]);
+  }, [profileRouteUsername, page, selectedUserId, user?.id]);
 
   const updateProjectInteraction = async (project, action, details = {}) => {
     if (!user) {
@@ -464,13 +496,6 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    if (!isBooting) return undefined;
-    const timer = setTimeout(() => setIsBooting(false), 8000);
-    return () => clearTimeout(timer);
-  }, [isBooting]);
-
-  // Safety net: tự tắt loading sau 8s nếu có gì treo
-  useEffect(() => {
     if (!supabase) {
       return undefined;
     }
@@ -499,42 +524,34 @@ export default function App() {
   useEffect(() => {
     let isActive = true;
     const userId = user?.id;
+    setDataError("");
     loadPublicUpdates().catch((error) => {
       if (isActive) setDataError(error.message);
     });
 
-    const load = async () => {
-      const extrasPromise = userId
-        ? Promise.all([
-          apiRequest("/api/activity", { authenticated: true }),
-          apiRequest("/api/notifications", { authenticated: true })
-        ]).catch((error) => {
-          if (isActive) setDataError(error.message);
-          return null;
-        })
-        : Promise.resolve(null);
+    if (userId) {
+      Promise.all([
+        apiRequest("/api/activity", { authenticated: true }),
+        apiRequest("/api/notifications", { authenticated: true })
+      ]).then(([activityResult, notificationResult]) => {
+        if (!isActive) return;
+        setActivities(activityResult.activities);
+        setNotifications(notificationResult.notifications);
+      }).catch((error) => {
+        if (isActive) setDataError(error.message);
+      });
+    } else {
+      setActivities([]);
+      setNotifications([]);
+    }
 
+    const load = async () => {
       try {
         const { projects: records } = await apiRequest("/api/projects");
         if (!isActive) return;
         setProjects(records.map(toProject));
-        setDataError("");
+        writePublicDataCache({ projects: records });
         setIsLoadingProjects(false);
-        setIsBooting(false);
-
-        if (userId) {
-          const results = await extrasPromise;
-          if (!isActive) return;
-          if (results) {
-            const [activityResult, notificationResult] = results;
-            setActivities(activityResult.activities);
-            setNotifications(notificationResult.notifications);
-          }
-        } else {
-          setActivities([]);
-          setNotifications([]);
-        }
-        if (isActive) setDataError("");
       } catch (error) {
         if (isActive) {
           setDataError(error.message);
@@ -542,7 +559,6 @@ export default function App() {
       } finally {
         if (isActive) {
           setIsLoadingProjects(false);
-          setIsBooting(false);
         }
       }
     };
@@ -598,10 +614,6 @@ export default function App() {
     };
   }, [user?.id]);
 
-  if (isBooting) {
-    return <LoadingScreen />;
-  }
-
   return (
     <div
       className={`app-layout${isLoggedIn ? " has-sidebar" : ""}${isSidebarOpen ? "" : " sidebar-collapsed"}`}
@@ -622,7 +634,7 @@ export default function App() {
         >
           <div className="sidebar-profile">
             {customization.avatarUrl
-              ? <img className="sidebar-avatar" src={customization.avatarUrl} alt="" />
+              ? <img className="sidebar-avatar" src={customization.avatarUrl} alt="" decoding="async" />
               : <div className="sidebar-avatar" aria-hidden="true">{customization.displayName.slice(0, 1)}</div>}
             <div className="sidebar-profile-copy">
               <strong>{customization.displayName}</strong>
@@ -757,6 +769,7 @@ export default function App() {
         <main
           className={`main-feed-container${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}`}
         >
+          <Suspense fallback={<p className="featured-empty">Loading page...</p>}>
           <User
           key={`${page}-${isCustomizeOpen}-${selectedUserId ?? ""}`}
           page={page}
@@ -803,6 +816,14 @@ export default function App() {
                     category: record.category,
                     tags: record.tags,
                     isPublic: record.is_public,
+                    thumbnailPath: record.thumbnail_url || "",
+                    thumb: record.thumbnail_url
+                      ? (record.thumbnail_url.startsWith("http")
+                        ? record.thumbnail_url
+                        : supabase.storage.from("project-files").getPublicUrl(record.thumbnail_url).data.publicUrl)
+                      : (record.scratch_project_id
+                        ? `https://uploads.scratch.mit.edu/get_image/project/${record.scratch_project_id}_480x360.png`
+                        : null),
                     scratchProjectId: record.scratch_project_id,
                     assetPath: record.asset_path,
                     projectUrl: record.asset_path
@@ -862,7 +883,7 @@ export default function App() {
                     {events.map((event) => (
                       <article className="home-event-card" key={event.id}>
                         {event.thumbnail_url
-                          ? <img src={supabase.storage.from("project-files").getPublicUrl(event.thumbnail_url).data.publicUrl} alt="" />
+                          ? <img src={supabase.storage.from("project-files").getPublicUrl(event.thumbnail_url).data.publicUrl} alt="" loading="lazy" decoding="async" />
                           : <div className="home-event-placeholder" aria-hidden="true">EVENT</div>}
                         <div className="home-event-copy">
                           <span className="home-update-label">COMMUNITY EVENT</span>
@@ -913,7 +934,7 @@ export default function App() {
                             }}
                           >
                             {activity.actor_avatar
-                              ? <img className="avatar avatar-img" src={activity.actor_avatar} alt="" />
+                              ? <img className="avatar avatar-img" src={activity.actor_avatar} alt="" loading="lazy" decoding="async" />
                               : <div className="avatar">{activity.actor_name.slice(0, 1).toUpperCase()}</div>}
                             <div>
                               <p className="feed-text">
@@ -1001,48 +1022,60 @@ export default function App() {
               onCreateAnnouncement={async (payload) => {
                 const result = await apiRequest("/api/announcements", { method: "POST", authenticated: true, body: payload });
                 if (result.announcement) {
-                  setAnnouncements((current) => [result.announcement, ...current.filter((item) => item.id !== result.announcement.id)].slice(0, 10));
+                  setAnnouncements([result.announcement]);
+                  writePublicDataCache({ announcements: [result.announcement] });
+                  setDismissedAnnouncementIds([]);
                 }
                 return result;
               }}
               onCreateEvent={async (payload) => {
                 const result = await apiRequest("/api/events", { method: "POST", authenticated: true, body: payload });
                 if (result.event) {
-                  setEvents((current) => [result.event, ...current.filter((item) => item.id !== result.event.id)].sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at)));
+                  const nextEvents = [result.event, ...events.filter((item) => item.id !== result.event.id)]
+                    .sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at));
+                  setEvents(nextEvents);
+                  writePublicDataCache({ events: nextEvents });
                 }
                 loadNotifications().catch(() => {});
                 return result;
               }}
               onDeleteEvent={async (event) => {
                 await apiRequest(`/api/events/${encodeURIComponent(event.id)}`, { method: "DELETE", authenticated: true });
-                setEvents((current) => current.filter((item) => item.id !== event.id));
+                const nextEvents = events.filter((item) => item.id !== event.id);
+                setEvents(nextEvents);
+                writePublicDataCache({ events: nextEvents });
                 loadNotifications().catch(() => {});
               }}
               error={dataError}
             />
           )}
+          </Suspense>
         </main>
       </div>
       {isAuthModalOpen && (
-        <AuthModal
-          onClose={() => setIsAuthModalOpen(false)}
-          onAuthenticated={handleAuthentication}
-        />
+        <Suspense fallback={null}>
+          <AuthModal
+            onClose={() => setIsAuthModalOpen(false)}
+            onAuthenticated={handleAuthentication}
+          />
+        </Suspense>
       )}
       {isUploadModalOpen && user && (
-        <UploadProjectModal
-          user={user}
-          onClose={() => setIsUploadModalOpen(false)}
-          onPublished={(record) => {
-            if (record) {
-              const project = toProject(record);
-              setProjects((current) => [project, ...current.filter((item) => item.databaseId !== project.databaseId)]);
-            }
-            setPage("explore");
-            setSelectedProject(null);
-            Promise.all([loadProjects(), loadActivities()]).catch((error) => setDataError(error.message));
-          }}
-        />
+        <Suspense fallback={null}>
+          <UploadProjectModal
+            user={user}
+            onClose={() => setIsUploadModalOpen(false)}
+            onPublished={(record) => {
+              if (record) {
+                const project = toProject(record);
+                setProjects((current) => [project, ...current.filter((item) => item.databaseId !== project.databaseId)]);
+              }
+              setPage("explore");
+              setSelectedProject(null);
+              Promise.all([loadProjects(), loadActivities()]).catch((error) => setDataError(error.message));
+            }}
+          />
+        </Suspense>
       )}
     </div>
   );
@@ -1053,14 +1086,19 @@ function ProjectCard({ project, index, onOpenProject, showFeaturedBadge = false 
     <article className="featured-card home-project-card" style={{ "--delay": index + 1 }}>
       <button className="home-project-open" type="button" onClick={() => onOpenProject(project)}>
         <div className="featured-thumb-wrapper">
-          <ProjectThumbnail project={project} alt={project.title} />
+          <ProjectThumbnail
+            project={project}
+            alt={project.title}
+            loading={index < 4 ? "eager" : "lazy"}
+            fetchPriority={index < 4 ? "high" : "low"}
+          />
           {showFeaturedBadge && <span className="featured-badge">FEATURED</span>}
         </div>
         <div className="featured-info">
           <h3>{project.title}</h3>
           <p className="featured-author">
             {project.authorAvatar
-              ? <img className="avatar avatar-xs avatar-img" src={project.authorAvatar} alt="" />
+              ? <img className="avatar avatar-xs avatar-img" src={project.authorAvatar} alt="" loading="lazy" decoding="async" />
               : <span className="avatar avatar-xs">{project.author.slice(0, 1).toUpperCase()}</span>}
             <span>by {project.author}</span>
           </p>

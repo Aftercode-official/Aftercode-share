@@ -1,5 +1,39 @@
 import { apiRequest } from "./api.js";
 
+const PUBLIC_PROFILE_CACHE_KEY = "aftercode-share-last-public-profile-v1";
+
+export function getCachedPublicProfile(userId) {
+  if (!userId) return null;
+  try {
+    const cached = JSON.parse(window.localStorage.getItem(PUBLIC_PROFILE_CACHE_KEY) || "null");
+    return cached?.userId === userId && cached.data?.profile ? cached.data : null;
+  } catch {
+    return null;
+  }
+}
+
+export function getCachedPublicProfileByUsername(username) {
+  const normalized = String(username || "").trim().replace(/^@/, "").toLocaleLowerCase();
+  if (!normalized) return null;
+  try {
+    const cached = JSON.parse(window.localStorage.getItem(PUBLIC_PROFILE_CACHE_KEY) || "null");
+    return cached?.data?.profile?.username?.replace(/^@/, "").toLocaleLowerCase() === normalized
+      ? cached
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export function cachePublicProfile(userId, data) {
+  if (!userId || !data?.profile) return;
+  try {
+    window.localStorage.setItem(PUBLIC_PROFILE_CACHE_KEY, JSON.stringify({ userId, data }));
+  } catch {
+    // Profile cache is optional when browser storage is full or unavailable.
+  }
+}
+
 function toClientShape(record) {
   return {
     displayName: record.display_name ?? "",
@@ -57,7 +91,9 @@ export async function saveCustomization(customization) {
 }
 
 export async function loadPublicProfile(userId) {
-  return apiRequest(`/api/profiles/${encodeURIComponent(userId)}`);
+  const data = await apiRequest(`/api/profiles/${encodeURIComponent(userId)}`);
+  cachePublicProfile(userId, data);
+  return data;
 }
 
 export async function loadFollowState(userId) {

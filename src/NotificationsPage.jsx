@@ -61,6 +61,8 @@ export default function NotificationsPage({ notifications, isLoading, onMarkAllR
                 className="notification-thumbnail"
                 src={supabase.storage.from("project-files").getPublicUrl(item.thumbnail_url).data.publicUrl}
                 alt=""
+                loading="lazy"
+                decoding="async"
               />
             )}
             <button
@@ -71,7 +73,7 @@ export default function NotificationsPage({ notifications, isLoading, onMarkAllR
               aria-label={`View ${item.actor_name || "user"}'s profile`}
             >
               {item.actor_avatar
-                ? <img className="notification-avatar" src={item.actor_avatar} alt="" />
+                ? <img className="notification-avatar" src={item.actor_avatar} alt="" loading="lazy" decoding="async" />
                 : <span className="notification-avatar notification-avatar-fallback">{(item.actor_name || "A").slice(0, 1).toUpperCase()}</span>}
             </button>
             <span className="notification-copy">

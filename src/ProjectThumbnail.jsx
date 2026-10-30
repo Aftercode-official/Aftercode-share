@@ -4,7 +4,9 @@ export default function ProjectThumbnail({
   project,
   alt = "",
   className = "featured-thumb",
-  fallbackClassName = "sb3-thumbnail"
+  fallbackClassName = "sb3-thumbnail",
+  loading = "lazy",
+  fetchPriority = "auto"
 }) {
   const sources = [...new Set([
     project.thumb,
@@ -28,8 +30,9 @@ export default function ProjectThumbnail({
       src={source}
       alt={alt}
       className={className}
-      loading="lazy"
+      loading={loading}
       decoding="async"
+      fetchPriority={fetchPriority}
       onError={() => setSourceIndex((index) => index + 1)}
     />
   );

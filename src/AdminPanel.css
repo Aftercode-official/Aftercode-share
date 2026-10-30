@@ -119,6 +119,7 @@
 .admin-tool-card { display: grid; align-content: start; gap: 0.75rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-main); }
 .admin-announcement-tool { border-top: 3px solid #d6a629; background: color-mix(in srgb, var(--bg-card), #d6a629 5%); }
 .admin-announcement-tool h2::before { content: "📣 "; }
+.admin-tool-description { margin: 0.35rem 0 0.8rem; color: var(--text-muted); font-size: 0.78rem; }
 .admin-event-tool { border-top: 3px solid #648edb; background: color-mix(in srgb, var(--bg-card), #648edb 5%); }
 .admin-event-tool h2::before { content: "📅 "; }
 .admin-tool-card h2, .admin-featured-management h2 { margin: 0; font-size: 1.05rem; }

@@ -1,8 +1,30 @@
 import { useEffect, useState } from "react";
-import { loadPublicProfile, apiFollow, loadFollowList, loadFollowState } from "./userStorage.js";
+import { getCachedPublicProfile, loadPublicProfile, apiFollow, loadFollowList, loadFollowState } from "./userStorage.js";
 import { supabase } from "./supabase.js";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
 import "./User.css";
+
+function toPublicProject(record) {
+  return {
+    id: record.id,
+    databaseId: record.id,
+    userId: record.user_id,
+    scratchProjectId: record.scratch_project_id,
+    title: record.title,
+    author: record.author,
+    category: record.category,
+    description: record.description,
+    tags: record.tags,
+    thumb: record.thumbnail_url
+      ? (record.thumbnail_url.startsWith("http")
+        ? record.thumbnail_url
+        : supabase?.storage.from("project-files").getPublicUrl(record.thumbnail_url).data.publicUrl ?? null)
+      : (record.scratch_project_id
+        ? `https://uploads.scratch.mit.edu/get_image/project/${record.scratch_project_id}_480x360.png`
+        : null),
+    views: 0
+  };
+}
 
 export default function User({
   page,
@@ -26,11 +48,12 @@ export default function User({
   const [profileTab, setProfileTab] = useState("all");
   const [uploadError, setUploadError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [publicProfile, setPublicProfile] = useState(null);
-  const [publicProjects, setPublicProjects] = useState([]);
+  const [initialCachedProfile] = useState(() => page === "user" && selectedUserId ? getCachedPublicProfile(selectedUserId) : null);
+  const [publicProfile, setPublicProfile] = useState(() => initialCachedProfile?.profile ?? null);
+  const [publicProjects, setPublicProjects] = useState(() => (initialCachedProfile?.projects ?? []).map(toPublicProject));
   const [publicProfileError, setPublicProfileError] = useState("");
-  const [followersCount, setFollowersCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
+  const [followersCount, setFollowersCount] = useState(initialCachedProfile?.followersCount ?? 0);
+  const [followingCount, setFollowingCount] = useState(initialCachedProfile?.followingCount ?? 0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowPending, setIsFollowPending] = useState(false);
   const [peopleModal, setPeopleModal] = useState(null);
@@ -47,27 +70,21 @@ export default function User({
       return;
     }
     let isActive = true;
+    const cached = getCachedPublicProfile(selectedUserId);
+    if (cached) {
+      setPublicProfile(cached.profile);
+      setPublicProjects((cached.projects ?? []).map(toPublicProject));
+      setFollowersCount(cached.followersCount ?? 0);
+      setFollowingCount(cached.followingCount ?? 0);
+    }
     loadPublicProfile(selectedUserId)
-      .then(({ profile, projects: records }) => {
+      .then((result) => {
         if (!isActive) return;
+        const { profile, projects: records } = result;
         setPublicProfile(profile);
-        setPublicProjects(records.map((record) => ({
-          id: record.id,
-          databaseId: record.id,
-          userId: record.user_id,
-          scratchProjectId: record.scratch_project_id,
-          title: record.title,
-          author: record.author,
-          category: record.category,
-          description: record.description,
-          tags: record.tags,
-          thumb: record.thumbnail_url
-            ? (record.thumbnail_url.startsWith("http")
-              ? record.thumbnail_url
-              : supabase?.storage.from("project-files").getPublicUrl(record.thumbnail_url).data.publicUrl ?? null)
-            : null,
-          views: 0
-        })));
+        setPublicProjects(records.map(toPublicProject));
+        setFollowersCount(result.followersCount ?? 0);
+        setFollowingCount(result.followingCount ?? 0);
         setPublicProfileError("");
       })
       .catch((error) => {
@@ -252,12 +269,12 @@ export default function User({
               className="profile-banner"
               style={{ backgroundColor: customization.profileBackground }}
             >
-              {customization.bannerUrl && <img src={customization.bannerUrl} alt="" />}
+              {customization.bannerUrl && <img src={customization.bannerUrl} alt="" decoding="async" fetchPriority="high" />}
             </div>
             <div className="profile-identity">
               <div className="profile-avatar">
                 {customization.avatarUrl
-                  ? <img src={customization.avatarUrl} alt={`${customization.displayName} avatar`} />
+                  ? <img src={customization.avatarUrl} alt={`${customization.displayName} avatar`} decoding="async" fetchPriority="high" />
                   : customization.displayName.slice(0, 1)}
               </div>
               <div className="profile-identity-main">
@@ -342,12 +359,12 @@ export default function User({
                   className="profile-banner"
                   style={{ backgroundColor: publicProfile.profile_background || "#171513" }}
                 >
-                  {publicProfile.banner_url && <img src={publicProfile.banner_url} alt="" />}
+                  {publicProfile.banner_url && <img src={publicProfile.banner_url} alt="" decoding="async" fetchPriority="high" />}
                 </div>
                 <div className="profile-identity">
                   <div className="profile-avatar">
                     {publicProfile.avatar_url
-                      ? <img src={publicProfile.avatar_url} alt="" />
+                      ? <img src={publicProfile.avatar_url} alt="" decoding="async" fetchPriority="high" />
                       : (publicProfile.display_name || "?").slice(0, 1)}
                   </div>
                   <div className="profile-identity-main">

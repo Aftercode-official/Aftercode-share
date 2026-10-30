@@ -67,14 +67,39 @@ export default async function handler(req, res) {
       return;
     }
 
-    const { data: announcement, error } = await client
-      .from("announcements")
-      .insert({ created_by: user.id, title, message })
-      .select("id, title, message, created_at")
-      .single();
+    let { data: announcement, error } = await client
+      .rpc("replace_global_announcement", {
+        p_created_by: user.id,
+        p_title: title,
+        p_message: message
+      });
+
+    // Deployments may receive this API update before the SQL migration. Keep
+    // announcement publishing available by falling back to the existing table.
+    if (error) {
+      const { data: insertedAnnouncement, error: insertError } = await client
+        .from("announcements")
+        .insert({ created_by: user.id, title, message })
+        .select("id, title, message, created_at")
+        .single();
+      if (insertError) throw insertError;
+
+      const { error: deleteError } = await client
+        .from("announcements")
+        .delete()
+        .neq("id", insertedAnnouncement.id);
+      if (deleteError) {
+        await client.from("announcements").delete().eq("id", insertedAnnouncement.id);
+        throw deleteError;
+      }
+
+      announcement = insertedAnnouncement;
+      error = null;
+    }
+
     if (error) throw error;
 
-    sendJson(res, 201, { announcement });
+    sendJson(res, 201, { announcement: Array.isArray(announcement) ? announcement[0] : announcement });
   } catch (error) {
     logApiError("Unable to process announcements request.", error);
     sendJson(res, 500, { error: "Unable to process the announcement." });

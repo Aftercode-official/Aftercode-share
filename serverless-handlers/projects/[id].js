@@ -6,6 +6,13 @@ const MAX_TAG_LENGTH = 30;
 const SCRATCH_PROJECT_ID = /^\d{1,20}$/;
 const FEATURED_PROJECT_ADMIN_ID = "5c7667c5-7119-44fc-bd62-28ba3d4507d0";
 
+function isUserStoragePath(path, userId) {
+  return typeof path === "string"
+    && path.startsWith(`${userId}/`)
+    && !path.includes("..")
+    && !path.includes("\\");
+}
+
 function validateUpdates(body, userId) {
   const updates = {};
 
@@ -38,6 +45,20 @@ function validateUpdates(body, userId) {
     }
     updates.asset_path = assetPath;
     updates.scratch_project_id = null;
+  }
+  if (Object.hasOwn(body, "thumbnailPath")) {
+    if (body.thumbnailPath === null || body.thumbnailPath === "") {
+      updates.thumbnail_url = null;
+    } else {
+      const thumbnailPath = typeof body.thumbnailPath === "string" ? body.thumbnailPath.trim() : "";
+      if (!thumbnailPath.startsWith(`${userId}/project-thumbnails/`)
+        || thumbnailPath.includes("..")
+        || thumbnailPath.includes("\\")
+        || !/\.(png|jpe?g|webp|gif)$/i.test(thumbnailPath)) {
+        return { error: "Upload a PNG, JPEG, WebP, or GIF thumbnail to your project-thumbnails folder." };
+      }
+      updates.thumbnail_url = thumbnailPath;
+    }
   }
   if (Object.hasOwn(body, "description")) {
     if (typeof body.description !== "string" || body.description.trim().length > 2000) {
@@ -135,7 +156,7 @@ export default async function handler(req, res) {
         .delete()
         .eq("id", id)
         .eq("user_id", user.id)
-        .select("id, asset_path")
+        .select("id, user_id, asset_path, thumbnail_url")
         .maybeSingle();
 
       if (error) {
@@ -145,10 +166,14 @@ export default async function handler(req, res) {
         sendJson(res, 404, { error: "Project not found." });
         return;
       }
-      if (data.asset_path) {
+      const pathsToRemove = [data.asset_path].filter(Boolean);
+      if (isUserStoragePath(data.thumbnail_url, data.user_id)) {
+        pathsToRemove.push(data.thumbnail_url);
+      }
+      if (pathsToRemove.length) {
         const { error: storageError } = await client.storage
           .from("project-files")
-          .remove([data.asset_path]);
+          .remove(pathsToRemove);
         if (storageError) {
           throw storageError;
         }
@@ -193,7 +218,7 @@ export default async function handler(req, res) {
 
     const { data: previous, error: previousError } = await client
       .from("projects")
-      .select("asset_path")
+      .select("asset_path, thumbnail_url")
       .eq("id", id)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -224,6 +249,14 @@ export default async function handler(req, res) {
         .from("project-files")
         .remove([previous.asset_path]);
       if (cleanupError) logApiError("Unable to clean up replaced project file.", cleanupError);
+    }
+    if (previous.thumbnail_url
+      && previous.thumbnail_url !== data.thumbnail_url
+      && isUserStoragePath(previous.thumbnail_url, user.id)) {
+      const { error: cleanupError } = await client.storage
+        .from("project-files")
+        .remove([previous.thumbnail_url]);
+      if (cleanupError) logApiError("Unable to clean up replaced project thumbnail.", cleanupError);
     }
     sendJson(res, 200, { project: data });
   } catch (error) {

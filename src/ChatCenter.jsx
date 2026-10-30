@@ -206,7 +206,7 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
               disabled={!message.user_id}
             >
               {message.avatar_url
-                ? <img className="chat-avatar" src={message.avatar_url} alt="" />
+                ? <img className="chat-avatar" src={message.avatar_url} alt="" loading="lazy" decoding="async" />
                 : <span className="chat-avatar chat-avatar-fallback" aria-hidden="true">{message.author.slice(0, 1).toUpperCase()}</span>}
             </button>
             <div className="chat-message-body">
@@ -228,7 +228,7 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
                     className="chat-shared-video"
                     src={supabase.storage.from("chat-media").getPublicUrl(message.media_path).data.publicUrl}
                     controls
-                    preload="metadata"
+                    preload="none"
                     playsInline
                   />
                 ) : (
@@ -268,7 +268,7 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
                       <span className="chat-project-title">{project.title}</span>
                       <span className="chat-project-author">
                         {project.authorAvatar
-                          ? <img src={project.authorAvatar} alt="" />
+                          ? <img src={project.authorAvatar} alt="" loading="lazy" decoding="async" />
                           : <span className="chat-project-author-fallback">{project.author.slice(0, 1).toUpperCase()}</span>}
                         <span>{project.author} · {project.category} · {project.likes} likes</span>
                       </span>

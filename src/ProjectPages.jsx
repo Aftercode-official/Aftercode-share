@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./ProjectPages.css";
 import { apiRequest } from "./api.js";
 import { supabase } from "./supabase.js";
@@ -49,8 +49,20 @@ export default function ProjectPages({
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState("");
   const [replacementFile, setReplacementFile] = useState(null);
+  const [replacementThumbnail, setReplacementThumbnail] = useState(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState("");
   const [shareStatus, setShareStatus] = useState("");
   const [editDraft, setEditDraft] = useState({ title: "", description: "", category: "", tags: "", isPublic: true });
+
+  useEffect(() => {
+    if (!replacementThumbnail) {
+      setThumbnailPreview(selectedProject?.thumb ?? "");
+      return undefined;
+    }
+    const previewUrl = URL.createObjectURL(replacementThumbnail);
+    setThumbnailPreview(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [replacementThumbnail, selectedProject?.thumb]);
 
   const filteredProjects = useMemo(() => {
     const searchTerms = normalizeSearchText(searchQuery).split(/\s+/).filter(Boolean);
@@ -155,6 +167,7 @@ export default function ProjectPages({
       });
       setEditError("");
       setReplacementFile(null);
+      setReplacementThumbnail(null);
       setIsEditOpen(true);
     };
 
@@ -164,6 +177,7 @@ export default function ProjectPages({
       setIsSavingEdit(true);
       setEditError("");
       let uploadedPath;
+      let uploadedThumbnailPath;
       try {
         if (replacementFile) {
           if (!supabase || !user?.id) throw new Error("Sign in to replace this project file.");
@@ -177,6 +191,22 @@ export default function ProjectPages({
             });
           if (uploadError) throw uploadError;
         }
+        if (replacementThumbnail) {
+          if (!supabase || !user?.id) throw new Error("Sign in to update this thumbnail.");
+          if (!replacementThumbnail.type.startsWith("image/")) throw new Error("Choose an image for the project thumbnail.");
+          if (replacementThumbnail.size > 5 * 1024 * 1024) throw new Error("Project thumbnails must be 5 MB or smaller.");
+          const extension = ({ "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif" })[replacementThumbnail.type];
+          if (!extension) throw new Error("Use a PNG, JPEG, WebP, or GIF thumbnail.");
+          uploadedThumbnailPath = `${user.id}/project-thumbnails/${crypto.randomUUID()}.${extension}`;
+          const { error: thumbnailUploadError } = await supabase.storage
+            .from("project-files")
+            .upload(uploadedThumbnailPath, replacementThumbnail, {
+              contentType: replacementThumbnail.type,
+              cacheControl: "31536000",
+              upsert: false
+            });
+          if (thumbnailUploadError) throw thumbnailUploadError;
+        }
         const { project } = await apiRequest(`/api/projects/${selectedProject.databaseId}`, {
           method: "PATCH",
           authenticated: true,
@@ -186,23 +216,30 @@ export default function ProjectPages({
             category: editDraft.category,
             tags: editDraft.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
             isPublic: editDraft.isPublic,
-            ...(uploadedPath ? { assetPath: uploadedPath } : {})
+            ...(uploadedPath ? { assetPath: uploadedPath } : {}),
+            ...(uploadedThumbnailPath ? { thumbnailPath: uploadedThumbnailPath } : {})
           }
         });
         uploadedPath = null;
+        uploadedThumbnailPath = null;
         setIsEditOpen(false);
         await onProjectUpdated?.(project);
       } catch (error) {
-        if (uploadedPath && supabase) {
-          let canCleanUp = false;
+        if ((uploadedPath || uploadedThumbnailPath) && supabase) {
+          let latest = null;
+          let latestWasVerified = false;
           try {
-            const { project: latest } = await apiRequest(`/api/projects/${selectedProject.databaseId}`, { authenticated: true });
-            canCleanUp = latest.asset_path !== uploadedPath;
+            ({ project: latest } = await apiRequest(`/api/projects/${selectedProject.databaseId}`, { authenticated: true }));
+            latestWasVerified = true;
           } catch (verificationError) {
             console.error("Unable to verify whether the replacement file is in use.", verificationError);
           }
-          if (canCleanUp) {
-            const { error: cleanupError } = await supabase.storage.from("project-files").remove([uploadedPath]);
+          const pathsToRemove = latestWasVerified ? [
+            uploadedPath && latest.asset_path !== uploadedPath ? uploadedPath : null,
+            uploadedThumbnailPath && latest.thumbnail_url !== uploadedThumbnailPath ? uploadedThumbnailPath : null
+          ].filter(Boolean) : [];
+          if (pathsToRemove.length) {
+            const { error: cleanupError } = await supabase.storage.from("project-files").remove(pathsToRemove);
             if (cleanupError) console.error("Unable to clean up the unused replacement file.", cleanupError);
           }
         }
@@ -375,7 +412,7 @@ export default function ProjectPages({
                       onClick={() => comment.userId && onOpenUserProfile?.(comment.userId)}
                     >
                       {comment.avatarUrl
-                        ? <img className="project-comment-avatar" src={comment.avatarUrl} alt="" />
+                        ? <img className="project-comment-avatar" src={comment.avatarUrl} alt="" loading="lazy" decoding="async" />
                         : <div className="avatar">{comment.author.slice(0, 1)}</div>}
                     </button>
                     <div>
@@ -434,6 +471,30 @@ export default function ProjectPages({
               <label>
                 Tags <span className="project-edit-hint">Separate with commas, up to 10</span>
                 <input maxLength={320} value={editDraft.tags} onChange={(event) => setEditDraft((draft) => ({ ...draft, tags: event.target.value }))} />
+              </label>
+              <label>
+                Project thumbnail <span className="project-edit-hint">PNG, JPEG, WebP, or GIF; max 5 MB</span>
+                {thumbnailPreview && (
+                  <span className="project-edit-thumbnail-preview">
+                    <img src={thumbnailPreview} alt="Project thumbnail preview" />
+                    <span>{replacementThumbnail ? "New thumbnail preview" : "Current thumbnail"}</span>
+                  </span>
+                )}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0] ?? null;
+                    if (file && file.size > 5 * 1024 * 1024) {
+                      setEditError("Project thumbnails must be 5 MB or smaller.");
+                      event.currentTarget.value = "";
+                      return;
+                    }
+                    setReplacementThumbnail(file);
+                    setEditError("");
+                  }}
+                />
+                {replacementThumbnail && <span className="project-edit-hint">Selected: {replacementThumbnail.name}</span>}
               </label>
               <label>
                 Replace Scratch project file (.sb3) <span className="project-edit-hint">Optional, max 50 MB</span>
@@ -509,7 +570,11 @@ export default function ProjectPages({
               onClick={() => onOpenProject(project)}
             >
               <span className="featured-thumb-wrapper">
-                <ProjectThumbnail project={project} />
+                <ProjectThumbnail
+                  project={project}
+                  loading={index < 4 ? "eager" : "lazy"}
+                  fetchPriority={index < 4 ? "high" : "low"}
+                />
                 <span className="featured-badge">{project.category}</span>
               </span>
               <span className="featured-info">
