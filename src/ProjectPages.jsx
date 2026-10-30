@@ -34,6 +34,7 @@ export default function ProjectPages({
   interaction,
   onInteractionChange,
   user,
+  onSignIn,
   onOpenUserProfile,
   onProjectDeleted,
   onProjectUpdated
@@ -81,6 +82,10 @@ export default function ProjectPages({
 
     const submitComment = async (event) => {
       event.preventDefault();
+      if (!user) {
+        onSignIn?.();
+        return;
+      }
       if (isInteractionPending) return;
       const text = commentDraft.trim();
       if (!text) return;
@@ -296,11 +301,6 @@ export default function ProjectPages({
                 Share project link
               </button>
               {shareStatus && <span className="project-share-status" role="status">{shareStatus}</span>}
-              {selectedProject.projectUrl && (
-                <a className="project-download-link" href={selectedProject.projectUrl} download={`${selectedProject.title}.sb3`}>
-                  Download .sb3
-                </a>
-              )}
             </section>
 
             <section className="project-detail-card project-comments">
@@ -309,9 +309,10 @@ export default function ProjectPages({
                 <div className="comment-input-wrap">
                   <textarea
                     aria-label="Write a comment"
-                    placeholder="Share your thoughts..."
+                    placeholder={user ? "Share your thoughts..." : "Sign in to join the conversation..."}
                     value={commentDraft}
                     maxLength={500}
+                    disabled={!user}
                     onChange={(event) => setCommentDraft(event.target.value)}
                   />
                   <button
@@ -319,6 +320,7 @@ export default function ProjectPages({
                     type="button"
                     aria-label="Choose an emoji"
                     aria-expanded={isEmojiPickerOpen}
+                    disabled={!user}
                     onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
                   >
                     😀
@@ -357,14 +359,14 @@ export default function ProjectPages({
                 <button
                   className="signin-btn"
                   type="submit"
-                  disabled={!commentDraft.trim() || isInteractionPending}
+                  disabled={Boolean(user) && (!commentDraft.trim() || isInteractionPending)}
                 >
-                  {isInteractionPending ? "Posting..." : "Post Comment"}
+                  {!user ? "Sign in to comment" : isInteractionPending ? "Posting..." : "Post Comment"}
                 </button>
               </form>
               <div className="project-comment-list">
                 {currentInteraction.comments.map((comment) => (
-                  <article className="project-comment" key={comment.id}>
+                  <article className={`project-comment${comment.pending ? " is-pending" : ""}`} key={comment.id}>
                     <button
                       type="button"
                       className="project-comment-avatar-btn"

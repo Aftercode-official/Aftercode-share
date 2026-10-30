@@ -566,6 +566,8 @@
   border-top: 1px solid var(--border-color);
 }
 
+.project-comment.is-pending { opacity: 0.65; }
+
 .project-comment .avatar {
   flex: 0 0 30px;
 }

@@ -29,11 +29,14 @@
 .notification-card:not(:disabled) { cursor: pointer; }
 .notification-card:not(:disabled):hover { border-color: var(--accent-color, #ffb700); }
 .notification-card.is-unread { background: color-mix(in srgb, var(--bg-card), var(--accent-color, #ffb700) 5%); }
+.notification-card.is-event-notification { border-left: 4px solid #648edb; background: color-mix(in srgb, var(--bg-card), #648edb 7%); }
 .notification-avatar { width: 42px; height: 42px; flex: 0 0 42px; object-fit: cover; border-radius: 50%; }
+.notification-thumbnail { width: 112px; height: 68px; flex: 0 0 112px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color); }
 .notification-avatar-fallback { display: grid; place-items: center; background: var(--bg-main); font-weight: 700; }
 .notification-copy { display: grid; gap: 0.25rem; min-width: 0; flex: 1; line-height: 1.45; }
 .notification-copy > span { overflow-wrap: anywhere; }
 .notification-copy time { color: var(--text-muted); font-size: 0.78rem; }
+.notification-message { color: var(--text-muted); white-space: pre-line; }
 .notification-unread-dot { width: 9px; height: 9px; flex: 0 0 9px; border-radius: 50%; background: var(--accent-color, #ffb700); }
 .notifications-empty { padding: 2.5rem 1rem; color: var(--text-muted); text-align: center; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; }
 
@@ -42,4 +45,5 @@
   .notifications-read-all { width: 100%; }
   .notifications-filters { gap: 0.35rem; }
   .notifications-filters button { padding: 0.45rem 0.65rem; font-size: 0.82rem; }
+  .notification-thumbnail { width: 76px; height: 58px; flex-basis: 76px; }
 }

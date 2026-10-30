@@ -9,6 +9,14 @@
       "destination": "/api?path=activity"
     },
     {
+      "source": "/api/announcements",
+      "destination": "/api?path=announcements"
+    },
+    {
+      "source": "/api/announcements/:id",
+      "destination": "/api?path=announcements/:id"
+    },
+    {
       "source": "/api/auth/me",
       "destination": "/api?path=auth/me"
     },
@@ -23,6 +31,10 @@
     {
       "source": "/api/events",
       "destination": "/api?path=events"
+    },
+    {
+      "source": "/api/events/:id",
+      "destination": "/api?path=events/:id"
     },
     {
       "source": "/api/follows",

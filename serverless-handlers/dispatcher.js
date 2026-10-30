@@ -1,5 +1,6 @@
 import { sendJson } from "../server/http.js";
 import activity from "./activity.js";
+import announcements from "./announcements.js";
 import authMe from "./auth/me.js";
 import signIn from "./auth/sign-in.js";
 import chat from "./chat.js";
@@ -35,8 +36,17 @@ export default function handler(req, res) {
   let endpoint;
 
   if (!identifier && resource === "activity") endpoint = activity;
+  else if (!identifier && resource === "announcements") endpoint = announcements;
+  else if (resource === "announcements" && identifier && extra.length === 0) {
+    req.query.id = identifier;
+    endpoint = announcements;
+  }
   else if (!identifier && resource === "chat") endpoint = chat;
   else if (!identifier && resource === "events") endpoint = events;
+  else if (resource === "events" && identifier && extra.length === 0) {
+    req.query.id = identifier;
+    endpoint = events;
+  }
   else if (!identifier && resource === "follows") endpoint = follows;
   else if (!identifier && resource === "notifications") endpoint = notifications;
   else if (!identifier && resource === "project-interactions") endpoint = projectInteractions;

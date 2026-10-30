@@ -121,7 +121,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    sendJson(res, 200, { interaction: await loadInteractions(client, projectId, user.id) });
+    sendJson(res, 200, { ok: true });
   } catch (error) {
     logApiError("Unable to process project interaction.", error);
     sendJson(res, 500, { error: "Unable to process the project interaction." });

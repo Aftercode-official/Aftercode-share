@@ -2,7 +2,7 @@ import { logApiError, requireMethod, sendJson } from "../server/http.js";
 import { createAdminClient, getAuthenticatedUser } from "../server/supabase.js";
 
 const NOTIFICATION_FIELDS =
-  "id, actor_id, actor_name, actor_avatar, notification_type, project_id, project_title, is_read, created_at";
+  "id, actor_id, actor_name, actor_avatar, notification_type, project_id, project_title, message, thumbnail_url, event_id, is_read, created_at";
 
 export default async function handler(req, res) {
   if (!requireMethod(req, res, ["GET", "PATCH"])) {
@@ -34,6 +34,7 @@ export default async function handler(req, res) {
       .from("notifications")
       .select(NOTIFICATION_FIELDS)
       .eq("recipient_id", user.id)
+      .neq("notification_type", "announcement")
       .order("created_at", { ascending: false })
       .limit(30);
 

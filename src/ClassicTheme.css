@@ -1,0 +1,239 @@
+/* Aftercode classic video-site theme, inspired by early YouTube layouts. */
+:root {
+  color-scheme: light;
+  --bg-main: #f1f1f1;
+  --bg-card: #fff;
+  --bg-hover: #e8edf2;
+  --border-color: #c8c8c8;
+  --text-primary: #222;
+  --text-muted: #666;
+  --accent-orange: #c2940c;
+  --accent-orange-hover: #9b7300;
+  --accent-yellow: #315b86;
+  --accent-yellow-light: #e7eef5;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-main: #202124;
+  --bg-card: #292a2d;
+  --bg-hover: #383a3e;
+  --border-color: #45464a;
+  --text-primary: #f1f3f4;
+  --text-muted: #b0b3b8;
+  --accent-orange: #e5bd45;
+  --accent-orange-hover: #f0ce67;
+  --accent-yellow: #527ba6;
+  --accent-yellow-light: #303b49;
+}
+
+body, button, input, textarea, select {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+body { background: var(--bg-main); }
+
+.header {
+  position: relative;
+  height: 54px;
+  flex: 0 0 54px;
+  padding: 0 16px;
+  gap: 12px;
+  border-bottom: 1px solid #bdbdbd;
+  border-top: 3px solid #e0ad24;
+  background: linear-gradient(#fff, #e9e9e9);
+  color: #222;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+}
+
+:root[data-theme="dark"] .header {
+  border-bottom-color: var(--border-color);
+  background: linear-gradient(#303135, #252629);
+  color: var(--text-primary);
+}
+
+.topbar-brand { color: inherit; }
+.header .logo { border-radius: 0; }
+.logo-img { max-height: 30px; }
+.topbar-nav { gap: 3px; }
+.header .icon-btn,
+.header .sidebar-toggle {
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: #333;
+  padding: 7px 9px;
+  font-size: 0.8rem;
+}
+:root[data-theme="dark"] .header .icon-btn,
+:root[data-theme="dark"] .header .sidebar-toggle { color: var(--text-primary); }
+.header .icon-btn:hover,
+.header .sidebar-toggle:hover { border-color: #c8c8c8; background: #e1e1e1; }
+:root[data-theme="dark"] .header .icon-btn:hover,
+:root[data-theme="dark"] .header .sidebar-toggle:hover { border-color: var(--border-color); background: var(--bg-hover); }
+.header .icon-btn.is-active {
+  border-color: #c99b19;
+  background: #edc443;
+  color: #242424;
+}
+.header .search-input {
+  height: 30px;
+  border: 1px solid #aaa;
+  border-radius: 2px;
+  background: #fff;
+  color: #222;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 8%);
+}
+.header .signin-btn {
+  min-height: 30px;
+  border: 1px solid #aaa;
+  border-radius: 3px;
+  background: linear-gradient(#fff, #e5e5e5);
+  color: #222;
+}
+
+.workspace { min-width: 0; }
+.main-feed-container {
+  max-width: 1240px;
+  padding: 14px 18px 20px;
+  gap: 12px;
+}
+.sidebar {
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-card);
+  box-shadow: none;
+}
+.sidebar-nav { gap: 2px; }
+.sidebar-nav-btn {
+  min-height: 34px;
+  border-radius: 2px;
+  color: var(--text-primary);
+}
+.sidebar-nav-btn:hover { background: var(--bg-hover); }
+.sidebar-nav-btn.is-active {
+  border-left: 3px solid var(--accent-orange);
+  background: var(--bg-hover);
+}
+
+.welcome-card,
+.timeline-card,
+.featured-hero,
+.home-announcements-section,
+.home-events-section,
+.chat-center,
+.chat-heading,
+.project-detail-card,
+.project-edit-dialog,
+.admin-panel,
+.notification-card,
+.event-card,
+.auth-modal,
+.customize-panel {
+  border-radius: 3px !important;
+  box-shadow: none !important;
+}
+.welcome-card,
+.timeline-card,
+.featured-hero,
+.home-announcements-section,
+.home-events-section,
+.project-detail-card,
+.chat-center {
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+}
+.welcome-card { border-top: 3px solid #315b86; }
+.section-title { padding-bottom: 7px; border-bottom: 1px solid #ddd; }
+:root[data-theme="dark"] .section-title { border-bottom-color: var(--border-color); }
+
+.featured-grid { gap: 12px; }
+.featured-card {
+  border: 1px solid #c7c7c7;
+  border-radius: 2px;
+  background: var(--bg-card);
+  box-shadow: none;
+  animation: none;
+  opacity: 1;
+  transform: none;
+  transition: border-color 0.12s ease;
+}
+.featured-card:hover {
+  transform: none;
+  border-color: #d4a51d;
+}
+.featured-thumb-wrapper { background: #d5d5d5; }
+.featured-badge {
+  top: 5px;
+  left: 5px;
+  padding: 3px 6px;
+  border-radius: 2px;
+  background: #edc443;
+  color: #282418;
+}
+.featured-info { padding: 8px; }
+.featured-info h3 { font-size: 0.88rem; }
+.featured-info p { font-size: 0.75rem; }
+.sb3-thumbnail {
+  background: linear-gradient(135deg, #e7e7e7, #c9c9c9);
+  color: #555;
+  text-shadow: none;
+}
+
+.home-announcements-section { border-top: 3px solid #e0ad24; }
+.home-events-section { border-top: 3px solid #315b86; }
+.home-announcement-card,
+.home-event-card {
+  border-radius: 2px;
+  box-shadow: none;
+}
+.home-announcement-card { border-color: #d9c27a; }
+.home-announcement-dismiss,
+.home-event-card button {
+  border-radius: 2px;
+}
+
+button, input, textarea, select,
+.chat-project-preview, .chat-emoji-picker,
+.chat-attachment-preview, .dropdown-menu,
+.auth-modal, .customize-panel {
+  border-radius: 3px;
+}
+input, textarea, select {
+  border-color: #aaa;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 6%);
+}
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 2px solid #315b86;
+  outline-offset: 1px;
+  box-shadow: none;
+}
+.project-action,
+.chat-composer button,
+.chat-signin-prompt button,
+.upload-submit,
+.signin-btn {
+  border: 1px solid #c99b19;
+  border-radius: 3px;
+  background: linear-gradient(#f4d36d, #e4b82f);
+  color: #282418;
+  box-shadow: none;
+}
+.project-action:hover,
+.chat-composer button:hover,
+.chat-signin-prompt button:hover,
+.upload-submit:hover,
+.signin-btn:hover { background: #dfae22; }
+.project-delete-action { border-color: #c99b19; color: #6e5308; }
+.chat-live { border-radius: 2px; }
+.chat-message { border-radius: 2px; }
+.chat-project-preview { border-radius: 3px; }
+
+@media (max-width: 600px) {
+  .workspace .header {
+    border-top: 2px solid #e0ad24;
+    min-height: 48px;
+    padding: 0.35rem 0.5rem;
+  }
+  .header .icon-btn { border-radius: 2px; }
+  .workspace .main-feed-container { padding: 0.6rem; }
+  .featured-grid { gap: 0.55rem; }
+}

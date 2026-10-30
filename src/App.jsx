@@ -14,6 +14,7 @@ import ProjectThumbnail from "./ProjectThumbnail.jsx";
 import AdminPanel from "./AdminPanel.jsx";
 import NotificationsPage from "./NotificationsPage.jsx";
 import { getProjectIdFromUrl, projectShareUrl } from "./projectLinks.js";
+import "./ClassicTheme.css";
 
 const THEME_STORAGE_KEY = "aftercode-share-theme";
 const CUSTOMIZATION_STORAGE_KEY = "aftercode-share-customization";
@@ -75,9 +76,11 @@ export default function App() {
   const [projects, setProjects] = useState([]);
   const [activities, setActivities] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [dismissedAnnouncementIds, setDismissedAnnouncementIds] = useState([]);
+  const [events, setEvents] = useState([]);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const unreadNotificationCount = notifications.filter((notification) => !notification.is_read).length;
-  const [events, setEvents] = useState([]);
   const [dataError, setDataError] = useState("");
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [page, setPage] = useState(() => getProjectIdFromUrl(window.location.href) ? "project" : "home");
@@ -89,7 +92,6 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(() =>
     window.matchMedia("(min-width: 761px)").matches
   );
-  const [activeDropdown, setActiveDropdown] = useState(null);
   const [theme, setTheme] = useState(() => {
     const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     return savedTheme === "dark" ? "dark" : "light";
@@ -100,19 +102,38 @@ export default function App() {
   const isProjectAdmin = user?.id === "5c7667c5-7119-44fc-bd62-28ba3d4507d0";
   const featuredProjects = projects.filter((project) => project.isFeatured);
 
-  const toggleDropdown = (name) => {
-    const nextDropdown = activeDropdown === name ? null : name;
-    setActiveDropdown(nextDropdown);
-    if (nextDropdown) {
-      setDataError("");
-      const loadDropdown = loadEvents;
-      loadDropdown().catch((error) => setDataError(error.message));
-    }
-  };
-
   const loadProjects = async () => {
     const { projects: records } = await apiRequest("/api/projects");
     setProjects(records.map(toProject));
+  };
+
+  const loadPublicUpdates = async () => {
+    const viewer = user?.id ?? "guest";
+    const localDismissed = JSON.parse(window.localStorage.getItem(`aftercode-dismissed-announcements:${viewer}`) || "[]");
+    const [announcementResult, eventResult] = await Promise.all([
+      apiRequest(user ? "/api/announcements?viewer=auth" : "/api/announcements", { authenticated: Boolean(user) }),
+      apiRequest("/api/events")
+    ]);
+    setAnnouncements(announcementResult.announcements);
+    setDismissedAnnouncementIds([...new Set([...(announcementResult.dismissedIds ?? []).map(String), ...localDismissed.map(String)])]);
+    setEvents(eventResult.events);
+  };
+
+  const dismissAnnouncement = async (announcementId) => {
+    const id = String(announcementId);
+    const viewer = user?.id ?? "guest";
+    setDismissedAnnouncementIds((current) => {
+      const next = [...new Set([...current.map(String), id])];
+      window.localStorage.setItem(`aftercode-dismissed-announcements:${viewer}`, JSON.stringify(next));
+      return next;
+    });
+    if (user) {
+      try {
+        await apiRequest(`/api/announcements/${encodeURIComponent(id)}`, { method: "PATCH", authenticated: true });
+      } catch (error) {
+        setDataError(error.message);
+      }
+    }
   };
 
   const loadActivities = async () => {
@@ -139,11 +160,6 @@ export default function App() {
     if (!user) return;
     await apiRequest("/api/notifications", { method: "PATCH", authenticated: true });
     setNotifications((current) => current.map((notification) => ({ ...notification, is_read: true })));
-  };
-
-  const loadEvents = async () => {
-    const { events: records } = await apiRequest("/api/events");
-    setEvents(records);
   };
 
   const loadProjectInteraction = useCallback(async (project) => {
@@ -191,7 +207,6 @@ export default function App() {
         return;
       }
       setIsSidebarOpen(false);
-      setActiveDropdown(null);
       setIsCustomizeOpen(false);
       setPage("home");
       setSelectedProject(null);
@@ -214,7 +229,6 @@ export default function App() {
     setPage(nextPage);
     setSelectedProject(options.project ?? null);
     setSelectedUserId(options.userId ?? null);
-    setActiveDropdown(null);
     if (nextPage !== "project") {
       const url = new URL(window.location.href);
       url.pathname = "/";
@@ -260,20 +274,55 @@ export default function App() {
   };
 
   const updateProjectInteraction = async (project, action, details = {}) => {
+    if (!user) {
+      openAuthModal();
+      return false;
+    }
     if (!project.databaseId) {
       setDataError("This project is not connected to the database.");
       return false;
     }
+    const projectId = project.databaseId;
+    const previous = projectInteractions[projectId] ?? { likes: 0, liked: false, favorited: false, comments: [] };
+    const next = { ...previous, comments: [...(previous.comments ?? [])] };
+    if (action === "like") {
+      next.liked = Boolean(details.enabled);
+      next.likes = Math.max(0, (previous.likes ?? 0) + (details.enabled ? 1 : -1));
+    } else if (action === "favorite") {
+      next.favorited = Boolean(details.enabled);
+    } else if (action === "comment") {
+      next.comments.push({
+        id: `pending-${Date.now()}`,
+        userId: user.id,
+        author: customization.displayName || user.user_metadata?.display_name || user.email?.split("@")[0] || "You",
+        avatarUrl: customization.avatarUrl || user.user_metadata?.avatar_url || "",
+        text: details.text,
+        createdAt: new Date().toISOString(),
+        pending: true
+      });
+    }
+    setProjectInteractions((current) => ({ ...current, [projectId]: next }));
     try {
-      const { interaction } = await apiRequest(
+      await apiRequest(
         `/api/project-interactions?projectId=${encodeURIComponent(project.databaseId)}`,
         { method: "POST", authenticated: true, body: { action, ...details } }
       );
-      setProjectInteractions((current) => ({ ...current, [project.databaseId]: interaction }));
-      await Promise.all([loadActivities(), loadNotifications(), loadProjects()]);
+      if (action === "comment") {
+        setProjectInteractions((current) => ({
+          ...current,
+          [projectId]: {
+            ...current[projectId],
+            comments: current[projectId].comments.map((comment) => comment.pending
+              ? { ...comment, pending: false }
+              : comment)
+          }
+        }));
+      }
+      Promise.all([loadActivities(), loadNotifications()]).catch(() => {});
       setDataError("");
       return true;
     } catch (error) {
+      setProjectInteractions((current) => ({ ...current, [projectId]: previous }));
       setDataError(error.message);
       return false;
     }
@@ -339,6 +388,9 @@ export default function App() {
   useEffect(() => {
     let isActive = true;
     const userId = user?.id;
+    loadPublicUpdates().catch((error) => {
+      if (isActive) setDataError(error.message);
+    });
 
     const load = async () => {
       const extrasPromise = userId
@@ -558,13 +610,6 @@ export default function App() {
                 Notifications
                 {unreadNotificationCount > 0 && <span className="notification-count-badge">{unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}</span>}
               </button>
-              <button
-                className="icon-btn events-trigger"
-                type="button"
-                onClick={() => toggleDropdown("events")}
-              >
-                Events
-              </button>
             </>
           )}
           <button
@@ -583,19 +628,6 @@ export default function App() {
             </button>
           )}
 
-          {isLoggedIn && activeDropdown === "events" && (
-            <div className="dropdown-menu">
-              {events.length > 0
-                ? events.map((event) => (
-                  <div className="dropdown-item" key={event.id}>
-                    <strong>{event.title}</strong>
-                    <p>{new Date(event.starts_at).toLocaleString()}</p>
-                    {event.location && <p>{event.location}</p>}
-                  </div>
-                ))
-                : <p className="dropdown-empty">No upcoming events yet.</p>}
-            </div>
-          )}
           {(authError || dataError) && <p className="auth-global-error" role="alert">{authError || dataError}</p>}
           {isLoggedIn && (
             <button
@@ -681,12 +713,56 @@ export default function App() {
               onInteractionChange={selectedProject
                 ? (action, details) => updateProjectInteraction(selectedProject, action, details)
                 : undefined}
+              onSignIn={openAuthModal}
               profile={customization}
             />
           )}
 
           {page === "home" && (
             <>
+              {announcements.some((announcement) => !dismissedAnnouncementIds.includes(String(announcement.id))) && (
+                <section className="home-announcements-section" aria-labelledby="home-announcements-title">
+                  <h2 className="section-title" id="home-announcements-title">Announcements</h2>
+                  <div className="home-announcement-list">
+                    {announcements.filter((announcement) => !dismissedAnnouncementIds.includes(String(announcement.id))).map((announcement) => (
+                      <article className="home-announcement-card" key={announcement.id}>
+                        <div className="home-announcement-copy">
+                          <span className="home-update-label">AFTERCODE UPDATE</span>
+                          <h3>{announcement.title}</h3>
+                          <p>{announcement.message}</p>
+                        </div>
+                        <footer className="home-announcement-footer">
+                          <time dateTime={announcement.created_at}>{new Date(announcement.created_at).toLocaleString()}</time>
+                          <button className="home-announcement-dismiss" type="button" onClick={() => dismissAnnouncement(announcement.id)}>OK</button>
+                        </footer>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {events.length > 0 && (
+                <section className="home-events-section" aria-labelledby="home-events-title">
+                  <h2 className="section-title" id="home-events-title">Upcoming Events</h2>
+                  <div className="home-event-list">
+                    {events.map((event) => (
+                      <article className="home-event-card" key={event.id}>
+                        {event.thumbnail_url
+                          ? <img src={supabase.storage.from("project-files").getPublicUrl(event.thumbnail_url).data.publicUrl} alt="" />
+                          : <div className="home-event-placeholder" aria-hidden="true">EVENT</div>}
+                        <div className="home-event-copy">
+                          <span className="home-update-label">COMMUNITY EVENT</span>
+                          <h3>{event.title}</h3>
+                          <time dateTime={event.starts_at}>{new Date(event.starts_at).toLocaleString()}</time>
+                          {event.location && <p className="home-event-location">{event.location}</p>}
+                          {event.description && <p>{event.description}</p>}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               {!isLoggedIn && customization.showWelcome && (
                 <section className="welcome-card">
                   <span className="welcome-eyebrow">WELCOME TO AFTERCODE</span>
@@ -806,8 +882,30 @@ export default function App() {
           {page === "admin" && isProjectAdmin && (
             <AdminPanel
               projects={projects}
+              events={events}
+              user={user}
               onToggleFeatured={toggleProjectFeatured}
               onOpenProject={openProject}
+              onCreateAnnouncement={async (payload) => {
+                const result = await apiRequest("/api/announcements", { method: "POST", authenticated: true, body: payload });
+                if (result.announcement) {
+                  setAnnouncements((current) => [result.announcement, ...current.filter((item) => item.id !== result.announcement.id)].slice(0, 10));
+                }
+                return result;
+              }}
+              onCreateEvent={async (payload) => {
+                const result = await apiRequest("/api/events", { method: "POST", authenticated: true, body: payload });
+                if (result.event) {
+                  setEvents((current) => [result.event, ...current.filter((item) => item.id !== result.event.id)].sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at)));
+                }
+                loadNotifications().catch(() => {});
+                return result;
+              }}
+              onDeleteEvent={async (event) => {
+                await apiRequest(`/api/events/${encodeURIComponent(event.id)}`, { method: "DELETE", authenticated: true });
+                setEvents((current) => current.filter((item) => item.id !== event.id));
+                loadNotifications().catch(() => {});
+              }}
               error={dataError}
             />
           )}
@@ -823,10 +921,14 @@ export default function App() {
         <UploadProjectModal
           user={user}
           onClose={() => setIsUploadModalOpen(false)}
-          onPublished={async () => {
-            await Promise.all([loadProjects(), loadActivities()]);
+          onPublished={(record) => {
+            if (record) {
+              const project = toProject(record);
+              setProjects((current) => [project, ...current.filter((item) => item.databaseId !== project.databaseId)]);
+            }
             setPage("explore");
             setSelectedProject(null);
+            Promise.all([loadProjects(), loadActivities()]).catch((error) => setDataError(error.message));
           }}
         />
       )}

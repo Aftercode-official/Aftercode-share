@@ -118,34 +118,41 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
       await validateScratchProjectFile(file);
 
       // 1. Upload .sb3 với progress
-      setUploadStage("Uploading project file...");
+      setUploadStage(thumbnail ? "Uploading project and thumbnail..." : "Uploading project file...");
       setUploadProgress(0);
       uploadedPath = `${user.id}/${crypto.randomUUID()}.sb3`;
-      await uploadWithProgress(
+      const uploadProgress = { project: 0, thumbnail: 0 };
+      const updateCombinedProgress = () => {
+        const totalBytes = file.size + (thumbnail?.size ?? 0);
+        const transferred = file.size * uploadProgress.project + (thumbnail?.size ?? 0) * uploadProgress.thumbnail;
+        setUploadProgress(totalBytes ? Math.round(transferred / totalBytes) : 0);
+      };
+      const uploads = [uploadWithProgress(
         uploadedPath,
         file,
         "application/octet-stream",
-        (percent) => setUploadProgress(percent)
-      );
+        (percent) => { uploadProgress.project = percent; updateCombinedProgress(); }
+      )];
 
       // 2. Upload thumbnail
       if (thumbnail) {
-        setUploadStage("Uploading thumbnail...");
-        setUploadProgress(0);
         const ext = (thumbnail.name.split(".").pop() || "png").toLowerCase();
         uploadedThumbPath = `${user.id}/thumb-${crypto.randomUUID()}.${ext}`;
-        await uploadWithProgress(
+        uploads.push(uploadWithProgress(
           uploadedThumbPath,
           thumbnail,
           thumbnail.type || "image/png",
-          (percent) => setUploadProgress(percent)
-        );
+          (percent) => { uploadProgress.thumbnail = percent; updateCombinedProgress(); }
+        ));
       }
+      const uploadResults = await Promise.allSettled(uploads);
+      const failedUpload = uploadResults.find((result) => result.status === "rejected");
+      if (failedUpload) throw failedUpload.reason;
 
       // 3. Gửi API
       setUploadStage("Saving project info...");
       setUploadProgress(100);
-      await apiRequest("/api/projects", {
+      const { project } = await apiRequest("/api/projects", {
         method: "POST",
         authenticated: true,
         body: {
@@ -161,7 +168,7 @@ export default function UploadProjectModal({ user, onClose, onPublished }) {
 
       uploadedPath = null;
       uploadedThumbPath = null;
-      await onPublished();
+      onPublished(project);
       onClose();
     } catch (publishError) {
       // Cleanup
