@@ -149,7 +149,7 @@ export default async function handler(req, res) {
       if (error) throw error;
 
       if (!existing) {
-        await client.from("notifications").insert({
+        const { error: notificationError } = await client.from("notifications").insert({
           recipient_id: targetId,
           actor_id: user.id,
           actor_name: actorName,
@@ -158,8 +158,9 @@ export default async function handler(req, res) {
           project_id: null,
           project_title: null
         });
+        if (notificationError) throw notificationError;
 
-        await client.from("activities").insert({
+        const { error: activityError } = await client.from("activities").insert({
           actor_id: user.id,
           actor_name: actorName,
           actor_avatar: actorAvatar,
@@ -167,6 +168,7 @@ export default async function handler(req, res) {
           project_id: null,
           project_title: null
         });
+        if (activityError) throw activityError;
       }
     } else {
       const { error } = await client

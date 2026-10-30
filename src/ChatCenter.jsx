@@ -48,7 +48,7 @@ function toProjectPreview(record) {
   };
 }
 
-export default function ChatCenter({ user, onSignIn, onOpenProject }) {
+export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserProfile }) {
   const [messages, setMessages] = useState([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
   const [projectPreviews, setProjectPreviews] = useState({});
@@ -198,12 +198,27 @@ export default function ChatCenter({ user, onSignIn, onOpenProject }) {
           </div>
         ) : messages.length ? messages.map((message) => (
           <article className={`chat-message${message.user_id === user?.id ? " is-own-message" : ""}`} key={message.id}>
-            {message.avatar_url
-              ? <img className="chat-avatar" src={message.avatar_url} alt="" />
-              : <span className="chat-avatar chat-avatar-fallback" aria-hidden="true">{message.author.slice(0, 1).toUpperCase()}</span>}
+            <button
+              className="chat-avatar-link"
+              type="button"
+              aria-label={`View ${message.author}'s profile`}
+              onClick={() => message.user_id && onOpenUserProfile?.(message.user_id)}
+              disabled={!message.user_id}
+            >
+              {message.avatar_url
+                ? <img className="chat-avatar" src={message.avatar_url} alt="" />
+                : <span className="chat-avatar chat-avatar-fallback" aria-hidden="true">{message.author.slice(0, 1).toUpperCase()}</span>}
+            </button>
             <div className="chat-message-body">
               <div className="chat-message-meta">
-                <strong>{message.author}</strong>
+                <button
+                  className="chat-user-link"
+                  type="button"
+                  onClick={() => message.user_id && onOpenUserProfile?.(message.user_id)}
+                  disabled={!message.user_id}
+                >
+                  {message.author}
+                </button>
                 <time dateTime={message.created_at}>{formatTime(message.created_at)}</time>
               </div>
               {message.text && <p>{message.text}</p>}

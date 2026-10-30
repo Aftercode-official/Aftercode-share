@@ -17,7 +17,10 @@ export default function User({
   favoriteProjectIds,
   onProjectOpen,
   selectedUserId,
-  onOpenUserProfile
+  onOpenUserProfile,
+  peopleListRoute,
+  onPeopleListNavigate,
+  onPublicProfileLoaded
 }) {
   const [draft, setDraft] = useState(() => ({ ...customization }));
   const [profileTab, setProfileTab] = useState("all");
@@ -73,6 +76,37 @@ export default function User({
     return () => { isActive = false; };
   }, [page, selectedUserId]);
 
+  useEffect(() => {
+    if (page === "user" && publicProfile?.username) {
+      onPublicProfileLoaded?.(publicProfile.username);
+    }
+  }, [page, publicProfile?.username]);
+
+  useEffect(() => {
+    if (!peopleListRoute) {
+      setPeopleModal(null);
+      return;
+    }
+    const targetId = selectedUserId ?? user?.id;
+    if (!targetId) return;
+    let isActive = true;
+    setPeopleModal(peopleListRoute);
+    setPeopleList([]);
+    setPeopleError("");
+    setIsPeopleLoading(true);
+    loadFollowList(targetId, peopleListRoute)
+      .then(({ users: records }) => {
+        if (isActive) setPeopleList(records ?? []);
+      })
+      .catch((error) => {
+        if (isActive) setPeopleError(error.message);
+      })
+      .finally(() => {
+        if (isActive) setIsPeopleLoading(false);
+      });
+    return () => { isActive = false; };
+  }, [peopleListRoute, selectedUserId, user?.id]);
+
   // Load follow state + count cho profile người khác
   useEffect(() => {
     if (page !== "user" || !selectedUserId) return;
@@ -102,27 +136,23 @@ export default function User({
     return () => { isActive = false; };
   }, [page, user]);
 
-  const openPeopleModal = async (list, userId) => {
+  const openPeopleModal = (list, userId) => {
     const targetId = userId ?? selectedUserId ?? user?.id;
     if (!targetId) return;
     setPeopleModal(list);
-    setPeopleList([]);
-    setPeopleError("");
-    setIsPeopleLoading(true);
-    try {
-      const { users } = await loadFollowList(targetId, list);
-      setPeopleList(users ?? []);
-    } catch (error) {
-      setPeopleError(error.message);
-    } finally {
-      setIsPeopleLoading(false);
-    }
+    onPeopleListNavigate?.(list);
   };
 
   const openPersonProfile = (personUserId) => {
     if (!personUserId) return;
     setPeopleModal(null);
-    onOpenUserProfile?.(personUserId);
+    const person = peopleList.find((entry) => entry.user_id === personUserId);
+    onOpenUserProfile?.(personUserId, person?.username);
+  };
+
+  const closePeopleModal = () => {
+    setPeopleModal(null);
+    onPeopleListNavigate?.(null);
   };
 
   const toggleFollow = async () => {
@@ -491,13 +521,13 @@ export default function User({
         <div
           className="customize-backdrop"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setPeopleModal(null);
+            if (event.target === event.currentTarget) closePeopleModal();
           }}
         >
           <section className="people-modal" role="dialog" aria-modal="true">
             <div className="customize-heading">
               <h2>{peopleModal === "followers" ? "Followers" : "Following"}</h2>
-              <button className="customize-close" type="button" aria-label="Close" onClick={() => setPeopleModal(null)}>×</button>
+              <button className="customize-close" type="button" aria-label="Close" onClick={closePeopleModal}>×</button>
             </div>
             {isPeopleLoading && <p className="feed-empty">Loading...</p>}
             {peopleError && <p className="customize-error" role="alert">{peopleError}</p>}

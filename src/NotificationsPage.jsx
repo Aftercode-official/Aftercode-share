@@ -8,6 +8,7 @@ const FILTERS = [
   { id: "project_liked", label: "Likes" },
   { id: "project_favorited", label: "Favorites" },
   { id: "project_commented", label: "Comments" },
+  { id: "follow", label: "Follows" },
   { id: "event", label: "Event notifications" }
 ];
 
@@ -15,11 +16,12 @@ function notificationAction(type) {
   if (type === "project_liked") return "loved your project";
   if (type === "project_favorited") return "added your project to favorites";
   if (type === "project_commented") return "commented on your project";
+  if (type === "follow") return "started following you";
   if (type === "event") return "sent an event notification";
   return "interacted with your project";
 }
 
-export default function NotificationsPage({ notifications, isLoading, onMarkAllRead, onOpenProject }) {
+export default function NotificationsPage({ notifications, isLoading, onMarkAllRead, onOpenProject, onOpenUserProfile }) {
   const [filter, setFilter] = useState("all");
   const unreadCount = notifications.filter((item) => !item.is_read).length;
   const visibleNotifications = useMemo(() => notifications.filter((item) => {
@@ -50,12 +52,9 @@ export default function NotificationsPage({ notifications, isLoading, onMarkAllR
 
       <div className="notifications-list" aria-live="polite">
         {isLoading ? <p className="notifications-empty">Loading notifications…</p> : visibleNotifications.length ? visibleNotifications.map((item) => (
-          <button
-            type="button"
+          <article
             className={`notification-card${item.is_read ? "" : " is-unread"}${item.notification_type === "event" ? " is-event-notification" : ""}`}
             key={item.id}
-            onClick={() => onOpenProject?.(item)}
-            disabled={!item.project_id}
           >
             {item.thumbnail_url && supabase && (
               <img
@@ -64,16 +63,41 @@ export default function NotificationsPage({ notifications, isLoading, onMarkAllR
                 alt=""
               />
             )}
-            {item.actor_avatar
-              ? <img className="notification-avatar" src={item.actor_avatar} alt="" />
-              : <span className="notification-avatar notification-avatar-fallback">{(item.actor_name || "A").slice(0, 1).toUpperCase()}</span>}
+            <button
+              type="button"
+              className="notification-actor"
+              onClick={() => item.actor_id && onOpenUserProfile?.(item.actor_id)}
+              disabled={!item.actor_id}
+              aria-label={`View ${item.actor_name || "user"}'s profile`}
+            >
+              {item.actor_avatar
+                ? <img className="notification-avatar" src={item.actor_avatar} alt="" />
+                : <span className="notification-avatar notification-avatar-fallback">{(item.actor_name || "A").slice(0, 1).toUpperCase()}</span>}
+            </button>
             <span className="notification-copy">
-              <span><strong>{item.actor_name}</strong> {notificationAction(item.notification_type)} <strong>{item.project_title}</strong></span>
-              {item.message && <span className="notification-message">{item.message}</span>}
+              <span className="notification-action-line"><strong>{item.actor_name}</strong> {notificationAction(item.notification_type)}</span>
+              {item.project_title && (
+                <button
+                  type="button"
+                  className="notification-project-link"
+                  onClick={() => onOpenProject?.(item)}
+                  disabled={!item.project_id}
+                >
+                  Project: <strong>{item.project_title}</strong>
+                </button>
+              )}
+              {item.notification_type === "project_commented" && item.message && (
+                <span className="notification-message">“{item.message}”</span>
+              )}
               <time dateTime={item.created_at}>{new Date(item.created_at).toLocaleString()}</time>
+              {item.actor_id && (
+                <button type="button" className="notification-view-profile" onClick={() => onOpenUserProfile?.(item.actor_id)}>
+                  View profile
+                </button>
+              )}
             </span>
             {!item.is_read && <span className="notification-unread-dot" aria-label="Unread" />}
-          </button>
+          </article>
         )) : <p className="notifications-empty">No notifications here.</p>}
       </div>
     </section>

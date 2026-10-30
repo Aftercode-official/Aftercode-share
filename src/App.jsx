@@ -67,7 +67,39 @@ function toProject(record) {
   };
 }
 
+function getInitialRoute() {
+  const projectId = getProjectIdFromUrl(window.location.href);
+  if (projectId) return { page: "project", username: "", peopleList: null };
+
+  const parts = window.location.pathname.split("/").filter(Boolean).map((part) => {
+    try { return decodeURIComponent(part); } catch { return part; }
+  });
+  if (parts.length === 1 && parts[0] === "notification") {
+    return { page: "notifications", username: "", peopleList: null };
+  }
+  if (parts.length === 1 && ["explorer", "explore"].includes(parts[0])) {
+    return { page: "explore", username: "", peopleList: null };
+  }
+  if (parts[0] === "user" && parts[1]) {
+    const peopleList = parts[2] === "follower" ? "followers" : parts[2] === "following" ? "following" : null;
+    return { page: "user", username: parts[1], peopleList };
+  }
+  if (parts[0] && ["follower", "following"].includes(parts[1])) {
+    return { page: "user", username: parts[0], peopleList: parts[1] === "follower" ? "followers" : "following" };
+  }
+  return { page: "home", username: "", peopleList: null };
+}
+
+function userPagePath(username, peopleList = null) {
+  const slug = encodeURIComponent(String(username || "").trim().replace(/^@/, ""));
+  if (!slug) return "/";
+  if (peopleList === "followers") return `/${slug}/follower`;
+  if (peopleList === "following") return `/${slug}/following`;
+  return `/user/${slug}`;
+}
+
 export default function App() {
+  const initialRoute = getInitialRoute();
   const [user, setUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -83,9 +115,11 @@ export default function App() {
   const unreadNotificationCount = notifications.filter((notification) => !notification.is_read).length;
   const [dataError, setDataError] = useState("");
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
-  const [page, setPage] = useState(() => getProjectIdFromUrl(window.location.href) ? "project" : "home");
+  const [page, setPage] = useState(initialRoute.page);
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [profileRouteUsername, setProfileRouteUsername] = useState(initialRoute.username);
+  const [peopleListRoute, setPeopleListRoute] = useState(initialRoute.peopleList);
   const [projectSearch, setProjectSearch] = useState("");
   const [projectInteractions, setProjectInteractions] = useState({});
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
@@ -210,6 +244,9 @@ export default function App() {
       setIsCustomizeOpen(false);
       setPage("home");
       setSelectedProject(null);
+      setSelectedUserId(null);
+      setProfileRouteUsername("");
+      setPeopleListRoute(null);
       const url = new URL(window.location.href);
       url.pathname = "/";
       url.searchParams.delete("projectId");
@@ -229,30 +266,50 @@ export default function App() {
     setPage(nextPage);
     setSelectedProject(options.project ?? null);
     setSelectedUserId(options.userId ?? null);
-    if (nextPage !== "project") {
-      const url = new URL(window.location.href);
-      url.pathname = "/";
-      url.searchParams.delete("projectId");
-      url.searchParams.delete("project");
-      window.history.replaceState({}, "", url);
-    }
+    setPeopleListRoute(null);
+
+    const ownUsername = String(customization.username || "").trim().replace(/^@/, "");
+    const routeUsername = nextPage === "profile"
+      ? ownUsername
+      : nextPage === "user"
+        ? (options.username || (options.userId ? "" : profileRouteUsername))
+        : "";
+    let pathname = "/";
+    if (nextPage === "notifications") pathname = "/notification";
+    else if (nextPage === "explore") pathname = "/explorer";
+    else if (nextPage === "user" || nextPage === "profile") pathname = userPagePath(routeUsername || options.userId);
+    setProfileRouteUsername(routeUsername || "");
+    const url = new URL(window.location.href);
+    url.pathname = pathname;
+    url.searchParams.delete("projectId");
+    url.searchParams.delete("project");
+    window.history.pushState({}, "", url);
+
     if (!window.matchMedia("(min-width: 761px)").matches) {
       setIsSidebarOpen(false);
     }
+  };
+
+  const navigateToPeopleList = (list) => {
+    const username = profileRouteUsername || String(customization.username || "").trim().replace(/^@/, "");
+    setPeopleListRoute(list);
+    const url = new URL(window.location.href);
+    url.pathname = userPagePath(username, list);
+    window.history.pushState({}, "", url);
   };
 
   const openProject = (project) => {
     setSelectedProject(project);
     setSelectedUserId(null);
     setPage("project");
-    window.history.replaceState({}, "", projectShareUrl(project.databaseId));
+    window.history.pushState({}, "", projectShareUrl(project.databaseId));
     setDataError("");
     loadProjectInteraction(project).catch((error) => setDataError(error.message));
   };
 
   useEffect(() => {
     const projectId = getProjectIdFromUrl(window.location.href);
-    if (!projectId) return undefined;
+    if (!projectId || page !== "project" || selectedProject?.databaseId === projectId) return undefined;
     let isActive = true;
     apiRequest(`/api/projects/${encodeURIComponent(projectId)}`, { authenticated: Boolean(user) })
       .then(({ project: record }) => {
@@ -266,12 +323,66 @@ export default function App() {
         if (isActive) setDataError(error.message);
       });
     return () => { isActive = false; };
-  }, [loadProjectInteraction, user]);
+  }, [loadProjectInteraction, user, page, selectedProject?.databaseId]);
 
-  const openUserProfile = (userId) => {
+  const openUserProfile = (userId, username = "") => {
     if (!userId) return;
-    navigateTo("user", { userId });
+    navigateTo("user", { userId, username });
   };
+
+  const handlePublicProfileLoaded = (username) => {
+    const normalized = String(username || "").trim().replace(/^@/, "");
+    if (!normalized || (page !== "user" && page !== "profile") || normalized === profileRouteUsername) return;
+    setProfileRouteUsername(normalized);
+    const url = new URL(window.location.href);
+    url.pathname = userPagePath(normalized, peopleListRoute);
+    window.history.replaceState({}, "", url);
+  };
+
+  const openNotificationProject = async (notification) => {
+    if (!notification.project_id) return;
+    const existingProject = projects.find((item) => item.databaseId === notification.project_id);
+    if (existingProject) {
+      openProject(existingProject);
+      return;
+    }
+    try {
+      const { project: record } = await apiRequest(`/api/projects/${encodeURIComponent(notification.project_id)}`, {
+        authenticated: Boolean(user)
+      });
+      openProject(toProject({ ...record, likes: record.likes ?? 0 }));
+    } catch (error) {
+      setDataError(error.message);
+    }
+  };
+
+  useEffect(() => {
+    const restoreRoute = () => {
+      const route = getInitialRoute();
+      setPage(route.page);
+      setSelectedProject(null);
+      setSelectedUserId(null);
+      setProfileRouteUsername(route.username);
+      setPeopleListRoute(route.peopleList);
+    };
+    window.addEventListener("popstate", restoreRoute);
+    return () => window.removeEventListener("popstate", restoreRoute);
+  }, []);
+
+  useEffect(() => {
+    if (!profileRouteUsername || (page !== "user" && page !== "profile")) return undefined;
+    let isActive = true;
+    apiRequest(`/api/profiles/lookup?username=${encodeURIComponent(profileRouteUsername)}`)
+      .then(({ userId }) => {
+        if (!isActive) return;
+        setSelectedUserId(userId);
+        setPage(userId === user?.id ? "profile" : "user");
+      })
+      .catch((error) => {
+        if (isActive) setDataError(error.message);
+      });
+    return () => { isActive = false; };
+  }, [profileRouteUsername, page, user?.id]);
 
   const updateProjectInteraction = async (project, action, details = {}) => {
     if (!user) {
@@ -661,6 +772,9 @@ export default function App() {
           onProjectOpen={openProject}
           selectedUserId={selectedUserId}
           onOpenUserProfile={openUserProfile}
+          peopleListRoute={peopleListRoute}
+          onPeopleListNavigate={navigateToPeopleList}
+          onPublicProfileLoaded={handlePublicProfileLoaded}
         />
 
           {(page === "explore" || page === "project") && (
@@ -867,16 +981,14 @@ export default function App() {
               </section>
             </>
           )}
-          {page === "chat" && <ChatCenter user={user} onSignIn={openAuthModal} onOpenProject={openProject} />}
+          {page === "chat" && <ChatCenter user={user} onSignIn={openAuthModal} onOpenProject={openProject} onOpenUserProfile={openUserProfile} />}
           {page === "notifications" && user && (
             <NotificationsPage
               notifications={notifications}
               isLoading={isLoadingNotifications}
               onMarkAllRead={() => markNotificationsRead().catch((error) => setDataError(error.message))}
-              onOpenProject={(notification) => {
-                const project = projects.find((item) => item.databaseId === notification.project_id);
-                if (project) openProject(project);
-              }}
+              onOpenProject={openNotificationProject}
+              onOpenUserProfile={openUserProfile}
             />
           )}
           {page === "admin" && isProjectAdmin && (

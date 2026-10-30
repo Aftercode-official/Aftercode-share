@@ -370,6 +370,8 @@ export default function ProjectPages({
                     <button
                       type="button"
                       className="project-comment-avatar-btn"
+                      aria-label={`View ${comment.author}'s profile`}
+                      disabled={!comment.userId}
                       onClick={() => comment.userId && onOpenUserProfile?.(comment.userId)}
                     >
                       {comment.avatarUrl
@@ -380,6 +382,7 @@ export default function ProjectPages({
                       <button
                         type="button"
                         className="project-author-link"
+                        disabled={!comment.userId}
                         onClick={() => comment.userId && onOpenUserProfile?.(comment.userId)}
                       >
                         <strong>{comment.author}</strong>

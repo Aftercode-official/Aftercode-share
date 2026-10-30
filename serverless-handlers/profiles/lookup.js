@@ -30,11 +30,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    // Lấy email từ auth.users thông qua admin API
-    const { data: userData, error: userError } = await client.auth.admin.getUserById(data.user_id);
-    if (userError) throw userError;
-
-    sendJson(res, 200, { email: userData.user?.email ?? "" });
+    sendJson(res, 200, { userId: data.user_id, username: data.username });
   } catch (error) {
     logApiError("Unable to look up username.", error);
     sendJson(res, 500, { error: "Unable to look up username." });
