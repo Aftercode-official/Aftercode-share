@@ -15,6 +15,7 @@ const NotificationsPage = lazy(() => import("./NotificationsPage.jsx"));
 import { getProjectIdFromUrl, projectShareUrl } from "./projectLinks.js";
 import "./ClassicTheme.css";
 import { isAdminUserId } from "../shared/adminUsers.js";
+import LoadingScreen from "./LoadingScreen.jsx";
 
 const THEME_STORAGE_KEY = "aftercode-share-theme";
 const CUSTOMIZATION_STORAGE_KEY = "aftercode-share-customization";
@@ -136,6 +137,7 @@ export default function App() {
   const cachedRouteProfile = getCachedPublicProfileByUsername(initialRoute.username);
   const [initialPublicCache] = useState(readPublicDataCache);
   const [user, setUser] = useState(null);
+  const [isRestoringSession, setIsRestoringSession] = useState(Boolean(supabase));
   const [accountBanNotice, setAccountBanNotice] = useState("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -524,9 +526,15 @@ export default function App() {
       if (error) {
         setAuthError(`Unable to restore your session: ${error.message}`);
         setUser(null);
+        setIsRestoringSession(false);
         return;
       }
       setUser(data.session?.user ?? null);
+      setIsRestoringSession(false);
+    }).catch((error) => {
+      if (!isActive) return;
+      setAuthError(`Unable to restore your session: ${error.message}`);
+      setIsRestoringSession(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -643,6 +651,8 @@ export default function App() {
       isActive = false;
     };
   }, [user?.id]);
+
+  if (isRestoringSession) return <LoadingScreen />;
 
   if (accountBanNotice) {
     return (
