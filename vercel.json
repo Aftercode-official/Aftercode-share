@@ -9,6 +9,10 @@
       "destination": "/api?path=activity"
     },
     {
+      "source": "/api/admin/bans",
+      "destination": "/api?path=admin/bans"
+    },
+    {
       "source": "/api/announcements",
       "destination": "/api?path=announcements"
     },

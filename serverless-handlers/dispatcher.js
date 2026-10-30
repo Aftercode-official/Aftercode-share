@@ -1,5 +1,6 @@
 import { sendJson } from "../server/http.js";
 import activity from "./activity.js";
+import adminBans from "./admin/bans.js";
 import announcements from "./announcements.js";
 import authMe from "./auth/me.js";
 import signIn from "./auth/sign-in.js";
@@ -13,6 +14,8 @@ import profileLookup from "./profiles/lookup.js";
 import profileMe from "./profiles/me.js";
 import projectById from "./projects/[id].js";
 import projects from "./projects/index.js";
+import { createAdminClient, getAccessToken } from "../server/supabase.js";
+import { isAdminUserId } from "../shared/adminUsers.js";
 
 function getPathSegments(req) {
   const path = req.query?.path;
@@ -29,13 +32,14 @@ function getPathSegments(req) {
   });
 }
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   req.query ??= {};
   const [resource, identifier, ...extra] = getPathSegments(req);
   const route = [resource, identifier].filter(Boolean).join("/");
   let endpoint;
 
   if (!identifier && resource === "activity") endpoint = activity;
+  else if (route === "admin/bans" && extra.length === 0) endpoint = adminBans;
   else if (!identifier && resource === "announcements") endpoint = announcements;
   else if (resource === "announcements" && identifier && extra.length === 0) {
     req.query.id = identifier;
@@ -66,6 +70,33 @@ export default function handler(req, res) {
   if (!endpoint) {
     sendJson(res, 404, { error: "API route not found." });
     return;
+  }
+
+  const accessToken = getAccessToken(req);
+  if (accessToken) {
+    try {
+      const client = createAdminClient();
+      const { data, error } = await client.auth.getUser(accessToken);
+      req.authenticatedUser = error ? null : data?.user ?? null;
+      if (req.authenticatedUser && !isAdminUserId(req.authenticatedUser.id)) {
+        const { data: ban, error: banError } = await client
+          .from("user_bans")
+          .select("reason")
+          .eq("user_id", req.authenticatedUser.id)
+          .maybeSingle();
+        if (banError) throw banError;
+        if (ban) {
+          sendJson(res, 403, {
+            code: "ACCOUNT_BANNED",
+            error: ban.reason ? `This account is permanently banned: ${ban.reason}` : "This account is permanently banned."
+          });
+          return;
+        }
+      }
+    } catch {
+      sendJson(res, 503, { error: "Unable to verify account access right now." });
+      return;
+    }
   }
 
   return endpoint(req, res);

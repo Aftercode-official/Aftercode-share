@@ -27,6 +27,10 @@ export function getAccessToken(req) {
 }
 
 export async function getAuthenticatedUser(client, req) {
+  if (Object.hasOwn(req, "authenticatedUser")) {
+    return req.authenticatedUser;
+  }
+
   const accessToken = getAccessToken(req);
   if (!accessToken) {
     return null;

@@ -15,16 +15,16 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg-main: #171513;
-  --bg-card: #211e1a;
-  --bg-hover: #33291d;
-  --text-primary: #f5eee5;
-  --text-muted: #b5a38e;
-  --border-color: #493b2c;
-  --accent-orange: #ff9a3d;
-  --accent-orange-hover: #ffb36b;
-  --accent-yellow: #9c6200;
-  --accent-yellow-light: #392c17;
+  --bg-main: #242220;
+  --bg-card: #302d29;
+  --bg-hover: #46392d;
+  --text-primary: #fff9f0;
+  --text-muted: #cbbba8;
+  --border-color: #625241;
+  --accent-orange: #ffad60;
+  --accent-orange-hover: #ffc184;
+  --accent-yellow: #ffd166;
+  --accent-yellow-light: #49391f;
 }
 
 * {
@@ -1272,6 +1272,54 @@ button.chat-project-preview:hover { border-color: var(--accent-orange); backgrou
 .sidebar { box-shadow: none; }
 .sb3-thumbnail { background: linear-gradient(135deg, #f4c84a, #ec8b48); }
 .dropdown-menu, .auth-modal, .customize-panel { box-shadow: 0 12px 32px rgb(24 24 24 / 12%); }
+
+/* Gentle motion across the interface */
+@keyframes aftercode-page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes aftercode-overlay-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes aftercode-pop-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.app-layout { animation: aftercode-overlay-enter 260ms ease-out both; }
+.workspace > .header { animation: aftercode-page-enter 320ms ease-out both; }
+.main-feed-container > * { animation: aftercode-page-enter 380ms ease-out both; }
+.main-feed-container > *:nth-child(2) { animation-delay: 45ms; }
+.main-feed-container > *:nth-child(3) { animation-delay: 90ms; }
+.dropdown-menu, .auth-modal, .customize-panel, .chat-emoji-picker, .chat-attachment-preview {
+  animation: aftercode-pop-in 180ms ease-out both;
+  transform-origin: top center;
+}
+
+.nav-btn, .icon-btn, button, a, input, textarea, select,
+.featured-card, .timeline-card, .home-event-card, .notification-card,
+.project-card, .chat-message, .sidebar {
+  transition: color 180ms ease, background-color 180ms ease,
+    border-color 180ms ease, box-shadow 180ms ease,
+    transform 180ms ease, opacity 180ms ease;
+}
+
+button:not(:disabled):hover, a:hover { transform: translateY(-1px); }
+button:not(:disabled):active, a:active { transform: translateY(0) scale(0.98); }
+.featured-card:hover, .timeline-card:hover, .home-event-card:hover,
+.notification-card:hover, .project-card:hover { transform: translateY(-2px); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 @media (max-width: 600px) {
   body { height: 100dvh; }

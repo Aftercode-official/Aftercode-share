@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { apiRequest } from "./api.js";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
 import { supabase } from "./supabase.js";
 import "./AdminPanel.css";
@@ -14,6 +15,19 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
   const [deletingEventId, setDeletingEventId] = useState(null);
   const [formError, setFormError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [banSearch, setBanSearch] = useState("");
+  const [banReason, setBanReason] = useState("");
+  const [banUsers, setBanUsers] = useState([]);
+  const [bans, setBans] = useState([]);
+  const [isLoadingBans, setIsLoadingBans] = useState(true);
+  const [banActionUserId, setBanActionUserId] = useState("");
+
+  useEffect(() => {
+    apiRequest("/api/admin/bans", { authenticated: true })
+      .then((result) => setBans(result.bans ?? []))
+      .catch((loadError) => setFormError(loadError.message))
+      .finally(() => setIsLoadingBans(false));
+  }, []);
 
   useEffect(() => () => {
     if (eventImagePreview) URL.revokeObjectURL(eventImagePreview);
@@ -91,6 +105,54 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
     }
   };
 
+  const searchBanUsers = async (event) => {
+    event.preventDefault();
+    const query = banSearch.trim();
+    if (!query) return;
+    setFormError("");
+    try {
+      const result = await apiRequest(`/api/admin/bans?q=${encodeURIComponent(query)}`, { authenticated: true });
+      setBanUsers(result.users ?? []);
+      if (!result.users?.length) setFormError("No matching user found.");
+    } catch (searchError) {
+      setFormError(searchError.message);
+    }
+  };
+
+  const banUser = async (target) => {
+    if (!banReason.trim()) {
+      setFormError("Add a reason before permanently banning this user.");
+      return;
+    }
+    if (!window.confirm(`Permanently ban ${target.display_name || target.username || "this user"}? They will be signed out and blocked from Aftercode.`)) return;
+    setBanActionUserId(target.user_id);
+    setFormError("");
+    setSuccessMessage("");
+    try {
+      const result = await apiRequest("/api/admin/bans", {
+        method: "POST",
+        authenticated: true,
+        body: { userId: target.user_id, reason: banReason.trim() }
+      });
+      setBanUsers((current) => current.map((userItem) => userItem.user_id === target.user_id ? { ...userItem, banned: true } : userItem));
+      setBans((current) => [{
+        user_id: target.user_id,
+        display_name: target.display_name,
+        username: target.username,
+        reason: banReason.trim(),
+        created_at: new Date().toISOString()
+      }, ...current.filter((ban) => ban.user_id !== target.user_id)]);
+      setBanReason("");
+      setSuccessMessage(result.authBanApplied
+        ? `${target.display_name || target.username} was permanently banned. Their current session will be blocked on its next request.`
+        : "The account is blocked from Aftercode, but Supabase could not apply its sign-in ban. Check the server logs.");
+    } catch (banError) {
+      setFormError(banError.message);
+    } finally {
+      setBanActionUserId("");
+    }
+  };
+
   return (
     <section className="admin-panel">
       <header className="admin-panel-heading">
@@ -132,6 +194,37 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
           <button className="admin-feature-button" type="submit" disabled={isCreatingEvent}>{isCreatingEvent ? "Creating event..." : "Create event notification"}</button>
         </form>
       </div>
+
+      <section className="admin-ban-management">
+        <h2>Permanent account bans</h2>
+        <p>Search by username or display name. Banned accounts cannot sign in again and their current API access is blocked.</p>
+        <form className="admin-ban-search" onSubmit={searchBanUsers}>
+          <input aria-label="Search users to ban" placeholder="Username or display name" value={banSearch} onChange={(event) => setBanSearch(event.target.value)} />
+          <button className="admin-feature-button" type="submit">Search users</button>
+        </form>
+        {banUsers.length > 0 && (
+          <div className="admin-ban-results">
+            <label>Reason for ban<input maxLength={500} value={banReason} onChange={(event) => setBanReason(event.target.value)} placeholder="Required; visible to the banned user" /></label>
+            {banUsers.map((target) => (
+              <article className="admin-ban-row" key={target.user_id}>
+                <span><strong>{target.display_name || target.username || "Aftercode user"}</strong><small>@{String(target.username || "").replace(/^@/, "")}</small></span>
+                {target.banned
+                  ? <strong className="admin-ban-status">Already banned</strong>
+                  : <button className="admin-ban-button" type="button" disabled={Boolean(banActionUserId)} onClick={() => banUser(target)}>{banActionUserId === target.user_id ? "Banning…" : "Ban permanently"}</button>}
+              </article>
+            ))}
+          </div>
+        )}
+        <h3>Currently banned</h3>
+        {isLoadingBans ? <p className="admin-panel-empty">Loading ban list…</p> : bans.length
+          ? <div className="admin-ban-results">{bans.map((ban) => (
+            <article className="admin-ban-row" key={ban.user_id}>
+              <span><strong>{ban.display_name || ban.username || ban.user_id}</strong><small>{ban.reason}</small></span>
+              <time>{new Date(ban.created_at).toLocaleDateString()}</time>
+            </article>
+          ))}</div>
+          : <p className="admin-panel-empty">No users are banned.</p>}
+      </section>
 
       <section className="admin-event-management">
         <h2>Manage events</h2>

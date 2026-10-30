@@ -2,8 +2,7 @@ import { logApiError, readJsonBody, requireMethod, sendJson } from "../server/ht
 import { createAdminClient, getAuthenticatedUser } from "../server/supabase.js";
 import { env } from "node:process";
 import { broadcastNotification } from "../server/broadcast.js";
-
-const ADMIN_USER_ID = "5c7667c5-7119-44fc-bd62-28ba3d4507d0";
+import { isAdminUserId } from "../shared/adminUsers.js";
 
 export default async function handler(req, res) {
   if (!requireMethod(req, res, ["GET", "POST", "DELETE"])) {
@@ -25,6 +24,7 @@ export default async function handler(req, res) {
       if (error) {
         throw error;
       }
+      res.setHeader("Cache-Control", "public, max-age=0, s-maxage=30, stale-while-revalidate=60");
       sendJson(res, 200, { events: data });
       return;
     }
@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     const eventAdminIds = new Set(
       (env.EVENT_ADMIN_USER_IDS ?? "").split(",").map((id) => id.trim()).filter(Boolean)
     );
-    const isEventAdmin = user.id === ADMIN_USER_ID || eventAdminIds.has(user.id);
+    const isEventAdmin = isAdminUserId(user.id) || eventAdminIds.has(user.id);
     if (!isEventAdmin) {
       sendJson(res, 403, { error: "Only configured event administrators can create events." });
       return;

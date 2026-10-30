@@ -1,7 +1,6 @@
 import { logApiError, readJsonBody, requireMethod, sendJson } from "../server/http.js";
 import { createAdminClient, getAuthenticatedUser } from "../server/supabase.js";
-
-const ADMIN_USER_ID = "5c7667c5-7119-44fc-bd62-28ba3d4507d0";
+import { isAdminUserId } from "../shared/adminUsers.js";
 
 export default async function handler(req, res) {
   if (!requireMethod(req, res, ["GET", "POST", "PATCH"])) return;
@@ -54,7 +53,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    if (user.id !== ADMIN_USER_ID) {
+    if (!isAdminUserId(user.id)) {
       sendJson(res, 403, { error: "Only the Aftercode administrator can send announcements." });
       return;
     }

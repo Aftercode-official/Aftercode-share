@@ -59,6 +59,10 @@ export async function apiRequest(path, { method = "GET", body, authenticated = f
     }
 
     if (!response.ok) {
+      if (response.status === 403 && payload?.code === "ACCOUNT_BANNED") {
+        await supabase?.auth.signOut({ scope: "local" }).catch(() => {});
+        window.dispatchEvent(new CustomEvent("aftercode:account-banned", { detail: { message: payload.error } }));
+      }
       throw new Error(payload?.error ?? `Request failed with status ${response.status}.`);
     }
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) {

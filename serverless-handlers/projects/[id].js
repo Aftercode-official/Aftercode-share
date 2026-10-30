@@ -1,10 +1,10 @@
 import { logApiError, readJsonBody, requireMethod, sendJson } from "../../server/http.js";
 import { createAdminClient, getAuthenticatedUser } from "../../server/supabase.js";
+import { isAdminUserId } from "../../shared/adminUsers.js";
 
 const MAX_TAGS = 10;
 const MAX_TAG_LENGTH = 30;
 const SCRATCH_PROJECT_ID = /^\d{1,20}$/;
-const FEATURED_PROJECT_ADMIN_ID = "5c7667c5-7119-44fc-bd62-28ba3d4507d0";
 
 function isUserStoragePath(path, userId) {
   return typeof path === "string"
@@ -188,7 +188,7 @@ export default async function handler(req, res) {
       return;
     }
     if (Object.hasOwn(body, "isFeatured")) {
-      if (user.id !== FEATURED_PROJECT_ADMIN_ID) {
+      if (!isAdminUserId(user.id)) {
         sendJson(res, 403, { error: "Only project administrators can feature projects." });
         return;
       }

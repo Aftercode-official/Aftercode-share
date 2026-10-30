@@ -64,7 +64,10 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
 
   useEffect(() => {
     let active = true;
+    let isLoading = false;
     const loadMessages = async () => {
+      if (!active || isLoading || document.visibilityState === "hidden") return;
+      isLoading = true;
       try {
         const { messages: latest } = await apiRequest("/api/chat");
         if (active) {
@@ -74,14 +77,20 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
       } catch (loadError) {
         if (active) setError(loadError.message);
       } finally {
+        isLoading = false;
         if (active) setIsLoadingMessages(false);
       }
     };
     loadMessages();
-    const timer = window.setInterval(loadMessages, 5000);
+    const timer = window.setInterval(loadMessages, 15000);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") loadMessages();
+    };
+    document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {
       active = false;
       window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
   }, []);
 
@@ -228,7 +237,7 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
                     className="chat-shared-video"
                     src={supabase.storage.from("chat-media").getPublicUrl(message.media_path).data.publicUrl}
                     controls
-                    preload="none"
+                    preload="metadata"
                     playsInline
                   />
                 ) : (

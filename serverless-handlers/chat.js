@@ -22,6 +22,7 @@ export default async function handler(req, res) {
         : { data: [], error: null };
       if (profilesError) throw profilesError;
       const profileMap = new Map((profiles ?? []).map((profile) => [profile.user_id, profile]));
+      res.setHeader("Cache-Control", "public, max-age=0, s-maxage=5, stale-while-revalidate=10");
       sendJson(res, 200, {
         messages: data.reverse().map((message) => {
           const profile = profileMap.get(message.user_id);

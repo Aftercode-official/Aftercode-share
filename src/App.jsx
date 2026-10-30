@@ -14,6 +14,7 @@ const AdminPanel = lazy(() => import("./AdminPanel.jsx"));
 const NotificationsPage = lazy(() => import("./NotificationsPage.jsx"));
 import { getProjectIdFromUrl, projectShareUrl } from "./projectLinks.js";
 import "./ClassicTheme.css";
+import { isAdminUserId } from "../shared/adminUsers.js";
 
 const THEME_STORAGE_KEY = "aftercode-share-theme";
 const CUSTOMIZATION_STORAGE_KEY = "aftercode-share-customization";
@@ -122,11 +123,20 @@ function writePublicDataCache(updates) {
   }
 }
 
+function normalizeCustomization(saved = {}) {
+  const normalized = { ...DEFAULT_CUSTOMIZATION, ...saved };
+  if (typeof saved.accentColor !== "string" || saved.accentColor.toLowerCase() === "#238a45") {
+    normalized.accentColor = DEFAULT_CUSTOMIZATION.accentColor;
+  }
+  return normalized;
+}
+
 export default function App() {
   const initialRoute = getInitialRoute();
   const cachedRouteProfile = getCachedPublicProfileByUsername(initialRoute.username);
   const [initialPublicCache] = useState(readPublicDataCache);
   const [user, setUser] = useState(null);
+  const [accountBanNotice, setAccountBanNotice] = useState("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [authError, setAuthError] = useState("");
@@ -160,9 +170,17 @@ export default function App() {
     const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     return savedTheme === "dark" ? "dark" : "light";
   });
+
+  useEffect(() => {
+    const handleAccountBanned = (event) => {
+      setAccountBanNotice(event.detail?.message || "This account is permanently banned.");
+    };
+    window.addEventListener("aftercode:account-banned", handleAccountBanned);
+    return () => window.removeEventListener("aftercode:account-banned", handleAccountBanned);
+  }, []);
   const [customization, setCustomization] = useState(DEFAULT_CUSTOMIZATION);
   const [customizationError, setCustomizationError] = useState("");
-  const isProjectAdmin = user?.id === "5c7667c5-7119-44fc-bd62-28ba3d4507d0";
+  const isProjectAdmin = isAdminUserId(user?.id);
   const featuredProjects = projects.filter((project) => project.isFeatured);
 
   const loadProjects = async () => {
@@ -571,16 +589,28 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return undefined;
+    let isRefreshing = false;
     const refreshUnreadNotifications = async () => {
+      if (isRefreshing || document.visibilityState === "hidden") return;
+      isRefreshing = true;
       try {
         const { notifications: records } = await apiRequest("/api/notifications", { authenticated: true });
         setNotifications(records);
       } catch {
         // Keep the last known badge count if a background refresh temporarily fails.
+      } finally {
+        isRefreshing = false;
       }
     };
-    const timer = window.setInterval(refreshUnreadNotifications, 30000);
-    return () => window.clearInterval(timer);
+    const timer = window.setInterval(refreshUnreadNotifications, 60000);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") refreshUnreadNotifications();
+    };
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, [user?.id]);
 
   useEffect(() => {
@@ -591,11 +621,11 @@ export default function App() {
         const saved = await loadCustomization();
         if (!isActive) return;
         if (saved) {
-          setCustomization({ ...DEFAULT_CUSTOMIZATION, ...saved });
+          setCustomization(normalizeCustomization(saved));
         } else {
           const legacySaved = window.localStorage.getItem(CUSTOMIZATION_STORAGE_KEY);
           if (legacySaved) {
-            const migrated = { ...DEFAULT_CUSTOMIZATION, ...JSON.parse(legacySaved) };
+            const migrated = normalizeCustomization(JSON.parse(legacySaved));
             await persistCustomization(migrated);
             if (!isActive) return;
             setCustomization(migrated);
@@ -614,12 +644,23 @@ export default function App() {
     };
   }, [user?.id]);
 
+  if (accountBanNotice) {
+    return (
+      <main style={{ minHeight: "100vh", display: "grid", placeContent: "center", gap: "1rem", padding: "2rem", textAlign: "center", background: "#111", color: "#fff" }}>
+        <h1>Account banned</h1>
+        <p>{accountBanNotice}</p>
+        <p>You have been signed out and can no longer use Aftercode with this account.</p>
+      </main>
+    );
+  }
+
   return (
     <div
       className={`app-layout${isLoggedIn ? " has-sidebar" : ""}${isSidebarOpen ? "" : " sidebar-collapsed"}`}
       style={{
         "--accent-yellow": customization.accentColor,
         "--accent-orange": customization.accentColor,
+        "--accent-color": customization.accentColor,
         "--custom-home-background": theme === "dark"
           ? "var(--bg-main)"
           : customization.homeBackground

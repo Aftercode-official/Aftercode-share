@@ -129,6 +129,21 @@
 .admin-event-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
 .admin-event-preview { width: 100%; max-height: 220px; object-fit: cover; border-radius: 9px; border: 1px solid var(--border-color); }
 .admin-featured-management { display: grid; gap: 0.75rem; }
+.admin-ban-management { display: grid; gap: 0.75rem; padding: 1rem; border: 1px solid color-mix(in srgb, #d06a5e, var(--border-color) 50%); border-radius: 12px; background: color-mix(in srgb, var(--bg-card), #d06a5e 4%); }
+.admin-ban-management h2, .admin-ban-management h3 { margin: 0; }
+.admin-ban-management h3 { margin-top: 0.5rem; font-size: 0.95rem; }
+.admin-ban-management > p { margin: 0; color: var(--text-muted); font-size: 0.82rem; }
+.admin-ban-search { display: flex; gap: 0.6rem; }
+.admin-ban-search input, .admin-ban-results > label input { min-width: 0; flex: 1; padding: 0.65rem 0.7rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-main); color: var(--text-primary); font: inherit; }
+.admin-ban-results { display: grid; gap: 0.55rem; }
+.admin-ban-results > label { display: grid; gap: 0.35rem; color: var(--text-muted); font-size: 0.8rem; }
+.admin-ban-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.65rem; border: 1px solid var(--border-color); border-radius: 9px; background: var(--bg-main); }
+.admin-ban-row > span { display: grid; gap: 0.2rem; min-width: 0; }
+.admin-ban-row small, .admin-ban-row time { color: var(--text-muted); font-size: 0.78rem; }
+.admin-ban-status { color: #d06a5e; font-size: 0.78rem; }
+.admin-ban-button { flex: 0 0 auto; padding: 0.5rem 0.7rem; border: 1px solid #d06a5e; border-radius: 8px; background: color-mix(in srgb, var(--bg-main), #d06a5e 12%); color: var(--text-primary); font: inherit; font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+.admin-ban-button:disabled { opacity: 0.55; cursor: wait; }
+.admin-ban-management .admin-feature-button { width: auto; }
 .admin-feature-button:disabled { opacity: 0.6; cursor: wait; }
 .admin-event-management { display: grid; gap: 0.65rem; }
 .admin-event-management h2 { margin: 0; font-size: 1.05rem; }
@@ -155,4 +170,8 @@
   .admin-event-row { align-items: stretch; flex-wrap: wrap; }
   .admin-event-row-copy { flex-basis: calc(100% - 100px); }
   .admin-delete-event-button { width: 100%; }
+  .admin-ban-search { flex-direction: column; }
+  .admin-ban-management .admin-feature-button { width: 100%; }
+  .admin-ban-row { align-items: stretch; flex-direction: column; }
+  .admin-ban-button { width: 100%; }
 }
