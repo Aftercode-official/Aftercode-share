@@ -14,6 +14,18 @@ const EMOJI_GROUPS = [
   { label: "Objects & symbols", items: ["❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "💕", "💖", "💗", "💘", "💝", "💯", "💢", "💥", "💫", "💦", "💨", "🗯️", "💬", "💭", "✅", "❌", "❓", "❗", "💡", "🔔", "🔒", "🔑", "📌", "📎", "💻", "📱", "🛠️", "🔧", "🧠", "👀"] }
 ];
 
+const CHAT_CACHE_KEY = "aftercode:chat:recent:v1";
+
+function readCachedChatMessages() {
+  try {
+    const cached = JSON.parse(window.localStorage.getItem(CHAT_CACHE_KEY) || "null");
+    if (!cached || Date.now() - cached.savedAt > 24 * 60 * 60 * 1000 || !Array.isArray(cached.messages)) return [];
+    return cached.messages.filter((message) => message?.id && message?.created_at).slice(-10);
+  } catch {
+    return [];
+  }
+}
+
 function formatTime(value) {
   return new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
@@ -70,8 +82,8 @@ function toProjectPreview(record) {
 }
 
 export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserProfile }) {
-  const [messages, setMessages] = useState([]);
-  const [isLoadingMessages, setIsLoadingMessages] = useState(true);
+  const [messages, setMessages] = useState(readCachedChatMessages);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(() => readCachedChatMessages().length === 0);
   const [hasOlderMessages, setHasOlderMessages] = useState(false);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [projectPreviews, setProjectPreviews] = useState({});
@@ -82,12 +94,23 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
   const [isSending, setIsSending] = useState(false);
   const chatMessagesRef = useRef(null);
   const hasInitiallyScrolledRef = useRef(false);
+  const lastAutoScrolledMessageIdRef = useRef(null);
   const pendingScrollRestoreRef = useRef(null);
   const hasLoadedInitialPageRef = useRef(false);
   const fileInputRef = useRef(null);
   const isAuthenticated = Boolean(user);
   const projectIdsKey = [...new Set(messages.flatMap((message) => getProjectIdsFromText(message.text)))].slice(-12).join(",");
   const lastMessageId = messages.at(-1)?.id;
+
+  useEffect(() => {
+    const recent = messages.filter((message) => !message.pending).slice(-10);
+    if (!recent.length) return;
+    try {
+      window.localStorage.setItem(CHAT_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), messages: recent }));
+    } catch {
+      // Chat continues to work when browser storage is unavailable or full.
+    }
+  }, [messages]);
 
   const scrollToBottom = (smooth = true) => {
     const container = chatMessagesRef.current;
@@ -100,6 +123,13 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
     container.scrollTo({ top: container.scrollHeight, behavior: smooth ? "smooth" : "auto" });
   };
 
+  const scrollToBottomIfNearBottom = () => {
+    const container = chatMessagesRef.current;
+    if (!container) return;
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    if (distanceFromBottom < 160) scrollToBottom();
+  };
+
   useEffect(() => {
     let active = true;
     let isLoading = false;
@@ -107,7 +137,7 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
       if (!active || isLoading || document.visibilityState === "hidden") return;
       isLoading = true;
       try {
-        const { messages: latest, hasMore } = await apiRequest("/api/chat");
+        const { messages: latest, hasMore } = await apiRequest("/api/chat?limit=10");
         if (active) {
           setMessages((current) => mergeChatMessages(current, latest));
           if (!hasLoadedInitialPageRef.current) {
@@ -189,12 +219,13 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
       if (container && saved) {
         container.scrollTop = saved.scrollTop + (container.scrollHeight - saved.scrollHeight);
         pendingScrollRestoreRef.current = null;
-      } else {
+      } else if (!hasInitiallyScrolledRef.current || lastAutoScrolledMessageIdRef.current !== lastMessageId) {
         scrollToBottom();
       }
+      lastAutoScrolledMessageIdRef.current = lastMessageId;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [messages.length, lastMessageId, projectPreviews]);
+  }, [messages.length, lastMessageId]);
 
   useEffect(() => {
     if (!attachment) return undefined;
@@ -212,7 +243,7 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
       const query = new URLSearchParams({
         before: oldest.created_at,
         beforeId: oldest.id,
-        limit: "50"
+        limit: "10"
       });
       const { messages: older, hasMore } = await apiRequest(`/api/chat?${query}`);
       if (older.length) {
@@ -367,7 +398,7 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
                   <video
                     className="chat-shared-video"
                     src={message.optimistic_media_url || supabase.storage.from("chat-media").getPublicUrl(message.media_path).data.publicUrl}
-                    onLoadedMetadata={() => scrollToBottom()}
+                    onLoadedMetadata={scrollToBottomIfNearBottom}
                     controls
                     preload="metadata"
                     playsInline
@@ -382,7 +413,7 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
                     <img
                       className="chat-shared-image"
                       src={message.optimistic_media_url || supabase.storage.from("chat-media").getPublicUrl(message.media_path).data.publicUrl}
-                      onLoad={() => scrollToBottom()}
+                      onLoad={scrollToBottomIfNearBottom}
                       alt="Image shared in chat"
                       loading="lazy"
                       decoding="async"
