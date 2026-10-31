@@ -35,8 +35,8 @@ function mergeChatMessages(current, incoming) {
   });
 
   return [...remaining, ...additions]
-    .sort((left, right) => new Date(left.created_at) - new Date(right.created_at))
-    .slice(-100);
+    .sort((left, right) => new Date(left.created_at) - new Date(right.created_at)
+      || String(left.id).localeCompare(String(right.id)));
 }
 
 function toProjectPreview(record) {
@@ -72,6 +72,8 @@ function toProjectPreview(record) {
 export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserProfile }) {
   const [messages, setMessages] = useState([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
+  const [hasOlderMessages, setHasOlderMessages] = useState(false);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [projectPreviews, setProjectPreviews] = useState({});
   const [draft, setDraft] = useState("");
   const [attachment, setAttachment] = useState(null);
@@ -80,6 +82,8 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
   const [isSending, setIsSending] = useState(false);
   const chatMessagesRef = useRef(null);
   const hasInitiallyScrolledRef = useRef(false);
+  const pendingScrollRestoreRef = useRef(null);
+  const hasLoadedInitialPageRef = useRef(false);
   const fileInputRef = useRef(null);
   const isAuthenticated = Boolean(user);
   const projectIdsKey = [...new Set(messages.flatMap((message) => getProjectIdsFromText(message.text)))].slice(-12).join(",");
@@ -103,9 +107,13 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
       if (!active || isLoading || document.visibilityState === "hidden") return;
       isLoading = true;
       try {
-        const { messages: latest } = await apiRequest("/api/chat");
+        const { messages: latest, hasMore } = await apiRequest("/api/chat");
         if (active) {
           setMessages((current) => mergeChatMessages(current, latest));
+          if (!hasLoadedInitialPageRef.current) {
+            setHasOlderMessages(Boolean(hasMore));
+            hasLoadedInitialPageRef.current = true;
+          }
           setError("");
         }
       } catch (loadError) {
@@ -175,7 +183,16 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
   }, [projectIdsKey, user?.id, isAuthenticated, projectPreviews]);
 
   useEffect(() => {
-    const frame = window.requestAnimationFrame(() => scrollToBottom());
+    const frame = window.requestAnimationFrame(() => {
+      const container = chatMessagesRef.current;
+      const saved = pendingScrollRestoreRef.current;
+      if (container && saved) {
+        container.scrollTop = saved.scrollTop + (container.scrollHeight - saved.scrollHeight);
+        pendingScrollRestoreRef.current = null;
+      } else {
+        scrollToBottom();
+      }
+    });
     return () => window.cancelAnimationFrame(frame);
   }, [messages.length, lastMessageId, projectPreviews]);
 
@@ -183,6 +200,35 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
     if (!attachment) return undefined;
     return () => URL.revokeObjectURL(attachment.previewUrl);
   }, [attachment]);
+
+  const loadOlderMessages = async () => {
+    if (isLoadingOlder || !hasOlderMessages || messages.length === 0) return;
+    const oldest = messages[0];
+    const container = chatMessagesRef.current;
+    if (!container) return;
+    setIsLoadingOlder(true);
+    setError("");
+    try {
+      const query = new URLSearchParams({
+        before: oldest.created_at,
+        beforeId: oldest.id,
+        limit: "50"
+      });
+      const { messages: older, hasMore } = await apiRequest(`/api/chat?${query}`);
+      if (older.length) {
+        pendingScrollRestoreRef.current = {
+          scrollTop: container.scrollTop,
+          scrollHeight: container.scrollHeight
+        };
+        setMessages((current) => mergeChatMessages(current, older));
+      }
+      setHasOlderMessages(Boolean(hasMore));
+    } catch (loadError) {
+      setError(loadError.message);
+    } finally {
+      setIsLoadingOlder(false);
+    }
+  };
 
   const chooseAttachment = (event) => {
     const file = event.currentTarget.files?.[0];
@@ -279,6 +325,11 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
         aria-live="polite"
         aria-label="Recent chat messages"
       >
+        {hasOlderMessages && !isLoadingMessages && (
+          <button className="chat-load-older" type="button" onClick={loadOlderMessages} disabled={isLoadingOlder}>
+            {isLoadingOlder ? "Loading older messages..." : "Load older messages"}
+          </button>
+        )}
         {!isLoadingMessages && error && <p className="chat-error" role="alert">{error}</p>}
         {isLoadingMessages ? (
           <div className="chat-loading" role="status">

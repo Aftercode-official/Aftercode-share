@@ -14,10 +14,26 @@ export default async function handler(req, res) {
   try {
     const client = createAdminClient();
     if (req.method === "GET") {
-      const { data, error } = await client.from("chat_messages")
-        .select(CHAT_FIELDS).order("created_at", { ascending: false }).limit(100);
+      const requestedLimit = Number.parseInt(req.query?.limit, 10);
+      const pageSize = Number.isFinite(requestedLimit) ? Math.min(100, Math.max(1, requestedLimit)) : 100;
+      const before = typeof req.query?.before === "string" ? req.query.before : "";
+      const beforeId = typeof req.query?.beforeId === "string" ? req.query.beforeId : "";
+      const validBefore = before && Number.isFinite(Date.parse(before));
+      const validBeforeId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(beforeId);
+      let query = client.from("chat_messages").select(CHAT_FIELDS);
+      if (validBefore && validBeforeId) {
+        query = query.or(`created_at.lt.${before},and(created_at.eq.${before},id.lt.${beforeId})`);
+      } else if (validBefore) {
+        query = query.lt("created_at", before);
+      }
+      const { data, error } = await query
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .limit(pageSize + 1);
       if (error) throw error;
-      const userIds = [...new Set(data.map((message) => message.user_id))];
+      const hasMore = data.length > pageSize;
+      const messages = data.slice(0, pageSize).reverse();
+      const userIds = [...new Set(messages.map((message) => message.user_id))];
       const { data: profiles, error: profilesError } = userIds.length
         ? await client.from("profiles").select("user_id, display_name, avatar_url").in("user_id", userIds)
         : { data: [], error: null };
@@ -25,7 +41,8 @@ export default async function handler(req, res) {
       const profileMap = new Map((profiles ?? []).map((profile) => [profile.user_id, profile]));
       res.setHeader("Cache-Control", "public, max-age=0, s-maxage=5, stale-while-revalidate=10");
       sendJson(res, 200, {
-        messages: data.reverse().map((message) => {
+        hasMore,
+        messages: messages.map((message) => {
           const profile = profileMap.get(message.user_id);
           return {
             ...message,

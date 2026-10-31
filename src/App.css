@@ -1039,6 +1039,26 @@ body {
   overscroll-behavior: contain;
 }
 
+.chat-load-older {
+  align-self: center;
+  margin: 0.15rem 0 0.5rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.chat-load-older:hover:not(:disabled) {
+  border-color: var(--accent-yellow);
+  color: var(--text-primary);
+}
+
+.chat-load-older:disabled { cursor: wait; opacity: 0.65; }
+
 .chat-message {
   display: flex;
   align-items: flex-start;
