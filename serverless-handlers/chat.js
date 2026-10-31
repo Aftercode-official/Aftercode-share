@@ -63,9 +63,8 @@ export default async function handler(req, res) {
     const author = profile?.display_name?.trim() || (typeof metadata.display_name === "string" && metadata.display_name.trim()
       ? metadata.display_name.trim().slice(0, 80)
       : user.email?.split("@")[0] ?? "Aftercode user");
-    const avatarUrl = !profile?.avatar_url && typeof metadata.avatar_url === "string"
-      ? metadata.avatar_url.slice(0, 2048)
-      : "";
+    const avatarUrl = profile?.avatar_url
+      || (typeof metadata.avatar_url === "string" ? metadata.avatar_url.slice(0, 2048) : "");
     const { data, error } = await client.from("chat_messages")
       .insert({
         user_id: user.id,

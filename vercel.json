@@ -69,6 +69,10 @@
       "destination": "/api?path=projects"
     },
     {
+      "source": "/api/projects/:id/view",
+      "destination": "/api?path=projects/:id/view"
+    },
+    {
       "source": "/api/projects/:id",
       "destination": "/api?path=projects/:id"
     },

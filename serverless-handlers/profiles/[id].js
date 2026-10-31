@@ -17,15 +17,20 @@ export default async function handler(req, res) {
   try {
     const client = createAdminClient();
 
-    const [profileResult, projectsResult, followersResult, followingResult] = await Promise.all([
+    const [profileResult, projectsResult, favoriteIdsResult, followersResult, followingResult] = await Promise.all([
       client.from("profiles")
         .select("user_id, display_name, username, bio, avatar_url, banner_url, accent_color, profile_background, created_at")
         .eq("user_id", id)
         .maybeSingle(),
       client.from("projects")
-        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, created_at")
+        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, view_count, created_at")
         .eq("user_id", id)
         .eq("is_public", true)
+        .order("created_at", { ascending: false })
+        .limit(100),
+      client.from("project_favorites")
+        .select("project_id")
+        .eq("user_id", id)
         .order("created_at", { ascending: false })
         .limit(100),
       client.from("follows")
@@ -38,8 +43,21 @@ export default async function handler(req, res) {
 
     if (profileResult.error) throw profileResult.error;
     if (projectsResult.error) throw projectsResult.error;
+    if (favoriteIdsResult.error) throw favoriteIdsResult.error;
     if (followersResult.error) throw followersResult.error;
     if (followingResult.error) throw followingResult.error;
+
+    const favoriteIds = (favoriteIdsResult.data ?? []).map((favorite) => favorite.project_id);
+    let favoriteProjects = [];
+    if (favoriteIds.length > 0) {
+      const { data, error } = await client.from("projects")
+        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, view_count, created_at")
+        .in("id", favoriteIds)
+        .eq("is_public", true);
+      if (error) throw error;
+      const byId = new Map((data ?? []).map((project) => [project.id, project]));
+      favoriteProjects = favoriteIds.map((favoriteId) => byId.get(favoriteId)).filter(Boolean);
+    }
 
     res.setHeader("Cache-Control", "public, max-age=0, s-maxage=15, stale-while-revalidate=60");
     sendJson(res, 200, {
@@ -54,6 +72,8 @@ export default async function handler(req, res) {
         profile_background: "#171513"
       },
       projects: projectsResult.data ?? [],
+      favoriteProjects,
+      favoritesCount: favoriteProjects.length,
       followersCount: followersResult.count ?? 0,
       followingCount: followingResult.count ?? 0
     });

@@ -13,6 +13,7 @@ import profileById from "./profiles/[id].js";
 import profileLookup from "./profiles/lookup.js";
 import profileMe from "./profiles/me.js";
 import projectById from "./projects/[id].js";
+import projectView from "./projects/view.js";
 import projects from "./projects/index.js";
 import { createAdminClient, getAccessToken } from "../server/supabase.js";
 import { isAdminUserId } from "../shared/adminUsers.js";
@@ -54,6 +55,10 @@ export default async function handler(req, res) {
   else if (!identifier && resource === "follows") endpoint = follows;
   else if (!identifier && resource === "notifications") endpoint = notifications;
   else if (!identifier && resource === "project-interactions") endpoint = projectInteractions;
+  else if (resource === "projects" && identifier && extra.length === 1 && extra[0] === "view") {
+    req.query.id = identifier;
+    endpoint = projectView;
+  }
   else if (route === "auth/me" && extra.length === 0) endpoint = authMe;
   else if (route === "auth/sign-in" && extra.length === 0) endpoint = signIn;
   else if (route === "profiles/me" && extra.length === 0) endpoint = profileMe;

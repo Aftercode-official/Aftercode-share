@@ -22,7 +22,7 @@ function toPublicProject(record) {
       : (record.scratch_project_id
         ? `https://uploads.scratch.mit.edu/get_image/project/${record.scratch_project_id}_480x360.png`
         : null),
-    views: 0
+    views: record.view_count ?? record.views ?? 0
   };
 }
 
@@ -36,7 +36,6 @@ export default function User({
   onCloseCustomizer,
   onSaveCustomization,
   projects,
-  favoriteProjectIds,
   onProjectOpen,
   selectedUserId,
   onOpenUserProfile,
@@ -51,6 +50,8 @@ export default function User({
   const [initialCachedProfile] = useState(() => page === "user" && selectedUserId ? getCachedPublicProfile(selectedUserId) : null);
   const [publicProfile, setPublicProfile] = useState(() => initialCachedProfile?.profile ?? null);
   const [publicProjects, setPublicProjects] = useState(() => (initialCachedProfile?.projects ?? []).map(toPublicProject));
+  const [publicFavoriteProjects, setPublicFavoriteProjects] = useState(() => (initialCachedProfile?.favoriteProjects ?? []).map(toPublicProject));
+  const [ownFavoriteProjects, setOwnFavoriteProjects] = useState([]);
   const [publicProfileError, setPublicProfileError] = useState("");
   const [followersCount, setFollowersCount] = useState(initialCachedProfile?.followersCount ?? 0);
   const [followingCount, setFollowingCount] = useState(initialCachedProfile?.followingCount ?? 0);
@@ -66,6 +67,7 @@ export default function User({
     if (page !== "user" || !selectedUserId) {
       setPublicProfile(null);
       setPublicProjects([]);
+      setPublicFavoriteProjects([]);
       setPublicProfileError("");
       return;
     }
@@ -74,6 +76,7 @@ export default function User({
     if (cached) {
       setPublicProfile(cached.profile);
       setPublicProjects((cached.projects ?? []).map(toPublicProject));
+      setPublicFavoriteProjects((cached.favoriteProjects ?? []).map(toPublicProject));
       setFollowersCount(cached.followersCount ?? 0);
       setFollowingCount(cached.followingCount ?? 0);
     }
@@ -83,6 +86,7 @@ export default function User({
         const { profile, projects: records } = result;
         setPublicProfile(profile);
         setPublicProjects(records.map(toPublicProject));
+        setPublicFavoriteProjects((result.favoriteProjects ?? []).map(toPublicProject));
         setFollowersCount(result.followersCount ?? 0);
         setFollowingCount(result.followingCount ?? 0);
         setPublicProfileError("");
@@ -92,6 +96,22 @@ export default function User({
       });
     return () => { isActive = false; };
   }, [page, selectedUserId]);
+
+  useEffect(() => {
+    if (page !== "profile" || !user?.id) {
+      setOwnFavoriteProjects([]);
+      return undefined;
+    }
+    let isActive = true;
+    loadPublicProfile(user.id)
+      .then((result) => {
+        if (isActive) setOwnFavoriteProjects((result.favoriteProjects ?? []).map(toPublicProject));
+      })
+      .catch(() => {
+        if (isActive) setOwnFavoriteProjects([]);
+      });
+    return () => { isActive = false; };
+  }, [page, user?.id]);
 
   useEffect(() => {
     if (page === "user" && publicProfile?.username) {
@@ -257,8 +277,9 @@ export default function User({
   const profileProjects = profileTab === "recent"
     ? [...myProjects].reverse()
     : profileTab === "favorite"
-      ? myProjects.filter((project) => favoriteProjectIds.includes(project.id))
+      ? ownFavoriteProjects
       : myProjects;
+  const publicProfileProjects = profileTab === "favorite" ? publicFavoriteProjects : publicProjects;
 
   return (
     <>
@@ -294,6 +315,7 @@ export default function User({
                   <button type="button" onClick={() => openPeopleModal("followers")}>
                     <strong>{followersCount}</strong> Followers
                   </button>
+                  <span><strong>{ownFavoriteProjects.length}</strong> Favorites</span>
                 </div>
               </div>
             </div>
@@ -308,13 +330,13 @@ export default function User({
 
           {customization.showProfileProjects && (
             <section className="profile-projects">
-              <h2 className="section-title">Projects ({myProjects.length})</h2>
+              <h2 className="section-title">{profileTab === "favorite" ? "Favorite Projects" : "Projects"} ({profileProjects.length})</h2>
               <div className="profile-project-tabs" role="tablist" aria-label="Profile projects">
                 <button type="button" role="tab" aria-selected={profileTab === "all"} onClick={() => setProfileTab("all")}>
                   All Projects
                 </button>
                 <button type="button" role="tab" aria-selected={profileTab === "favorite"} onClick={() => setProfileTab("favorite")}>
-                  Favorites
+                  Favorites ({ownFavoriteProjects.length})
                 </button>
                 <button type="button" role="tab" aria-selected={profileTab === "recent"} onClick={() => setProfileTab("recent")}>
                   Recent
@@ -340,7 +362,7 @@ export default function User({
                   </button>
                 ))}
                 {profileProjects.length === 0 && (
-                  <p className="featured-empty">No projects to show yet.</p>
+                  <p className="featured-empty">{profileTab === "favorite" ? "No favorite projects yet." : "No projects to show yet."}</p>
                 )}
               </div>
             </section>
@@ -396,6 +418,7 @@ export default function User({
                       <button type="button" onClick={() => openPeopleModal("followers", publicProfile.user_id)}>
                         <strong>{followersCount}</strong> Followers
                       </button>
+                      <span><strong>{publicFavoriteProjects.length}</strong> Favorites</span>
                     </div>
                   </div>
                 </div>
@@ -409,9 +432,17 @@ export default function User({
               )}
 
               <section className="profile-projects">
-                <h2 className="section-title">Projects ({publicProjects.length})</h2>
+                <h2 className="section-title">{profileTab === "favorite" ? "Favorite Projects" : "Projects"} ({publicProfileProjects.length})</h2>
+                <div className="profile-project-tabs" role="tablist" aria-label="Profile projects">
+                  <button type="button" role="tab" aria-selected={profileTab !== "favorite"} onClick={() => setProfileTab("all")}>
+                    All Projects ({publicProjects.length})
+                  </button>
+                  <button type="button" role="tab" aria-selected={profileTab === "favorite"} onClick={() => setProfileTab("favorite")}>
+                    Favorites ({publicFavoriteProjects.length})
+                  </button>
+                </div>
                 <div className="featured-grid">
-                  {publicProjects.map((project, index) => (
+                  {publicProfileProjects.map((project, index) => (
                     <button
                       className="featured-card profile-project-card"
                       type="button"
@@ -429,8 +460,8 @@ export default function User({
                       </div>
                     </button>
                   ))}
-                  {publicProjects.length === 0 && (
-                    <p className="featured-empty">This user has no public projects yet.</p>
+                  {publicProfileProjects.length === 0 && (
+                    <p className="featured-empty">{profileTab === "favorite" ? "This user has no public favorite projects yet." : "This user has no public projects yet."}</p>
                   )}
                 </div>
               </section>

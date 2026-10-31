@@ -110,7 +110,7 @@ export default async function handler(req, res) {
     if (req.method === "GET") {
       const { data, error } = await client
         .from("projects")
-        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, is_featured, created_at, updated_at")
+        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, is_featured, view_count, created_at, updated_at")
         .eq("id", id)
         .maybeSingle();
 
@@ -138,7 +138,8 @@ export default async function handler(req, res) {
         project: {
           ...data,
           authorAvatar: profileResult.data?.avatar_url || "",
-          likes: likesResult.count ?? 0
+        likes: likesResult.count ?? 0,
+        views: data.view_count ?? 0
         }
       });
       return;

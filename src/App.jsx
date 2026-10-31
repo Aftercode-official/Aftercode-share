@@ -65,7 +65,7 @@ function toProject(record) {
     description: record.description,
     tags: record.tags,
     isPublic: record.is_public,
-    views: 0,
+    views: record.view_count ?? record.views ?? 0,
     likes: record.likes
   };
 }
@@ -79,6 +79,9 @@ function getInitialRoute() {
   });
   if (parts.length === 1 && parts[0] === "notification") {
     return { page: "notifications", username: "", peopleList: null };
+  }
+  if (parts.length === 1 && parts[0] === "chat") {
+    return { page: "chat", username: "", peopleList: null };
   }
   if (parts.length === 1 && ["explorer", "explore"].includes(parts[0])) {
     return { page: "explore", username: "", peopleList: null };
@@ -140,6 +143,7 @@ export default function App() {
   const [isRestoringSession, setIsRestoringSession] = useState(Boolean(supabase));
   const [isInitialDataLoading, setIsInitialDataLoading] = useState(true);
   const hasCompletedInitialDataLoad = useRef(false);
+  const viewRequestTimesRef = useRef(new Map());
   const [accountBanNotice, setAccountBanNotice] = useState("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -329,6 +333,7 @@ export default function App() {
         : "";
     let pathname = "/";
     if (nextPage === "notifications") pathname = "/notification";
+    else if (nextPage === "chat") pathname = "/chat";
     else if (nextPage === "explore") pathname = "/explorer";
     else if (nextPage === "user" || nextPage === "profile") pathname = userPagePath(routeUsername || options.userId);
     setProfileRouteUsername(routeUsername || "");
@@ -359,6 +364,30 @@ export default function App() {
     setDataError("");
     loadProjectInteraction(project).catch((error) => setDataError(error.message));
   };
+
+  useEffect(() => {
+    const projectId = page === "project" ? selectedProject?.databaseId : null;
+    if (!projectId) return undefined;
+
+    const lastRequestedAt = viewRequestTimesRef.current.get(projectId) ?? 0;
+    if (Date.now() - lastRequestedAt < 10 * 60 * 1000) return undefined;
+    viewRequestTimesRef.current.set(projectId, Date.now());
+
+    let active = true;
+    apiRequest(`/api/projects/${encodeURIComponent(projectId)}/view`, {
+      method: "POST",
+      authenticated: Boolean(user),
+      body: {}
+    }).then(({ views }) => {
+      if (!active || !Number.isFinite(views)) return;
+      setSelectedProject((current) => current?.databaseId === projectId ? { ...current, views } : current);
+      setProjects((current) => current.map((project) => project.databaseId === projectId ? { ...project, views } : project));
+    }).catch(() => {
+      viewRequestTimesRef.current.delete(projectId);
+    });
+
+    return () => { active = false; };
+  }, [page, selectedProject?.databaseId, user]);
 
   useEffect(() => {
     const projectId = getProjectIdFromUrl(window.location.href);
@@ -455,6 +484,7 @@ export default function App() {
       next.likes = Math.max(0, (previous.likes ?? 0) + (details.enabled ? 1 : -1));
     } else if (action === "favorite") {
       next.favorited = Boolean(details.enabled);
+      next.favorites = Math.max(0, (previous.favorites ?? 0) + (details.enabled ? 1 : -1));
     } else if (action === "comment") {
       next.comments.push({
         id: `pending-${Date.now()}`,
@@ -492,10 +522,6 @@ export default function App() {
       return false;
     }
   };
-
-  const favoriteProjectIds = Object.entries(projectInteractions)
-    .filter(([, interaction]) => interaction.favorited)
-    .map(([projectId]) => projectId);
 
   const openCustomizer = () => {
     setIsCustomizeOpen(true);
@@ -828,7 +854,6 @@ export default function App() {
           onCloseCustomizer={() => setIsCustomizeOpen(false)}
           onSaveCustomization={handleSaveCustomization}
           projects={projects}
-          favoriteProjectIds={favoriteProjectIds}
           onProjectOpen={openProject}
           selectedUserId={selectedUserId}
           onOpenUserProfile={openUserProfile}
@@ -888,6 +913,7 @@ export default function App() {
                 ? projectInteractions[selectedProject.databaseId] ?? {
                   liked: false,
                   favorited: false,
+                  favorites: 0,
                   likes: selectedProject.likes,
                   comments: []
                 }

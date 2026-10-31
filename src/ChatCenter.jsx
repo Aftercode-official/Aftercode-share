@@ -18,6 +18,27 @@ function formatTime(value) {
   return new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+function mergeChatMessages(current, incoming) {
+  const additions = Array.isArray(incoming) ? incoming : [incoming];
+  const additionIds = new Set(additions.map((message) => message.id));
+  const remaining = current.filter((message) => {
+    if (additionIds.has(message.id)) return false;
+    if (!message.pending) return true;
+
+    return !additions.some((added) => {
+      const sameContent = message.user_id === added.user_id
+        && message.text === added.text
+        && (message.media_type ?? null) === (added.media_type ?? null);
+      const timeDifference = Math.abs(new Date(message.created_at).getTime() - new Date(added.created_at).getTime());
+      return sameContent && timeDifference < 10000;
+    });
+  });
+
+  return [...remaining, ...additions]
+    .sort((left, right) => new Date(left.created_at) - new Date(right.created_at))
+    .slice(-100);
+}
+
 function toProjectPreview(record) {
   const thumb = record.thumbnail_url && supabase
     ? (record.thumbnail_url.startsWith("http")
@@ -57,10 +78,23 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [error, setError] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const bottomRef = useRef(null);
+  const chatMessagesRef = useRef(null);
+  const hasInitiallyScrolledRef = useRef(false);
   const fileInputRef = useRef(null);
   const isAuthenticated = Boolean(user);
   const projectIdsKey = [...new Set(messages.flatMap((message) => getProjectIdsFromText(message.text)))].slice(-12).join(",");
+  const lastMessageId = messages.at(-1)?.id;
+
+  const scrollToBottom = (smooth = true) => {
+    const container = chatMessagesRef.current;
+    if (!container) return;
+    if (!hasInitiallyScrolledRef.current) {
+      container.scrollTop = container.scrollHeight;
+      hasInitiallyScrolledRef.current = true;
+      return;
+    }
+    container.scrollTo({ top: container.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+  };
 
   useEffect(() => {
     let active = true;
@@ -71,7 +105,7 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
       try {
         const { messages: latest } = await apiRequest("/api/chat");
         if (active) {
-          setMessages(latest);
+          setMessages((current) => mergeChatMessages(current, latest));
           setError("");
         }
       } catch (loadError) {
@@ -91,6 +125,28 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
       active = false;
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!supabase) return undefined;
+    let active = true;
+    const channel = supabase
+      .channel("aftercode-global-chat")
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "chat_messages"
+      }, ({ new: message }) => {
+        if (active && message?.id) {
+          setMessages((current) => mergeChatMessages(current, message));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
     };
   }, []);
 
@@ -119,8 +175,9 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
   }, [projectIdsKey, user?.id, isAuthenticated, projectPreviews]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages.length]);
+    const frame = window.requestAnimationFrame(() => scrollToBottom());
+    return () => window.cancelAnimationFrame(frame);
+  }, [messages.length, lastMessageId, projectPreviews]);
 
   useEffect(() => {
     if (!attachment) return undefined;
@@ -151,6 +208,20 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
     if ((!text && !attachment) || isSending) return;
     setIsSending(true);
     setError("");
+    const pendingId = `pending-${crypto.randomUUID()}`;
+    const pendingMessage = {
+      id: pendingId,
+      user_id: user.id,
+      author: user.user_metadata?.display_name || user.email?.split("@")[0] || "You",
+      avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || "",
+      text,
+      media_path: "",
+      media_type: attachment?.file.type ?? null,
+      optimistic_media_url: attachment?.previewUrl ?? "",
+      created_at: new Date().toISOString(),
+      pending: true
+    };
+    setMessages((current) => mergeChatMessages(current, pendingMessage));
     let uploadedPath = "";
     try {
       if (attachment) {
@@ -173,11 +244,15 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
           mediaType: uploadedPath ? attachment.file.type : undefined
         }
       });
-      setMessages((current) => [...current.filter((item) => item.id !== message.id), message].slice(-100));
+      setMessages((current) => mergeChatMessages(current.filter((item) => item.id !== pendingId), {
+        ...message,
+        avatar_url: message.avatar_url || pendingMessage.avatar_url
+      }));
       setDraft("");
       setAttachment(null);
       setIsEmojiPickerOpen(false);
     } catch (sendError) {
+      setMessages((current) => current.filter((message) => message.id !== pendingId));
       if (uploadedPath && supabase) {
         await supabase.storage.from("chat-media").remove([uploadedPath]).catch(() => {});
       }
@@ -198,7 +273,12 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
         <span className="chat-live"><i /> Global room</span>
       </header>
 
-      <div className="chat-messages" aria-live="polite" aria-label="Recent chat messages">
+      <div
+        ref={chatMessagesRef}
+        className="chat-messages"
+        aria-live="polite"
+        aria-label="Recent chat messages"
+      >
         {!isLoadingMessages && error && <p className="chat-error" role="alert">{error}</p>}
         {isLoadingMessages ? (
           <div className="chat-loading" role="status">
@@ -206,7 +286,7 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
             <span>Loading chat...</span>
           </div>
         ) : messages.length ? messages.map((message) => (
-          <article className={`chat-message${message.user_id === user?.id ? " is-own-message" : ""}`} key={message.id}>
+          <article className={`chat-message${message.user_id === user?.id ? " is-own-message" : ""}${message.pending ? " is-pending" : ""}`} key={message.id}>
             <button
               className="chat-avatar-link"
               type="button"
@@ -231,11 +311,12 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
                 <time dateTime={message.created_at}>{formatTime(message.created_at)}</time>
               </div>
               {message.text && <p>{message.text}</p>}
-              {message.media_path && supabase && (
+              {(message.media_path || message.optimistic_media_url) && supabase && (
                 message.media_type?.startsWith("video/") ? (
                   <video
                     className="chat-shared-video"
-                    src={supabase.storage.from("chat-media").getPublicUrl(message.media_path).data.publicUrl}
+                    src={message.optimistic_media_url || supabase.storage.from("chat-media").getPublicUrl(message.media_path).data.publicUrl}
+                    onLoadedMetadata={() => scrollToBottom()}
                     controls
                     preload="metadata"
                     playsInline
@@ -243,13 +324,14 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
                 ) : (
                   <a
                     className="chat-shared-image-link"
-                    href={supabase.storage.from("chat-media").getPublicUrl(message.media_path).data.publicUrl}
+                    href={message.optimistic_media_url || supabase.storage.from("chat-media").getPublicUrl(message.media_path).data.publicUrl}
                     target="_blank"
                     rel="noreferrer"
                   >
                     <img
                       className="chat-shared-image"
-                      src={supabase.storage.from("chat-media").getPublicUrl(message.media_path).data.publicUrl}
+                      src={message.optimistic_media_url || supabase.storage.from("chat-media").getPublicUrl(message.media_path).data.publicUrl}
+                      onLoad={() => scrollToBottom()}
                       alt="Image shared in chat"
                       loading="lazy"
                       decoding="async"
@@ -257,6 +339,7 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
                   </a>
                 )
               )}
+              {message.pending && <span className="chat-message-pending" role="status">Sending…</span>}
               {getProjectIdsFromText(message.text).map((projectId) => {
                 const preview = projectPreviews[`${user?.id ?? "guest"}:${projectId}`];
                 if (!preview) {
@@ -291,7 +374,6 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
             </div>
           </article>
         )) : <div className="chat-empty"><strong>No chat here</strong><span>Be the first to say hello to the community.</span></div>}
-        <div ref={bottomRef} />
       </div>
 
       {user ? (

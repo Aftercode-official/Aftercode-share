@@ -326,7 +326,7 @@ export default function ProjectPages({
                     disabled={isInteractionPending}
                     onClick={handleFavorite}
                   >
-                    ⭐ {currentInteraction.favorited ? "Saved" : "Favorite"}
+                    ⭐ {currentInteraction.favorited ? "Saved" : "Favorite"} <span>{currentInteraction.favorites ?? 0}</span>
                   </button>
                 </div>
               </div>

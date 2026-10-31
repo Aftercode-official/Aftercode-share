@@ -24,6 +24,7 @@ async function loadInteractions(client, projectId, userId) {
 
   return {
     likes: likes.count ?? 0,
+    favorites: favorites.count ?? 0,
     liked: Boolean(liked.data),
     favorited: Boolean(favorited.data),
     comments: comments.data.map((comment) => ({

@@ -76,7 +76,7 @@ export default async function handler(req, res) {
     if (req.method === "GET") {
       const { data, error } = await client
         .from("projects")
-        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, is_featured, created_at, updated_at")
+        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, is_featured, view_count, created_at, updated_at")
         .eq("is_public", true)
         .order("created_at", { ascending: false })
         .limit(100);
@@ -116,7 +116,8 @@ export default async function handler(req, res) {
         projects: data.map((project) => ({
           ...project,
           authorAvatar: avatarMap.get(project.user_id) || "",
-          likes: likeCounts[project.id] ?? 0
+          likes: likeCounts[project.id] ?? 0,
+          views: project.view_count ?? 0
         }))
       });
       return;
