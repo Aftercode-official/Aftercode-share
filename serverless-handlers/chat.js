@@ -1,4 +1,5 @@
 import { logApiError, readJsonBody, requireMethod, sendJson } from "../server/http.js";
+import { checkRateLimit } from "../server/rateLimit.js";
 import { createAdminClient, getAuthenticatedUser } from "../server/supabase.js";
 
 const CHAT_FIELDS = "id, user_id, author, avatar_url, text, media_path, media_type, created_at";
@@ -39,6 +40,12 @@ export default async function handler(req, res) {
     const user = await getAuthenticatedUser(client, req);
     if (!user) {
       sendJson(res, 401, { error: "Sign in to send a chat message." });
+      return;
+    }
+    const rateLimit = await checkRateLimit(client, `chat-message:${user.id}`, 10, 60_000);
+    if (!rateLimit.ok) {
+      res.setHeader("Retry-After", String(Math.max(1, rateLimit.retryAfter)));
+      sendJson(res, 429, { error: "You are sending chat messages too quickly. Try again shortly." });
       return;
     }
     const body = readJsonBody(req);

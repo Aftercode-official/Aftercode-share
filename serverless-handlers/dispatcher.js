@@ -1,4 +1,4 @@
-import { sendJson } from "../server/http.js";
+import { logApiError, sendJson } from "../server/http.js";
 import activity from "./activity.js";
 import adminBans from "./admin/bans.js";
 import announcements from "./announcements.js";
@@ -16,6 +16,7 @@ import projectById from "./projects/[id].js";
 import projectView from "./projects/view.js";
 import projects from "./projects/index.js";
 import { createAdminClient, getAccessToken } from "../server/supabase.js";
+import { checkRateLimits, getClientIp, hashRateLimitKey } from "../server/rateLimit.js";
 import { isAdminUserId } from "../shared/adminUsers.js";
 
 function getPathSegments(req) {
@@ -78,9 +79,9 @@ export default async function handler(req, res) {
   }
 
   const accessToken = getAccessToken(req);
-  if (accessToken) {
-    try {
-      const client = createAdminClient();
+  try {
+    const client = createAdminClient();
+    if (accessToken) {
       const { data, error } = await client.auth.getUser(accessToken);
       req.authenticatedUser = error ? null : data?.user ?? null;
       if (req.authenticatedUser && !isAdminUserId(req.authenticatedUser.id)) {
@@ -98,10 +99,41 @@ export default async function handler(req, res) {
           return;
         }
       }
-    } catch {
-      sendJson(res, 503, { error: "Unable to verify account access right now." });
+    }
+
+    const ip = getClientIp(req);
+    const rules = [
+      { key: `site-ip:${hashRateLimitKey(ip)}`, maxRequests: 600, windowSeconds: 60 }
+    ];
+    if (req.authenticatedUser?.id) {
+      rules.push({
+        key: `site-user:${hashRateLimitKey(req.authenticatedUser.id)}`,
+        maxRequests: 240,
+        windowSeconds: 60
+      });
+    }
+    if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+      rules.push({ key: `site-write-ip:${hashRateLimitKey(ip)}`, maxRequests: 90, windowSeconds: 60 });
+      if (req.authenticatedUser?.id) {
+        rules.push({
+          key: `site-write-user:${hashRateLimitKey(req.authenticatedUser.id)}`,
+          maxRequests: 30,
+          windowSeconds: 60
+        });
+      }
+    }
+
+    const rateLimit = await checkRateLimits(client, rules);
+    res.setHeader("X-RateLimit-Remaining", String(rateLimit.remaining));
+    if (!rateLimit.ok) {
+      res.setHeader("Retry-After", String(Math.max(1, rateLimit.retryAfter)));
+      sendJson(res, 429, { error: "Too many requests. Slow down and try again shortly." });
       return;
     }
+  } catch (error) {
+    logApiError("Unable to apply API rate limits.", error);
+    sendJson(res, 503, { error: "The API is temporarily unavailable." });
+    return;
   }
 
   return endpoint(req, res);

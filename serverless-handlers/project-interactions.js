@@ -1,4 +1,5 @@
 import { logApiError, readJsonBody, requireMethod, sendJson } from "../server/http.js";
+import { checkRateLimit } from "../server/rateLimit.js";
 import { createAdminClient, getAuthenticatedUser } from "../server/supabase.js";
 
 async function loadInteractions(client, projectId, userId) {
@@ -78,6 +79,14 @@ export default async function handler(req, res) {
     const body = readJsonBody(req);
     if (!body) {
       sendJson(res, 400, { error: "A JSON object is required." });
+      return;
+    }
+
+    const actionLimit = body.action === "comment" ? 10 : 30;
+    const rateLimit = await checkRateLimit(client, `project-interaction:${body.action}:${user.id}`, actionLimit, 60_000);
+    if (!rateLimit.ok) {
+      res.setHeader("Retry-After", String(Math.max(1, rateLimit.retryAfter)));
+      sendJson(res, 429, { error: "You are interacting with projects too quickly. Try again shortly." });
       return;
     }
 
