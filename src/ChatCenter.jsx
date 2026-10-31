@@ -26,6 +26,16 @@ function readCachedChatMessages() {
   }
 }
 
+function readCachedHasOlderMessages() {
+  try {
+    const cached = JSON.parse(window.localStorage.getItem(CHAT_CACHE_KEY) || "null");
+    if (!cached || Date.now() - cached.savedAt > 24 * 60 * 60 * 1000 || !Array.isArray(cached.messages)) return false;
+    return typeof cached.hasMore === "boolean" ? cached.hasMore : cached.messages.length >= 10;
+  } catch {
+    return false;
+  }
+}
+
 function formatTime(value) {
   return new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
@@ -84,7 +94,7 @@ function toProjectPreview(record) {
 export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserProfile }) {
   const [messages, setMessages] = useState(readCachedChatMessages);
   const [isLoadingMessages, setIsLoadingMessages] = useState(() => readCachedChatMessages().length === 0);
-  const [hasOlderMessages, setHasOlderMessages] = useState(false);
+  const [hasOlderMessages, setHasOlderMessages] = useState(readCachedHasOlderMessages);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [projectPreviews, setProjectPreviews] = useState({});
   const [draft, setDraft] = useState("");
@@ -106,11 +116,15 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
     const recent = messages.filter((message) => !message.pending).slice(-10);
     if (!recent.length) return;
     try {
-      window.localStorage.setItem(CHAT_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), messages: recent }));
+      window.localStorage.setItem(CHAT_CACHE_KEY, JSON.stringify({
+        savedAt: Date.now(),
+        messages: recent,
+        hasMore: hasOlderMessages
+      }));
     } catch {
       // Chat continues to work when browser storage is unavailable or full.
     }
-  }, [messages]);
+  }, [messages, hasOlderMessages]);
 
   const scrollToBottom = (smooth = true) => {
     const container = chatMessagesRef.current;
@@ -356,8 +370,8 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
         aria-live="polite"
         aria-label="Recent chat messages"
       >
-        {hasOlderMessages && !isLoadingMessages && (
-          <button className="chat-load-older" type="button" onClick={loadOlderMessages} disabled={isLoadingOlder}>
+        {(hasOlderMessages || isLoadingMessages) && (
+          <button className="chat-load-older" type="button" onClick={loadOlderMessages} disabled={isLoadingMessages || isLoadingOlder}>
             {isLoadingOlder ? "Loading older messages..." : "Load older messages"}
           </button>
         )}
