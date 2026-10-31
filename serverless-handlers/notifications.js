@@ -39,7 +39,18 @@ export default async function handler(req, res) {
       .limit(30);
 
     if (error) throw error;
-    sendJson(res, 200, { notifications: data });
+    const actorIds = [...new Set(data.map((notification) => notification.actor_id).filter(Boolean))];
+    const { data: profiles, error: profilesError } = actorIds.length > 0
+      ? await client.from("profiles").select("user_id, avatar_url").in("user_id", actorIds)
+      : { data: [], error: null };
+    if (profilesError) throw profilesError;
+    const avatarByUserId = new Map((profiles ?? []).map((profile) => [profile.user_id, profile.avatar_url]));
+    sendJson(res, 200, {
+      notifications: data.map((notification) => ({
+        ...notification,
+        actor_avatar: avatarByUserId.get(notification.actor_id) || notification.actor_avatar || ""
+      }))
+    });
   } catch (error) {
     logApiError("Unable to load notifications.", error);
     sendJson(res, 500, { error: "Unable to load notifications." });

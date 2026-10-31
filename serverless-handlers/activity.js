@@ -25,18 +25,28 @@ export default async function handler(req, res) {
     }
 
     const projectIds = [...new Set(data.map((activity) => activity.project_id).filter(Boolean))];
-    const { data: publicProjects, error: projectsError } = projectIds.length > 0
-      ? await client.from("projects").select("id").in("id", projectIds).eq("is_public", true)
-      : { data: [], error: null };
+    const actorIds = [...new Set(data.map((activity) => activity.actor_id).filter(Boolean))];
+    const [projectsResult, profilesResult] = await Promise.all([
+      projectIds.length > 0
+        ? client.from("projects").select("id").in("id", projectIds).eq("is_public", true)
+        : Promise.resolve({ data: [], error: null }),
+      actorIds.length > 0
+        ? client.from("profiles").select("user_id, avatar_url").in("user_id", actorIds)
+        : Promise.resolve({ data: [], error: null })
+    ]);
 
-    if (projectsError) {
-      throw projectsError;
-    }
-    const publicProjectIds = new Set(publicProjects.map((project) => project.id));
+    if (projectsResult.error) throw projectsResult.error;
+    if (profilesResult.error) throw profilesResult.error;
+    const publicProjectIds = new Set((projectsResult.data ?? []).map((project) => project.id));
+    const avatarByUserId = new Map((profilesResult.data ?? []).map((profile) => [profile.user_id, profile.avatar_url]));
 
     sendJson(res, 200, {
       activities: data
         .filter((activity) => !activity.project_id || publicProjectIds.has(activity.project_id))
+        .map((activity) => ({
+          ...activity,
+          actor_avatar: avatarByUserId.get(activity.actor_id) || activity.actor_avatar || ""
+        }))
         .slice(0, 30)
     });
   } catch (error) {
