@@ -8,6 +8,7 @@ function toPublicProject(record) {
   return {
     id: record.id,
     databaseId: record.id,
+    projectNumber: record.project_number ?? null,
     userId: record.user_id,
     scratchProjectId: record.scratch_project_id,
     title: record.title,
@@ -343,7 +344,7 @@ export default function User({
                     </div>
                     <div className="featured-info">
                       <h3>{project.title}</h3>
-                      <span className="project-sequence">Project #{index + 1}</span>
+                      <span className="project-sequence">Project #{project.projectNumber ?? index + 1}</span>
                       <p>by {project.author}</p>
                     </div>
                   </button>
@@ -443,7 +444,7 @@ export default function User({
                       </div>
                       <div className="featured-info">
                         <h3>{project.title}</h3>
-                        <span className="project-sequence">Project #{index + 1}</span>
+                        <span className="project-sequence">Project #{project.projectNumber ?? index + 1}</span>
                         <p>by {project.author}</p>
                       </div>
                     </button>

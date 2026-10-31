@@ -72,6 +72,7 @@ function toProjectPreview(record) {
   return {
     id: record.id,
     databaseId: record.id,
+    projectNumber: record.project_number ?? null,
     userId: record.user_id,
     scratchProjectId: record.scratch_project_id,
     assetPath: record.asset_path,

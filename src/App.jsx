@@ -51,6 +51,7 @@ function toProject(record) {
   return {
     id: record.id,
     databaseId: record.id,
+    projectNumber: record.project_number ?? null,
     userId: record.user_id,
     scratchProjectId: record.scratch_project_id,
     assetPath: record.asset_path,
@@ -162,7 +163,9 @@ export default function App() {
   const [page, setPage] = useState(initialRoute.page);
   const [selectedProject, setSelectedProject] = useState(() => {
     const projectId = getProjectIdFromUrl(window.location.href);
-    const cachedRecord = initialPublicCache?.projects.find((project) => String(project.id) === projectId);
+    const cachedRecord = initialPublicCache?.projects.find((project) => (
+      String(project.project_number ?? "") === projectId || String(project.id) === projectId
+    ));
     return cachedRecord ? toProject(cachedRecord) : null;
   });
   const [selectedUserId, setSelectedUserId] = useState(cachedRouteProfile?.userId ?? null);
@@ -360,7 +363,7 @@ export default function App() {
     setSelectedProject(project);
     setSelectedUserId(null);
     setPage("project");
-    window.history.pushState({}, "", projectShareUrl(project.databaseId));
+    window.history.pushState({}, "", projectShareUrl(project.projectNumber ?? project.databaseId));
     setDataError("");
     loadProjectInteraction(project).catch((error) => setDataError(error.message));
   };
@@ -1169,7 +1172,7 @@ function ProjectCard({ project, index, onOpenProject, showFeaturedBadge = false 
         </div>
         <div className="featured-info">
           <h3>{project.title}</h3>
-          <span className="project-sequence">Project #{index + 1}</span>
+          <span className="project-sequence">Project #{project.projectNumber ?? index + 1}</span>
           <p className="featured-author">
             {project.authorAvatar
               ? <img className="avatar avatar-xs avatar-img" src={project.authorAvatar} alt="" loading="lazy" decoding="async" />

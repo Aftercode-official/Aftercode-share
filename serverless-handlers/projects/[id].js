@@ -98,19 +98,35 @@ export default async function handler(req, res) {
     return;
   }
 
-  const id = req.query.id;
-  if (typeof id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+  const requestedId = req.query.id;
+  const isUuid = typeof requestedId === "string"
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedId);
+  const isProjectNumber = typeof requestedId === "string" && /^\d{1,18}$/.test(requestedId);
+  if (!isUuid && !isProjectNumber) {
     sendJson(res, 400, { error: "A valid project ID is required." });
     return;
   }
 
   try {
     const client = createAdminClient();
+    let id = requestedId;
+    if (isProjectNumber) {
+      const { data: numberedProject, error: numberError } = await client.from("projects")
+        .select("id")
+        .eq("project_number", Number(requestedId))
+        .maybeSingle();
+      if (numberError) throw numberError;
+      if (!numberedProject) {
+        sendJson(res, 404, { error: "Project not found." });
+        return;
+      }
+      id = numberedProject.id;
+    }
 
     if (req.method === "GET") {
       const { data, error } = await client
         .from("projects")
-        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, is_featured, view_count, created_at, updated_at")
+        .select("id, project_number, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, is_featured, view_count, created_at, updated_at")
         .eq("id", id)
         .maybeSingle();
 
@@ -201,7 +217,7 @@ export default async function handler(req, res) {
         .from("projects")
         .update({ is_featured: body.isFeatured, updated_at: new Date().toISOString() })
         .eq("id", id)
-        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, is_featured, created_at, updated_at")
+        .select("id, project_number, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, is_featured, created_at, updated_at")
         .maybeSingle();
       if (error) throw error;
       if (!data) {
@@ -235,7 +251,7 @@ export default async function handler(req, res) {
       .update(validation.updates)
       .eq("id", id)
       .eq("user_id", user.id)
-      .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, is_featured, created_at, updated_at")
+      .select("id, project_number, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, is_featured, created_at, updated_at")
       .maybeSingle();
 
     if (error) {

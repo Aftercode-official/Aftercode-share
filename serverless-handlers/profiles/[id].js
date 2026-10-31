@@ -24,7 +24,7 @@ export default async function handler(req, res) {
         .eq("user_id", id)
         .maybeSingle(),
       client.from("projects")
-        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, view_count, created_at")
+        .select("id, project_number, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, view_count, created_at")
         .eq("user_id", id)
         .eq("is_public", true)
         .order("created_at", { ascending: false })
@@ -60,7 +60,7 @@ export default async function handler(req, res) {
     let favoriteProjects = [];
     if (favoriteIds.length > 0) {
       const { data, error } = await client.from("projects")
-        .select("id, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, view_count, created_at")
+        .select("id, project_number, user_id, title, author, scratch_project_id, asset_path, thumbnail_url, description, category, tags, is_public, view_count, created_at")
         .in("id", favoriteIds)
         .eq("is_public", true);
       if (error) throw error;

@@ -131,7 +131,7 @@ export default function ProjectPages({
     };
 
     const copyProjectLink = async () => {
-      const shareUrl = projectShareUrl(selectedProject.databaseId);
+      const shareUrl = projectShareUrl(selectedProject.projectNumber ?? selectedProject.databaseId);
       try {
         await navigator.clipboard.writeText(shareUrl);
         setShareStatus("Link copied");
@@ -579,7 +579,7 @@ export default function ProjectPages({
               </span>
               <span className="featured-info">
                 <strong>{project.title}</strong>
-                <span className="project-sequence">Project #{index + 1}</span>
+                <span className="project-sequence">Project #{project.projectNumber ?? index + 1}</span>
                 <span>by {project.author} · {project.views.toLocaleString()} views</span>
               </span>
             </button>
