@@ -17,7 +17,8 @@ export default async function handler(req, res) {
   try {
     const client = createAdminClient();
 
-    const [profileResult, projectsResult, favoriteIdsResult, followersResult, followingResult] = await Promise.all([
+    const viewerId = req.authenticatedUser?.id ?? null;
+    const [profileResult, projectsResult, favoriteIdsResult, followersResult, followingResult, viewerFollowResult] = await Promise.all([
       client.from("profiles")
         .select("user_id, display_name, username, bio, avatar_url, banner_url, accent_color, profile_background, created_at")
         .eq("user_id", id)
@@ -38,7 +39,14 @@ export default async function handler(req, res) {
         .eq("following_id", id),
       client.from("follows")
         .select("following_id", { count: "exact", head: true })
-        .eq("follower_id", id)
+        .eq("follower_id", id),
+      viewerId && viewerId !== id
+        ? client.from("follows")
+          .select("follower_id")
+          .eq("follower_id", viewerId)
+          .eq("following_id", id)
+          .maybeSingle()
+        : Promise.resolve({ data: null, error: null })
     ]);
 
     if (profileResult.error) throw profileResult.error;
@@ -46,6 +54,7 @@ export default async function handler(req, res) {
     if (favoriteIdsResult.error) throw favoriteIdsResult.error;
     if (followersResult.error) throw followersResult.error;
     if (followingResult.error) throw followingResult.error;
+    if (viewerFollowResult.error) throw viewerFollowResult.error;
 
     const favoriteIds = (favoriteIdsResult.data ?? []).map((favorite) => favorite.project_id);
     let favoriteProjects = [];
@@ -59,7 +68,9 @@ export default async function handler(req, res) {
       favoriteProjects = favoriteIds.map((favoriteId) => byId.get(favoriteId)).filter(Boolean);
     }
 
-    res.setHeader("Cache-Control", "public, max-age=0, s-maxage=15, stale-while-revalidate=60");
+    res.setHeader("Cache-Control", viewerId
+      ? "private, no-store"
+      : "public, max-age=0, s-maxage=15, stale-while-revalidate=60");
     sendJson(res, 200, {
       profile: profileResult.data ?? {
         user_id: id,
@@ -75,7 +86,8 @@ export default async function handler(req, res) {
       favoriteProjects,
       favoritesCount: favoriteProjects.length,
       followersCount: followersResult.count ?? 0,
-      followingCount: followingResult.count ?? 0
+      followingCount: followingResult.count ?? 0,
+      isFollowing: Boolean(viewerFollowResult.data)
     });
   } catch (error) {
     logApiError("Unable to load user profile.", error);

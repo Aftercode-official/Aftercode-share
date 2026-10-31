@@ -1,6 +1,38 @@
 import { apiRequest } from "./api.js";
 
 const PUBLIC_PROFILE_CACHE_KEY = "aftercode-share-last-public-profile-v1";
+const PROFILE_STATS_CACHE_KEY = "aftercode-share-profile-stats-v1";
+
+export function getCachedProfileStats(userId) {
+  if (!userId) return null;
+  try {
+    const cache = JSON.parse(window.localStorage.getItem(PROFILE_STATS_CACHE_KEY) || "null");
+    return cache?.[userId]?.stats ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function cacheProfileStats(userId, stats) {
+  if (!userId || !stats || typeof stats !== "object") return;
+  try {
+    const cache = JSON.parse(window.localStorage.getItem(PROFILE_STATS_CACHE_KEY) || "{}") || {};
+    const entries = Object.entries(cache)
+      .filter(([, entry]) => Date.now() - (entry.updatedAt ?? 0) < 90 * 24 * 60 * 60 * 1000)
+      .sort(([, first], [, second]) => first.updatedAt - second.updatedAt);
+    const next = Object.fromEntries(entries);
+    const previousStats = next[userId]?.stats ?? {};
+    delete next[userId];
+    next[userId] = {
+      stats: { ...previousStats, ...stats },
+      updatedAt: Date.now()
+    };
+    const limited = Object.fromEntries(Object.entries(next).slice(-100));
+    window.localStorage.setItem(PROFILE_STATS_CACHE_KEY, JSON.stringify(limited));
+  } catch {
+    // Profile counters can still load from the API when browser storage is unavailable.
+  }
+}
 
 export function getCachedPublicProfile(userId) {
   if (!userId) return null;
@@ -29,6 +61,11 @@ export function cachePublicProfile(userId, data) {
   if (!userId || !data?.profile) return;
   try {
     window.localStorage.setItem(PUBLIC_PROFILE_CACHE_KEY, JSON.stringify({ userId, data }));
+    cacheProfileStats(userId, {
+      followersCount: data.followersCount ?? 0,
+      followingCount: data.followingCount ?? 0,
+      favoritesCount: data.favoritesCount ?? data.favoriteProjects?.length ?? 0
+    });
   } catch {
     // Profile cache is optional when browser storage is full or unavailable.
   }
@@ -90,8 +127,8 @@ export async function saveCustomization(customization) {
   return toClientShape(profile);
 }
 
-export async function loadPublicProfile(userId) {
-  const data = await apiRequest(`/api/profiles/${encodeURIComponent(userId)}`);
+export async function loadPublicProfile(userId, { authenticated = false } = {}) {
+  const data = await apiRequest(`/api/profiles/${encodeURIComponent(userId)}`, { authenticated });
   cachePublicProfile(userId, data);
   return data;
 }

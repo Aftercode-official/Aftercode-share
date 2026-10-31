@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCachedPublicProfile, loadPublicProfile, apiFollow, loadFollowList, loadFollowState } from "./userStorage.js";
+import { getCachedProfileStats, getCachedPublicProfile, loadPublicProfile, apiFollow, cacheProfileStats, loadFollowList } from "./userStorage.js";
 import { supabase } from "./supabase.js";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
 import "./User.css";
@@ -47,14 +47,17 @@ export default function User({
   const [profileTab, setProfileTab] = useState("all");
   const [uploadError, setUploadError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [initialCachedProfile] = useState(() => page === "user" && selectedUserId ? getCachedPublicProfile(selectedUserId) : null);
+  const profileCacheUserId = page === "user" ? selectedUserId : page === "profile" ? user?.id : null;
+  const [initialCachedProfile] = useState(() => profileCacheUserId ? getCachedPublicProfile(profileCacheUserId) : null);
+  const [initialCachedStats] = useState(() => getCachedProfileStats(profileCacheUserId));
   const [publicProfile, setPublicProfile] = useState(() => initialCachedProfile?.profile ?? null);
   const [publicProjects, setPublicProjects] = useState(() => (initialCachedProfile?.projects ?? []).map(toPublicProject));
   const [publicFavoriteProjects, setPublicFavoriteProjects] = useState(() => (initialCachedProfile?.favoriteProjects ?? []).map(toPublicProject));
-  const [ownFavoriteProjects, setOwnFavoriteProjects] = useState([]);
+  const [ownFavoriteProjects, setOwnFavoriteProjects] = useState(() => (initialCachedProfile?.favoriteProjects ?? []).map(toPublicProject));
   const [publicProfileError, setPublicProfileError] = useState("");
-  const [followersCount, setFollowersCount] = useState(initialCachedProfile?.followersCount ?? 0);
-  const [followingCount, setFollowingCount] = useState(initialCachedProfile?.followingCount ?? 0);
+  const [followersCount, setFollowersCount] = useState(initialCachedProfile?.followersCount ?? initialCachedStats?.followersCount ?? 0);
+  const [followingCount, setFollowingCount] = useState(initialCachedProfile?.followingCount ?? initialCachedStats?.followingCount ?? 0);
+  const [favoritesCount, setFavoritesCount] = useState(initialCachedProfile?.favoritesCount ?? initialCachedStats?.favoritesCount ?? initialCachedProfile?.favoriteProjects?.length ?? 0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowPending, setIsFollowPending] = useState(false);
   const [peopleModal, setPeopleModal] = useState(null);
@@ -77,10 +80,11 @@ export default function User({
       setPublicProfile(cached.profile);
       setPublicProjects((cached.projects ?? []).map(toPublicProject));
       setPublicFavoriteProjects((cached.favoriteProjects ?? []).map(toPublicProject));
-      setFollowersCount(cached.followersCount ?? 0);
-      setFollowingCount(cached.followingCount ?? 0);
+      setFollowersCount(cached.followersCount ?? initialCachedStats?.followersCount ?? 0);
+      setFollowingCount(cached.followingCount ?? initialCachedStats?.followingCount ?? 0);
+      setFavoritesCount(cached.favoritesCount ?? initialCachedStats?.favoritesCount ?? cached.favoriteProjects?.length ?? 0);
     }
-    loadPublicProfile(selectedUserId)
+    loadPublicProfile(selectedUserId, { authenticated: Boolean(user) })
       .then((result) => {
         if (!isActive) return;
         const { profile, projects: records } = result;
@@ -89,13 +93,15 @@ export default function User({
         setPublicFavoriteProjects((result.favoriteProjects ?? []).map(toPublicProject));
         setFollowersCount(result.followersCount ?? 0);
         setFollowingCount(result.followingCount ?? 0);
+        setFavoritesCount(result.favoritesCount ?? result.favoriteProjects?.length ?? 0);
+        setIsFollowing(Boolean(result.isFollowing));
         setPublicProfileError("");
       })
       .catch((error) => {
         if (isActive) setPublicProfileError(error.message);
       });
     return () => { isActive = false; };
-  }, [page, selectedUserId]);
+  }, [page, selectedUserId, user?.id, initialCachedStats]);
 
   useEffect(() => {
     if (page !== "profile" || !user?.id) {
@@ -103,9 +109,13 @@ export default function User({
       return undefined;
     }
     let isActive = true;
-    loadPublicProfile(user.id)
+    loadPublicProfile(user.id, { authenticated: true })
       .then((result) => {
-        if (isActive) setOwnFavoriteProjects((result.favoriteProjects ?? []).map(toPublicProject));
+        if (!isActive) return;
+        setOwnFavoriteProjects((result.favoriteProjects ?? []).map(toPublicProject));
+        setFollowersCount(result.followersCount ?? 0);
+        setFollowingCount(result.followingCount ?? 0);
+        setFavoritesCount(result.favoritesCount ?? result.favoriteProjects?.length ?? 0);
       })
       .catch(() => {
         if (isActive) setOwnFavoriteProjects([]);
@@ -145,34 +155,7 @@ export default function User({
   }, [peopleListRoute, selectedUserId, user?.id]);
 
   // Load follow state + count cho profile người khác
-  useEffect(() => {
-    if (page !== "user" || !selectedUserId) return;
-    let isActive = true;
-    loadFollowState(selectedUserId)
-      .then(({ isFollowing: f, followersCount: fc, followingCount: fg }) => {
-        if (!isActive) return;
-        setIsFollowing(Boolean(f));
-        setFollowersCount(fc ?? 0);
-        setFollowingCount(fg ?? 0);
-      })
-      .catch(() => {});
-    return () => { isActive = false; };
-  }, [page, selectedUserId, user]);
-
   // Load follow count cho profile của chính mình
-  useEffect(() => {
-    if (page !== "profile" || !user) return;
-    let isActive = true;
-    loadFollowState(user.id)
-      .then(({ followersCount: fc, followingCount: fg }) => {
-        if (!isActive) return;
-        setFollowersCount(fc ?? 0);
-        setFollowingCount(fg ?? 0);
-      })
-      .catch(() => {});
-    return () => { isActive = false; };
-  }, [page, user]);
-
   const openPeopleModal = (list, userId) => {
     const targetId = userId ?? selectedUserId ?? user?.id;
     if (!targetId) return;
@@ -206,6 +189,9 @@ export default function User({
       const result = await apiFollow(selectedUserId, nextFollowing);
       setIsFollowing(result.isFollowing);
       setFollowersCount(result.followersCount);
+      cacheProfileStats(selectedUserId, { followersCount: result.followersCount });
+      const ownStats = getCachedProfileStats(user.id);
+      cacheProfileStats(user.id, { followingCount: Math.max(0, (ownStats?.followingCount ?? 0) + (nextFollowing ? 1 : -1)) });
     } catch (error) {
       setIsFollowing(prevFollowing);
       setFollowersCount(prevCount);
@@ -315,7 +301,7 @@ export default function User({
                   <button type="button" onClick={() => openPeopleModal("followers")}>
                     <strong>{followersCount}</strong> Followers
                   </button>
-                  <span><strong>{ownFavoriteProjects.length}</strong> Favorites</span>
+                  <span><strong>{favoritesCount}</strong> Favorites</span>
                 </div>
               </div>
             </div>
@@ -336,7 +322,7 @@ export default function User({
                   All Projects
                 </button>
                 <button type="button" role="tab" aria-selected={profileTab === "favorite"} onClick={() => setProfileTab("favorite")}>
-                  Favorites ({ownFavoriteProjects.length})
+                  Favorites ({favoritesCount})
                 </button>
                 <button type="button" role="tab" aria-selected={profileTab === "recent"} onClick={() => setProfileTab("recent")}>
                   Recent
@@ -418,7 +404,7 @@ export default function User({
                       <button type="button" onClick={() => openPeopleModal("followers", publicProfile.user_id)}>
                         <strong>{followersCount}</strong> Followers
                       </button>
-                      <span><strong>{publicFavoriteProjects.length}</strong> Favorites</span>
+                      <span><strong>{favoritesCount}</strong> Favorites</span>
                     </div>
                   </div>
                 </div>
@@ -438,7 +424,7 @@ export default function User({
                     All Projects ({publicProjects.length})
                   </button>
                   <button type="button" role="tab" aria-selected={profileTab === "favorite"} onClick={() => setProfileTab("favorite")}>
-                    Favorites ({publicFavoriteProjects.length})
+                    Favorites ({favoritesCount})
                   </button>
                 </div>
                 <div className="featured-grid">
