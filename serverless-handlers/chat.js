@@ -59,12 +59,6 @@ export default async function handler(req, res) {
       sendJson(res, 401, { error: "Sign in to send a chat message." });
       return;
     }
-    const rateLimit = await checkRateLimit(client, `chat-message:${user.id}`, 10, 60_000);
-    if (!rateLimit.ok) {
-      res.setHeader("Retry-After", String(Math.max(1, rateLimit.retryAfter)));
-      sendJson(res, 429, { error: "You are sending chat messages too quickly. Try again shortly." });
-      return;
-    }
     const body = readJsonBody(req);
     const text = typeof body?.text === "string" ? body.text.trim() : "";
     const mediaPath = typeof body?.mediaPath === "string" ? body.mediaPath.trim() : "";
@@ -81,8 +75,16 @@ export default async function handler(req, res) {
     }
 
     const metadata = user.user_metadata ?? {};
-    const { data: profile, error: profileError } = await client.from("profiles")
-      .select("display_name, avatar_url").eq("user_id", user.id).maybeSingle();
+    const [rateLimit, profileResult] = await Promise.all([
+      checkRateLimit(client, `chat-message:${user.id}`, 10, 60_000),
+      client.from("profiles").select("display_name, avatar_url").eq("user_id", user.id).maybeSingle()
+    ]);
+    if (!rateLimit.ok) {
+      res.setHeader("Retry-After", String(Math.max(1, rateLimit.retryAfter)));
+      sendJson(res, 429, { error: "You are sending chat messages too quickly. Try again shortly." });
+      return;
+    }
+    const { data: profile, error: profileError } = profileResult;
     if (profileError) throw profileError;
     const author = profile?.display_name?.trim() || (typeof metadata.display_name === "string" && metadata.display_name.trim()
       ? metadata.display_name.trim().slice(0, 80)

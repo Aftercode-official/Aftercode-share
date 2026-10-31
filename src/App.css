@@ -1106,7 +1106,7 @@ body {
 .chat-message-meta strong { font-size: 0.83rem; }
 .chat-message-meta time { color: var(--text-muted); font-size: 0.69rem; }
 .chat-message-pending { display: block; margin-top: 0.25rem; color: var(--text-muted); font-size: 0.7rem; }
-.chat-message.is-pending { opacity: 0.72; }
+.chat-message.is-pending { opacity: 1; }
 .chat-message-body p { margin-top: 0.2rem; line-height: 1.5; overflow-wrap: anywhere; }
 .chat-shared-image-link { display: block; width: fit-content; max-width: 100%; margin-top: 0.55rem; padding: 0; border: 0; background: transparent; cursor: zoom-in; }
 .chat-shared-image, .chat-shared-video { display: block; width: auto; max-width: min(100%, 480px); max-height: 360px; margin-top: 0.55rem; border-radius: 12px; object-fit: contain; background: var(--bg-main); }

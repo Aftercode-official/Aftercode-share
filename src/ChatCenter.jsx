@@ -308,8 +308,9 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
   const sendMessage = async (event) => {
     event.preventDefault();
     const text = draft.trim();
-    if ((!text && !attachment) || isSending) return;
-    setIsSending(true);
+    if ((!text && !attachment) || (attachment && isSending)) return;
+    const includesAttachment = Boolean(attachment);
+    setIsSending(includesAttachment);
     setError("");
     const pendingId = `pending-${crypto.randomUUID()}`;
     const pendingMessage = {
@@ -325,6 +326,7 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
       pending: true
     };
     setMessages((current) => mergeChatMessages(current, pendingMessage));
+    setDraft("");
     let uploadedPath = "";
     try {
       if (attachment) {
@@ -351,17 +353,17 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
         ...message,
         avatar_url: message.avatar_url || pendingMessage.avatar_url
       }));
-      setDraft("");
       setAttachment(null);
       setIsEmojiPickerOpen(false);
     } catch (sendError) {
       setMessages((current) => current.filter((message) => message.id !== pendingId));
+      setDraft((current) => current || text);
       if (uploadedPath && supabase) {
         await supabase.storage.from("chat-media").remove([uploadedPath]).catch(() => {});
       }
       setError(sendError.message);
     } finally {
-      setIsSending(false);
+      if (includesAttachment) setIsSending(false);
     }
   };
 
@@ -453,7 +455,6 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
                   </button>
                 )
               )}
-              {message.pending && <span className="chat-message-pending" role="status">Sending…</span>}
               {getProjectIdsFromText(message.text).map((projectId) => {
                 const preview = projectPreviews[`${user?.id ?? "guest"}:${projectId}`];
                 if (!preview) {
@@ -548,7 +549,7 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
             onChange={(event) => setDraft(event.target.value)}
           />
           <span className="chat-character-count">{draft.length}/1000</span>
-          <button type="submit" disabled={(!draft.trim() && !attachment) || isSending}>{isSending ? "Sending…" : "Send"}</button>
+          <button type="submit" disabled={(!draft.trim() && !attachment) || (Boolean(attachment) && isSending)}>Send</button>
         </form>
       ) : (
         <div className="chat-signin-prompt">
