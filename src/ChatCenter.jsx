@@ -103,6 +103,7 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState(null);
   const [imageZoom, setImageZoom] = useState(1);
+  const [replyingTo, setReplyingTo] = useState(null);
   const [error, setError] = useState("");
   const [isSending, setIsSending] = useState(false);
   const chatMessagesRef = useRef(null);
@@ -203,7 +204,22 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
         table: "chat_messages"
       }, ({ new: message }) => {
         if (active && message?.id) {
-          setMessages((current) => mergeChatMessages(current, message));
+          setMessages((current) => {
+            const target = current.find((item) => item.id === message.reply_to_message_id);
+            return mergeChatMessages(current, {
+              ...message,
+              reply_to: target ? { id: target.id, author: target.author, text: target.text, media_type: target.media_type } : null
+            });
+          });
+        }
+      })
+      .on("postgres_changes", {
+        event: "DELETE",
+        schema: "public",
+        table: "chat_messages"
+      }, ({ old: message }) => {
+        if (active && message?.id) {
+          setMessages((current) => current.filter((item) => item.id !== message.id));
         }
       })
       .subscribe();
@@ -322,6 +338,13 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
       media_path: "",
       media_type: attachment?.file.type ?? null,
       optimistic_media_url: attachment?.previewUrl ?? "",
+      reply_to_message_id: replyingTo?.id ?? null,
+      reply_to: replyingTo ? {
+        id: replyingTo.id,
+        author: replyingTo.author,
+        text: replyingTo.text,
+        media_type: replyingTo.media_type
+      } : null,
       created_at: new Date().toISOString(),
       pending: true
     };
@@ -346,13 +369,16 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
         body: {
           text,
           mediaPath: uploadedPath || undefined,
-          mediaType: uploadedPath ? attachment.file.type : undefined
+          mediaType: uploadedPath ? attachment.file.type : undefined,
+          replyToMessageId: replyingTo?.id
         }
       });
       setMessages((current) => mergeChatMessages(current.filter((item) => item.id !== pendingId), {
         ...message,
+        reply_to: pendingMessage.reply_to,
         avatar_url: message.avatar_url || pendingMessage.avatar_url
       }));
+      setReplyingTo((current) => current?.id === pendingMessage.reply_to_message_id ? null : current);
       setAttachment(null);
       setIsEmojiPickerOpen(false);
     } catch (sendError) {
@@ -364,6 +390,37 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
       setError(sendError.message);
     } finally {
       if (includesAttachment) setIsSending(false);
+    }
+  };
+
+  const deleteMessage = async (message) => {
+    if (!message.id || message.pending || !window.confirm("Delete this chat message?")) return;
+    setError("");
+    try {
+      await apiRequest("/api/chat", {
+        method: "DELETE",
+        authenticated: true,
+        body: { messageId: message.id }
+      });
+      setMessages((current) => current.filter((item) => item.id !== message.id));
+    } catch (deleteError) {
+      setError(deleteError.message);
+    }
+  };
+
+  const reportMessage = async (message) => {
+    const reason = window.prompt("Why are you reporting this message? (up to 500 characters)")?.trim();
+    if (!reason) return;
+    setError("");
+    try {
+      await apiRequest("/api/chat", {
+        method: "POST",
+        authenticated: true,
+        body: { action: "report", messageId: message.id, reason }
+      });
+      window.alert("Report sent to the Aftercode admin team.");
+    } catch (reportError) {
+      setError(reportError.message);
     }
   };
 
@@ -395,8 +452,10 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
             <span className="chat-loading-spinner" aria-hidden="true" />
             <span>Loading chat...</span>
           </div>
-        ) : messages.length ? messages.map((message) => (
-          <article className={`chat-message${message.user_id === user?.id ? " is-own-message" : ""}${message.pending ? " is-pending" : ""}`} key={message.id}>
+        ) : messages.length ? messages.map((message) => {
+          const replyTarget = message.reply_to ?? messages.find((item) => item.id === message.reply_to_message_id);
+          return (
+          <article id={`chat-message-${message.id}`} className={`chat-message${message.user_id === user?.id ? " is-own-message" : ""}${message.pending ? " is-pending" : ""}`} key={message.id}>
             <button
               className="chat-avatar-link"
               type="button"
@@ -420,6 +479,16 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
                 </button>
                 <time dateTime={message.created_at}>{formatTime(message.created_at)}</time>
               </div>
+              {message.reply_to_message_id && (
+                <button
+                  className="chat-reply-reference"
+                  type="button"
+                  onClick={() => document.getElementById(`chat-message-${message.reply_to_message_id}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                >
+                  <strong>{replyTarget?.author || "Replied message"}</strong>
+                  <span>{replyTarget?.text || (replyTarget?.media_type ? `[${replyTarget.media_type.startsWith("video/") ? "video" : "image"}]` : "Original message is no longer available.")}</span>
+                </button>
+              )}
               {message.text && <p>{message.text}</p>}
               {(message.media_path || message.optimistic_media_url) && supabase && (
                 message.media_type?.startsWith("video/") ? (
@@ -486,9 +555,18 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
                   </button>
                 );
               })}
+              {user && (
+                <div className="chat-message-actions">
+                  <button type="button" onClick={() => setReplyingTo(message)} disabled={message.pending}>Reply</button>
+                  {message.user_id === user.id
+                    ? <button type="button" onClick={() => deleteMessage(message)} disabled={message.pending}>Delete</button>
+                    : <button type="button" onClick={() => reportMessage(message)} disabled={message.pending}>Report</button>}
+                </div>
+              )}
             </div>
           </article>
-        )) : <div className="chat-empty"><strong>No chat here</strong><span>Be the first to say hello to the community.</span></div>}
+          );
+        }) : <div className="chat-empty"><strong>No chat here</strong><span>Be the first to say hello to the community.</span></div>}
       </div>
 
       {user ? (
@@ -538,6 +616,12 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
                 : <img src={attachment.previewUrl} alt="Attachment preview" />}
               <span>{attachment.file.name}</span>
               <button type="button" aria-label="Remove attachment" onClick={() => setAttachment(null)}>×</button>
+            </div>
+          )}
+          {replyingTo && (
+            <div className="chat-reply-composer">
+              <span><strong>Replying to {replyingTo.author}</strong><small>{replyingTo.text || (replyingTo.media_type ? "Media message" : "Message")}</small></span>
+              <button type="button" aria-label="Cancel reply" onClick={() => setReplyingTo(null)}>×</button>
             </div>
           )}
           <label className="visually-hidden" htmlFor="chat-message">Write a message</label>

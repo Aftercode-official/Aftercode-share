@@ -130,6 +130,16 @@
 .admin-event-preview { width: 100%; max-height: 220px; object-fit: cover; border-radius: 9px; border: 1px solid var(--border-color); }
 .admin-featured-management { display: grid; gap: 0.75rem; }
 .admin-ban-management { display: grid; gap: 0.75rem; padding: 1rem; border: 1px solid color-mix(in srgb, #d06a5e, var(--border-color) 50%); border-radius: 12px; background: color-mix(in srgb, var(--bg-card), #d06a5e 4%); }
+.admin-chat-reports { display: grid; gap: 0.75rem; padding: 1rem; border: 1px solid color-mix(in srgb, #d6a629, var(--border-color) 50%); border-radius: 12px; background: color-mix(in srgb, var(--bg-card), #d6a629 4%); }
+.admin-chat-reports h2 { margin: 0; }
+.admin-chat-reports > p { margin: 0; color: var(--text-muted); font-size: 0.82rem; }
+.admin-chat-report-list { display: grid; gap: 0.6rem; }
+.admin-chat-report { display: grid; gap: 0.4rem; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 9px; background: var(--bg-main); }
+.admin-chat-report-heading, .admin-chat-report-actions { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.admin-chat-report-heading time, .admin-chat-report-reporter { color: var(--text-muted); font-size: 0.72rem; }
+.admin-chat-report-message, .admin-chat-report-reason { margin: 0; font-size: 0.84rem; overflow-wrap: anywhere; }
+.admin-chat-report-actions { justify-content: flex-end; }
+.admin-chat-report-actions .admin-delete-event-button { flex: 0 0 auto; }
 .admin-ban-management h2, .admin-ban-management h3 { margin: 0; }
 .admin-ban-management h3 { margin-top: 0.5rem; font-size: 0.95rem; }
 .admin-ban-management > p { margin: 0; color: var(--text-muted); font-size: 0.82rem; }

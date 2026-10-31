@@ -21,12 +21,22 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
   const [bans, setBans] = useState([]);
   const [isLoadingBans, setIsLoadingBans] = useState(true);
   const [banActionUserId, setBanActionUserId] = useState("");
+  const [chatReports, setChatReports] = useState([]);
+  const [isLoadingChatReports, setIsLoadingChatReports] = useState(true);
+  const [chatReportActionId, setChatReportActionId] = useState("");
 
   useEffect(() => {
     apiRequest("/api/admin/bans", { authenticated: true })
       .then((result) => setBans(result.bans ?? []))
       .catch((loadError) => setFormError(loadError.message))
       .finally(() => setIsLoadingBans(false));
+  }, []);
+
+  useEffect(() => {
+    apiRequest("/api/admin/chat-reports", { authenticated: true })
+      .then((result) => setChatReports(result.reports ?? []))
+      .catch((loadError) => setFormError(loadError.message))
+      .finally(() => setIsLoadingChatReports(false));
   }, []);
 
   useEffect(() => () => {
@@ -153,6 +163,25 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
     }
   };
 
+  const reviewChatReport = async (report, action) => {
+    setChatReportActionId(report.id);
+    setFormError("");
+    setSuccessMessage("");
+    try {
+      await apiRequest("/api/admin/chat-reports", {
+        method: "PATCH",
+        authenticated: true,
+        body: { reportId: report.id, action }
+      });
+      setChatReports((current) => current.filter((item) => item.id !== report.id));
+      setSuccessMessage(action === "remove_message" ? "Reported message removed." : "Report dismissed.");
+    } catch (reviewError) {
+      setFormError(reviewError.message);
+    } finally {
+      setChatReportActionId("");
+    }
+  };
+
   return (
     <section className="admin-panel">
       <header className="admin-panel-heading">
@@ -224,6 +253,30 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
             </article>
           ))}</div>
           : <p className="admin-panel-empty">No users are banned.</p>}
+      </section>
+
+      <section className="admin-chat-reports">
+        <h2>Chat reports</h2>
+        <p>Review messages reported by the community. Removing a message also removes its uploaded media.</p>
+        {isLoadingChatReports ? <p className="admin-panel-empty">Loading chat reports...</p> : chatReports.length
+          ? <div className="admin-chat-report-list">{chatReports.map((report) => (
+            <article className="admin-chat-report" key={report.id}>
+              <div className="admin-chat-report-heading">
+                <strong>{report.message_author || report.reportedUser?.display_name || "Chat user"}</strong>
+                <time>{new Date(report.created_at).toLocaleString()}</time>
+              </div>
+              <p className="admin-chat-report-message">{report.message_text || `[${report.media_type || "media"} attachment]`}</p>
+              <p className="admin-chat-report-reason"><strong>Reason:</strong> {report.reason}</p>
+              <p className="admin-chat-report-reporter">Reported by {report.reporter?.display_name || report.reporter?.username || "a user"}</p>
+              <div className="admin-chat-report-actions">
+                <button type="button" className="admin-feature-button" disabled={Boolean(chatReportActionId)} onClick={() => reviewChatReport(report, "dismiss")}>Dismiss</button>
+                <button type="button" className="admin-delete-event-button" disabled={Boolean(chatReportActionId)} onClick={() => reviewChatReport(report, "remove_message")}>
+                  {chatReportActionId === report.id ? "Working..." : "Delete message"}
+                </button>
+              </div>
+            </article>
+          ))}</div>
+          : <p className="admin-panel-empty">No open chat reports.</p>}
       </section>
 
       <section className="admin-event-management">

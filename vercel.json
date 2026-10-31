@@ -14,6 +14,10 @@
       "destination": "/api?path=admin/bans"
     },
     {
+      "source": "/api/admin/chat-reports",
+      "destination": "/api?path=admin/chat-reports"
+    },
+    {
       "source": "/api/announcements",
       "destination": "/api?path=announcements"
     },

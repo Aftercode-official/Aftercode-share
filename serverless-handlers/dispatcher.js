@@ -1,6 +1,7 @@
 import { logApiError, sendJson } from "../server/http.js";
 import activity from "./activity.js";
 import adminBans from "./admin/bans.js";
+import adminChatReports from "./admin/chat-reports.js";
 import announcements from "./announcements.js";
 import authMe from "./auth/me.js";
 import signIn from "./auth/sign-in.js";
@@ -42,6 +43,7 @@ export default async function handler(req, res) {
 
   if (!identifier && resource === "activity") endpoint = activity;
   else if (route === "admin/bans" && extra.length === 0) endpoint = adminBans;
+  else if (route === "admin/chat-reports" && extra.length === 0) endpoint = adminChatReports;
   else if (!identifier && resource === "announcements") endpoint = announcements;
   else if (resource === "announcements" && identifier && extra.length === 0) {
     req.query.id = identifier;
