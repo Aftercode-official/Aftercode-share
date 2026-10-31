@@ -343,6 +343,7 @@ export default function User({
                     </div>
                     <div className="featured-info">
                       <h3>{project.title}</h3>
+                      <span className="project-sequence">Project #{index + 1}</span>
                       <p>by {project.author}</p>
                     </div>
                   </button>
@@ -442,6 +443,7 @@ export default function User({
                       </div>
                       <div className="featured-info">
                         <h3>{project.title}</h3>
+                        <span className="project-sequence">Project #{index + 1}</span>
                         <p>by {project.author}</p>
                       </div>
                     </button>

@@ -1169,6 +1169,7 @@ function ProjectCard({ project, index, onOpenProject, showFeaturedBadge = false 
         </div>
         <div className="featured-info">
           <h3>{project.title}</h3>
+          <span className="project-sequence">Project #{index + 1}</span>
           <p className="featured-author">
             {project.authorAvatar
               ? <img className="avatar avatar-xs avatar-img" src={project.authorAvatar} alt="" loading="lazy" decoding="async" />

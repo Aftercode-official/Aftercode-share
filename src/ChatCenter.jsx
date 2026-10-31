@@ -100,6 +100,8 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
   const [draft, setDraft] = useState("");
   const [attachment, setAttachment] = useState(null);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState(null);
+  const [imageZoom, setImageZoom] = useState(1);
   const [error, setError] = useState("");
   const [isSending, setIsSending] = useState(false);
   const chatMessagesRef = useRef(null);
@@ -111,6 +113,15 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
   const isAuthenticated = Boolean(user);
   const projectIdsKey = [...new Set(messages.flatMap((message) => getProjectIdsFromText(message.text)))].slice(-12).join(",");
   const lastMessageId = messages.at(-1)?.id;
+
+  useEffect(() => {
+    if (!lightboxImage) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setLightboxImage(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [lightboxImage]);
 
   useEffect(() => {
     const recent = messages.filter((message) => !message.pending).slice(-10);
@@ -418,11 +429,17 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
                     playsInline
                   />
                 ) : (
-                  <a
+                  <button
                     className="chat-shared-image-link"
-                    href={message.optimistic_media_url || supabase.storage.from("chat-media").getPublicUrl(message.media_path).data.publicUrl}
-                    target="_blank"
-                    rel="noreferrer"
+                    type="button"
+                    aria-label="Open image viewer"
+                    onClick={() => {
+                      setLightboxImage({
+                        src: message.optimistic_media_url || supabase.storage.from("chat-media").getPublicUrl(message.media_path).data.publicUrl,
+                        alt: "Image shared in chat"
+                      });
+                      setImageZoom(1);
+                    }}
                   >
                     <img
                       className="chat-shared-image"
@@ -432,7 +449,7 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
                       loading="lazy"
                       decoding="async"
                     />
-                  </a>
+                  </button>
                 )
               )}
               {message.pending && <span className="chat-message-pending" role="status">Sending…</span>}
@@ -536,6 +553,39 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
         <div className="chat-signin-prompt">
           <span>Sign in to join the conversation.</span>
           <button type="button" onClick={onSignIn}>Sign in</button>
+        </div>
+      )}
+
+      {lightboxImage && (
+        <div
+          className="chat-image-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image viewer"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setLightboxImage(null);
+          }}
+          onWheel={(event) => {
+            event.preventDefault();
+            setImageZoom((zoom) => Math.max(0.5, Math.min(4, zoom + (event.deltaY < 0 ? 0.2 : -0.2))));
+          }}
+        >
+          <div className="chat-image-lightbox-toolbar">
+            <button type="button" onClick={() => setImageZoom((zoom) => Math.max(0.5, zoom - 0.25))} aria-label="Zoom out">−</button>
+            <span>{Math.round(imageZoom * 100)}%</span>
+            <button type="button" onClick={() => setImageZoom((zoom) => Math.min(4, zoom + 0.25))} aria-label="Zoom in">+</button>
+            <button type="button" onClick={() => setImageZoom(1)}>Reset</button>
+            <button type="button" onClick={() => setLightboxImage(null)} aria-label="Close image viewer">×</button>
+          </div>
+          <div className="chat-image-lightbox-stage">
+            <img
+              className="chat-image-lightbox-image"
+              src={lightboxImage.src}
+              alt={lightboxImage.alt}
+              style={{ transform: `scale(${imageZoom})` }}
+              draggable="false"
+            />
+          </div>
         </div>
       )}
     </section>

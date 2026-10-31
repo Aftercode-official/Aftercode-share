@@ -579,6 +579,7 @@ export default function ProjectPages({
               </span>
               <span className="featured-info">
                 <strong>{project.title}</strong>
+                <span className="project-sequence">Project #{index + 1}</span>
                 <span>by {project.author} · {project.views.toLocaleString()} views</span>
               </span>
             </button>

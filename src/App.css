@@ -413,6 +413,14 @@ body {
   color: var(--text-muted);
 }
 
+.project-sequence {
+  display: block;
+  margin: 0.1rem 0 0.2rem;
+  color: var(--accent-yellow);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
 /* 2. TIMELINE SECTION */
 .timeline-card {
   background-color: var(--bg-card);
@@ -1100,9 +1108,65 @@ body {
 .chat-message-pending { display: block; margin-top: 0.25rem; color: var(--text-muted); font-size: 0.7rem; }
 .chat-message.is-pending { opacity: 0.72; }
 .chat-message-body p { margin-top: 0.2rem; line-height: 1.5; overflow-wrap: anywhere; }
-.chat-shared-image-link { display: block; width: fit-content; max-width: 100%; margin-top: 0.55rem; }
+.chat-shared-image-link { display: block; width: fit-content; max-width: 100%; margin-top: 0.55rem; padding: 0; border: 0; background: transparent; cursor: zoom-in; }
 .chat-shared-image, .chat-shared-video { display: block; width: auto; max-width: min(100%, 480px); max-height: 360px; margin-top: 0.55rem; border-radius: 12px; object-fit: contain; background: var(--bg-main); }
 .chat-shared-image-link .chat-shared-image { margin-top: 0; }
+
+.chat-image-lightbox {
+  position: fixed;
+  z-index: 10000;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  background: rgb(0 0 0 / 92%);
+}
+
+.chat-image-lightbox-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  padding-bottom: 0.75rem;
+  color: white;
+}
+
+.chat-image-lightbox-toolbar button {
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 9px;
+  background: rgb(255 255 255 / 10%);
+  color: white;
+  cursor: pointer;
+  font: inherit;
+}
+
+.chat-image-lightbox-toolbar button:hover { background: rgb(255 255 255 / 22%); }
+.chat-image-lightbox-toolbar span { min-width: 3.5rem; text-align: center; font-size: 0.85rem; }
+
+.chat-image-lightbox-stage {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  place-items: center;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.chat-image-lightbox-image {
+  display: block;
+  max-width: min(92vw, 1400px);
+  max-height: 86vh;
+  margin: auto;
+  border-radius: 4px;
+  object-fit: contain;
+  transform-origin: center;
+  transition: transform 120ms ease-out;
+  user-select: none;
+}
 
 .chat-project-preview {
   display: grid;
