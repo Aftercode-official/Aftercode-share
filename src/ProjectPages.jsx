@@ -259,7 +259,7 @@ export default function ProjectPages({
                 ? (
                   <iframe
                     title={`${selectedProject.title} interactive project`}
-                    src={`https://aftercode-web-wheat.vercel.app/embed.html?project_url=${encodeURIComponent(selectedProject.projectUrl)}&project_title=${encodeURIComponent(selectedProject.title)}`}
+                    src={`https://aftercode-official.github.io/aftercode-editor/embed.html?project_url=${encodeURIComponent(selectedProject.projectUrl)}&project_title=${encodeURIComponent(selectedProject.title)}`}
                     allowFullScreen
                     loading="lazy"
                   />
@@ -267,7 +267,7 @@ export default function ProjectPages({
                 : (
                   <iframe
                     title={`${selectedProject.title} interactive project`}
-                    src={`https://aftercode-web-wheat.vercel.app/embed.html?project_url=${encodeURIComponent(selectedProject.projectUrl)}&project_title=${encodeURIComponent(selectedProject.title)}`}
+                    src={`https://aftercode-official.github.io/aftercode-editor/embed.html?project_url=${encodeURIComponent(selectedProject.projectUrl)}&project_title=${encodeURIComponent(selectedProject.title)}`}
                     allowFullScreen
                     loading="lazy"
                   />
