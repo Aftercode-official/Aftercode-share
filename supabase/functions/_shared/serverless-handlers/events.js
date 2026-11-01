@@ -1,6 +1,6 @@
 import { logApiError, readJsonBody, requireMethod, sendJson } from "../server/http.js";
 import { createAdminClient, getAuthenticatedUser } from "../server/supabase.js";
-import { env } from "node:process";
+import { getServerEnv } from "../server/env.js";
 import { broadcastNotification } from "../server/broadcast.js";
 import { isAdminUserId } from "../shared/adminUsers.js";
 
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
       return;
     }
     const eventAdminIds = new Set(
-      (env.EVENT_ADMIN_USER_IDS ?? "").split(",").map((id) => id.trim()).filter(Boolean)
+      (getServerEnv("EVENT_ADMIN_USER_IDS") ?? "").split(",").map((id) => id.trim()).filter(Boolean)
     );
     const isEventAdmin = isAdminUserId(user.id) || eventAdminIds.has(user.id);
     if (!isEventAdmin) {

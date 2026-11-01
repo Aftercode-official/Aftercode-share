@@ -1,12 +1,12 @@
 import { createHash } from "node:crypto";
-import { env } from "node:process";
+import { getServerEnv } from "../../server/env.js";
 import { logApiError, requireMethod, sendJson } from "../../server/http.js";
 import { getClientIp } from "../../server/rateLimit.js";
 import { createAdminClient, getAuthenticatedUser } from "../../server/supabase.js";
 
 function hashKey(value) {
   return createHash("sha256")
-    .update(`${env.SUPABASE_SERVICE_ROLE_KEY}:${value}`)
+    .update(`${getServerEnv("SUPABASE_SERVICE_ROLE_KEY")}:${value}`)
     .digest("hex");
 }
 

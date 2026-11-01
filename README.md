@@ -1,6 +1,6 @@
 # Aftercode Share
 
-Aftercode Share is a React + Vite app for discovering and sharing Scratch projects. Its API is deployed as Vercel Functions and uses Supabase Auth and PostgreSQL.
+Aftercode Share is a React + Vite app for discovering and sharing Scratch projects. GitHub Pages hosts the frontend and a Supabase Edge Function provides the API backed by Supabase Auth and PostgreSQL.
 
 ## Backend setup
 
@@ -12,16 +12,48 @@ Aftercode Share is a React + Vite app for discovering and sharing Scratch projec
 6. Run [`supabase/migrations/20261029000000_add_featured_projects.sql`](./supabase/migrations/20261029000000_add_featured_projects.sql) to add admin-managed featured projects.
 7. Copy `.env.example` to `.env.local` and fill in the values:
    - `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are public client settings. Use these with Supabase Auth in the browser.
-   - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are server-only settings used by Vercel Functions. Never expose or prefix the service role key with `VITE_`.
+   - `VITE_API_BASE_URL` is optional and is mainly useful for local Supabase Edge Function development. Production builds default to `${VITE_SUPABASE_URL}/functions/v1/api`.
+   - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are server-only settings. Never expose or prefix the service role key with `VITE_`.
    - `EVENT_ADMIN_USER_IDS` is a comma-separated list of Supabase user UUIDs allowed to create events. Leave it unset to disable event creation through the API.
 8. The Admin Panel and admin APIs allow the `katboizz` and `thinh1234231t` accounts, configured in `shared/adminUsers.js`. Apply `supabase/migrations/20261031170000_add_thinh_admin.sql` in the Supabase SQL Editor so both admins can send global announcements.
-9. Add the same variables to the Vercel project's Environment Variables. Deploy the project to make the `api/` functions available.
+9. Deploy the API to Supabase Edge Functions as described below. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` as GitHub Actions variables so the Pages workflow can build the frontend.
 
-`npm run dev` starts the Vite frontend only. To run the Vercel Functions locally, use `npx vercel dev` after configuring the Vercel project and its local environment variables.
+## Deploying the API to Supabase Edge Functions
 
-Use Node.js 22 LTS for local development and the Vercel CLI. Node 24 can trigger a Windows libuv assertion in some Vercel CLI runs. The repository pins Node 22 in `.nvmrc` and `package.json`.
+The GitHub Pages frontend can use the `api` Supabase Edge Function instead of Vercel. The function reuses the existing API handlers, validates Supabase access tokens itself, and accepts browser requests from the GitHub Pages site.
 
-For local Vercel Functions, add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the Vercel project's Development environment, then run `npx vercel pull --environment=development` to sync them into `.vercel/`. `vercel dev` does not read the Vite-only `VITE_` settings as server secrets.
+1. In a terminal, install/use the Supabase CLI and link this repository to the existing Supabase project:
+
+   ```sh
+   npx supabase login
+   npx supabase link --project-ref YOUR_PROJECT_REF
+   ```
+
+2. Deploy the API function:
+
+   ```sh
+   npx supabase functions deploy api
+   ```
+
+   `supabase/config.toml` disables gateway JWT verification for this function because public read routes are allowed. Protected routes still verify bearer tokens in the API handlers.
+
+3. In the GitHub repository, add Actions variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` under **Settings → Secrets and variables → Actions → Variables**. The Pages workflow uses these public client settings to build the frontend. Never add the Supabase service-role key to GitHub Pages or a `VITE_` variable; Supabase injects it into Edge Functions.
+
+4. In Supabase **Authentication → URL Configuration**, add `https://aftercode-official.github.io/Aftercode-share/` to the allowed redirect URLs. Set the site URL to the Pages URL if this project no longer uses another production frontend.
+
+5. Apply any unapplied SQL migrations to the Supabase project, including the chat reports/replies migration, then push the frontend workflow to `main`:
+
+   ```sh
+   git add README.md .env.example src/api.js serverless-handlers shared/adminUsers.js supabase/config.toml supabase/functions
+   git commit -m "Deploy API with Supabase Edge Functions"
+   git push origin main
+   ```
+
+The Edge Function URL is `${VITE_SUPABASE_URL}/functions/v1/api`. Production frontend API requests use this URL automatically. For local function development, set `VITE_API_BASE_URL=http://127.0.0.1:54321/functions/v1/api` in `.env.local`.
+
+`npm run dev` starts the Vite frontend only. For local API development, start Supabase with `npx supabase start`, then run `npx supabase functions serve api --env-file .env.local`.
+
+Use Node.js 22 LTS for local development. The repository pins Node 22 in `.nvmrc` and `package.json`.
 
 ## Uploading Scratch projects
 
@@ -69,7 +101,7 @@ All responses use JSON except a successful delete, which returns `204 No Content
 | `GET` | `/api/chat` | List the latest 100 messages in the global community chat |
 | `POST` | `/api/chat` | Send a chat message as the signed-in user |
 
-All API URLs are rewritten to a single Vercel function in `api/index.js` and dispatched by `serverless-handlers/dispatcher.js`, keeping the deployment within the Hobby plan's serverless-function limit.
+All API routes are handled by one Supabase Edge Function in `supabase/functions/api/index.ts` and dispatched by `serverless-handlers/dispatcher.js`.
 
 Create a project with:
 
@@ -88,7 +120,7 @@ To replace an uploaded Scratch project, upload the validated `.sb3` file into th
 
 The API derives the author from the authenticated Supabase user; clients cannot choose an owner. Database row-level security permits public reads while writes go through the ownership-checking API.
 
-Project creation, likes, and comments automatically add community activity; likes and comments also notify the project owner. The frontend loads public projects and signed-in activity/notifications from the API. Vercel Functions are not served by plain `npm run dev`; use `npx vercel dev` locally or deploy the project to Vercel.
+Project creation, likes, and comments automatically add community activity; likes and comments also notify the project owner. The frontend loads public projects and signed-in activity/notifications from the API. The API runs locally with `npx supabase functions serve api` or in production as a Supabase Edge Function.
 
 The Community Chat is shared by all visitors. Anyone can read recent messages; signed-in users can post messages up to 1,000 characters. It refreshes automatically while the chat view is open. Share a project from its detail page to copy an `?projectId=` link; posting that link in chat creates a clickable card with the project thumbnail and details.
 

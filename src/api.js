@@ -1,5 +1,10 @@
 import { supabase } from "./supabase.js";
 
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
+const apiBaseUrl = configuredApiBaseUrl || (import.meta.env.PROD && import.meta.env.VITE_SUPABASE_URL
+  ? `${import.meta.env.VITE_SUPABASE_URL.replace(/\/$/, "")}/functions/v1/api`
+  : "");
+
 // Cache promise đang bay để dedupe request trùng
 const inflightRequests = new Map();
 const INFLIGHT_WINDOW_MS = 300;
@@ -19,6 +24,9 @@ export async function apiRequest(path, { method = "GET", body, authenticated = f
   }
 
   const headers = {};
+  if (apiBaseUrl && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+    headers.apikey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  }
   if (body !== undefined) {
     headers["Content-Type"] = "application/json";
   }
@@ -34,7 +42,10 @@ export async function apiRequest(path, { method = "GET", body, authenticated = f
   }
 
   const promise = (async () => {
-    const response = await fetch(path, {
+    const apiUrl = apiBaseUrl && path.startsWith("/api/")
+      ? `${apiBaseUrl}${path.slice(4)}`
+      : path;
+    const response = await fetch(apiUrl, {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body)
@@ -45,7 +56,7 @@ export async function apiRequest(path, { method = "GET", body, authenticated = f
     if (!contentType.toLowerCase().includes("application/json")) {
       if (response.ok) {
         throw new Error(
-          `The API endpoint ${path} did not return JSON. The Vite dev server does not run Vercel Functions; stop it and start the app with "npx vercel dev".`
+          `The API endpoint ${path} did not return JSON. In production, verify that the Supabase "api" Edge Function is deployed.`
         );
       }
       throw new Error(`Request to ${path} failed with status ${response.status}.`);
