@@ -761,7 +761,7 @@ export default function App() {
           <nav className="topbar-nav" aria-label="Project navigation">
             <a
               className="icon-btn"
-              href="https://aftercode-web-wheat.vercel.app/editor.html"
+              href="https://aftercode-official.github.io/aftercode-editor/editor.html"
               target="_blank"
               rel="noreferrer"
             >
