@@ -22,7 +22,7 @@ export function getProjectIdsFromText(text) {
 }
 
 export function projectShareUrl(projectId) {
-  const url = new URL(window.location.origin);
+  const url = new URL(import.meta.env.BASE_URL, window.location.origin);
   url.searchParams.set("projectId", projectId);
   return url.toString();
 }

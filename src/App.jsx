@@ -20,6 +20,7 @@ import LoadingScreen from "./LoadingScreen.jsx";
 const THEME_STORAGE_KEY = "aftercode-share-theme";
 const CUSTOMIZATION_STORAGE_KEY = "aftercode-share-customization";
 const PUBLIC_DATA_CACHE_KEY = "aftercode-share-public-data-v1";
+const APP_BASE_PATH = new URL(import.meta.env.BASE_URL, window.location.origin).pathname.replace(/\/$/, "");
 const DEFAULT_CUSTOMIZATION = {
   displayName: "Name",
   username: "@IDName",
@@ -36,6 +37,18 @@ const DEFAULT_CUSTOMIZATION = {
   showProfileProjects: true,
   showProfileStats: true
 };
+
+function appRoutePath(pathname) {
+  const route = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  if (!APP_BASE_PATH) return route;
+  return route === "/" ? `${APP_BASE_PATH}/` : `${APP_BASE_PATH}${route}`;
+}
+
+function routePathFromLocation(pathname) {
+  if (!APP_BASE_PATH) return pathname;
+  if (pathname === APP_BASE_PATH || pathname === `${APP_BASE_PATH}/`) return "/";
+  return pathname.startsWith(`${APP_BASE_PATH}/`) ? pathname.slice(APP_BASE_PATH.length) : pathname;
+}
 
 function toProject(record) {
   const projectUrl = record.asset_path
@@ -75,7 +88,7 @@ function getInitialRoute() {
   const projectId = getProjectIdFromUrl(window.location.href);
   if (projectId) return { page: "project", username: "", peopleList: null };
 
-  const parts = window.location.pathname.split("/").filter(Boolean).map((part) => {
+  const parts = routePathFromLocation(window.location.pathname).split("/").filter(Boolean).map((part) => {
     try { return decodeURIComponent(part); } catch { return part; }
   });
   if (parts.length === 1 && parts[0] === "notification") {
@@ -99,10 +112,10 @@ function getInitialRoute() {
 
 function userPagePath(username, peopleList = null) {
   const slug = encodeURIComponent(String(username || "").trim().replace(/^@/, ""));
-  if (!slug) return "/";
-  if (peopleList === "followers") return `/${slug}/follower`;
-  if (peopleList === "following") return `/${slug}/following`;
-  return `/user/${slug}`;
+  if (!slug) return appRoutePath("/");
+  if (peopleList === "followers") return appRoutePath(`/${slug}/follower`);
+  if (peopleList === "following") return appRoutePath(`/${slug}/following`);
+  return appRoutePath(`/user/${slug}`);
 }
 
 function readPublicDataCache() {
@@ -308,7 +321,7 @@ export default function App() {
       setProfileRouteUsername("");
       setPeopleListRoute(null);
       const url = new URL(window.location.href);
-      url.pathname = "/";
+      url.pathname = appRoutePath("/");
       url.searchParams.delete("projectId");
       url.searchParams.delete("project");
       window.history.replaceState({}, "", url);
@@ -334,10 +347,10 @@ export default function App() {
       : nextPage === "user"
         ? (options.username || (options.userId ? "" : profileRouteUsername))
         : "";
-    let pathname = "/";
-    if (nextPage === "notifications") pathname = "/notification";
-    else if (nextPage === "chat") pathname = "/chat";
-    else if (nextPage === "explore") pathname = "/explorer";
+    let pathname = appRoutePath("/");
+    if (nextPage === "notifications") pathname = appRoutePath("/notification");
+    else if (nextPage === "chat") pathname = appRoutePath("/chat");
+    else if (nextPage === "explore") pathname = appRoutePath("/explorer");
     else if (nextPage === "user" || nextPage === "profile") pathname = userPagePath(routeUsername || options.userId);
     setProfileRouteUsername(routeUsername || "");
     const url = new URL(window.location.href);
