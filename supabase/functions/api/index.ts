@@ -11,7 +11,7 @@ Deno.serve(async (request: Request) => {
   const responseHeaders = new Headers({
     "Vary": "Origin",
     "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
-    "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
     "Access-Control-Max-Age": "86400",
   });
   if (allowedOrigins.has(origin)) {
