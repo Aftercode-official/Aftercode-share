@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { isSupabaseConfigured, supabase } from "./supabase.js";
+import { apiRequest } from "./api.js";
 import "./AuthModal.css";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
 
@@ -63,16 +64,13 @@ export default function AuthModal({ onClose, onAuthenticated }) {
           const { data: sessionData } = await supabase.auth.getSession();
           const token = sessionData.session?.access_token;
           if (token) {
-            await fetch("/api/profiles/me", {
+            await apiRequest("/api/profiles/me", {
               method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
-              },
-              body: JSON.stringify({
+              authenticated: true,
+              body: {
                 displayName: trimmedName,
                 username: trimmedName
-              })
+              }
             });
           }
         }
@@ -89,18 +87,10 @@ export default function AuthModal({ onClose, onAuthenticated }) {
           throw new Error("Enter your username.");
         }
 
-        const signInRes = await fetch("/api/auth/sign-in", {
+        const { session } = await apiRequest("/api/auth/sign-in", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: trimmedUsername, password })
+          body: { username: trimmedUsername, password }
         });
-
-        if (!signInRes.ok) {
-          const payload = await signInRes.json().catch(() => ({}));
-          throw new Error(payload.error || "Invalid username or password.");
-        }
-
-        const { session } = await signInRes.json();
         if (!session) {
           throw new Error("Unable to sign in.");
         }
