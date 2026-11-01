@@ -23,10 +23,9 @@ Deno.serve(async (request: Request) => {
   }
 
   const url = new URL(request.url);
-  const functionPath = "/functions/v1/api";
-  const routePath = url.pathname.startsWith(functionPath)
-    ? url.pathname.slice(functionPath.length)
-    : url.pathname;
+  const routePath = url.pathname
+    .replace(/^\/functions\/v1\/api(?=\/|$)/, "")
+    .replace(/^\/api(?=\/|$)/, "");
   const query: Record<string, string | string[]> = {};
   for (const [key, value] of url.searchParams) {
     const previous = query[key];
