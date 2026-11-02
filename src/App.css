@@ -1905,6 +1905,15 @@ body {
   width: 232px;
   min-width: 232px;
 }
+.app-layout.has-sidebar.sidebar-collapsed > .sidebar {
+  flex: 0 0 0;
+  width: 0;
+  min-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  overflow: hidden;
+  border-left: 0;
+}
 .app-layout.has-sidebar .workspace .main-feed-container {
   width: 100%;
   max-width: none;
