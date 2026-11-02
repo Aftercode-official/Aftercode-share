@@ -58,6 +58,13 @@ export default function WebStudio({ isOpen, onClose }) {
   }, [html, css, background, windows]);
 
   useEffect(() => {
+    document.documentElement.style.setProperty(
+      "--aftercode-site-background",
+      background ? `url(${JSON.stringify(background)})` : "none"
+    );
+  }, [background]);
+
+  useEffect(() => {
     const move = (event) => {
       if (!dragRef.current) return;
       const { id, startX, startY, originX, originY } = dragRef.current;
@@ -134,7 +141,6 @@ export default function WebStudio({ isOpen, onClose }) {
                     }}
                   >
                     <span className="studio-window-dots"><i /><i /><i /></span><strong>{item.title}</strong>
-                    {!isApplied && <button className="studio-apply" type="button" onClick={() => setIsApplied(true)}>Apply</button>}
                     <button type="button" onClick={() => removeWindow(item.id)}>×</button>
                   </header>
                   <div className="studio-window-tools"><input aria-label="Window URL" value={item.url} placeholder="https://example.com" onChange={(event) => updateWindow(item.id, { url: event.target.value })} /><input aria-label="Window title" value={item.title} onChange={(event) => updateWindow(item.id, { title: event.target.value })} /></div>

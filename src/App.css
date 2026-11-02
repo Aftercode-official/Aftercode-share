@@ -1908,6 +1908,28 @@ body {
   align-self: stretch;
 }
 
+.app-layout {
+  position: relative;
+  isolation: isolate;
+}
+.app-layout::before {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  background-image: var(--aftercode-site-background, none);
+  background-position: center;
+  background-size: cover;
+  content: "";
+  opacity: 0.24;
+  pointer-events: none;
+}
+.app-layout > .workspace,
+.app-layout > .sidebar,
+.app-layout > .sidebar-backdrop {
+  position: relative;
+  z-index: 1;
+}
+
 /* Full-width card shimmer */
 .featured-card,
 .timeline-card,
