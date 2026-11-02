@@ -12,7 +12,6 @@ import ProjectThumbnail from "./ProjectThumbnail.jsx";
 const ChatCenter = lazy(() => import("./ChatCenter.jsx"));
 const AdminPanel = lazy(() => import("./AdminPanel.jsx"));
 const NotificationsPage = lazy(() => import("./NotificationsPage.jsx"));
-const WebStudio = lazy(() => import("./WebStudio.jsx"));
 import { getProjectIdFromUrl, projectShareUrl } from "./projectLinks.js";
 import "./ClassicTheme.css";
 import { isAdminUserId } from "../shared/adminUsers.js";
@@ -188,7 +187,6 @@ export default function App() {
   const [projectSearch, setProjectSearch] = useState("");
   const [projectInteractions, setProjectInteractions] = useState({});
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
-  const [isWebStudioOpen, setIsWebStudioOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() =>
     window.matchMedia("(min-width: 761px)").matches
   );
@@ -739,14 +737,6 @@ export default function App() {
             {isProjectAdmin && <button className={`sidebar-nav-btn${page === "admin" ? " is-active" : ""}`} type="button" onClick={() => navigateTo("admin")}>⚙ <span>Admin Panel</span></button>}
             <button className="sidebar-nav-btn" type="button" onClick={() => navigateTo("profile")}>◉ <span>View Profile</span></button>
             <button className="sidebar-nav-btn" type="button" onClick={openCustomizer}>⚙ <span>Customize Page</span></button>
-            <button
-              className="sidebar-nav-btn"
-              type="button"
-              onClick={() => {
-                setIsWebStudioOpen(true);
-                window.dispatchEvent(new Event("aftercode:web-studio-reopen"));
-              }}
-            >Web <span>Web Studio</span></button>
           </nav>
           <div className="sidebar-account">
             <span className="sidebar-section-label">ACCOUNT</span>
@@ -1176,9 +1166,6 @@ export default function App() {
           />
         </Suspense>
       )}
-      <Suspense fallback={null}>
-        <WebStudio isOpen={isWebStudioOpen} onClose={() => setIsWebStudioOpen(false)} />
-      </Suspense>
     </div>
   );
 }
