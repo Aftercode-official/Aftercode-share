@@ -2253,14 +2253,50 @@ body {
 
 /* Optional fallback mode for older browsers and constrained devices. */
 :root[data-compatibility-mode="true"] .app-layout::before {
-  display: none;
+  display: none !important;
+}
+
+:root[data-compatibility-mode="true"] .app-layout,
+:root[data-compatibility-mode="true"] .workspace .main-feed-container,
+:root[data-compatibility-mode="true"] .main-feed-container:not(.profile-page) {
+  background-image: none !important;
+}
+
+:root[data-compatibility-mode="true"] .workspace .header,
+:root[data-compatibility-mode="true"] .sidebar,
+:root[data-compatibility-mode="true"] .welcome-card,
+:root[data-compatibility-mode="true"] .featured-card,
+:root[data-compatibility-mode="true"] .timeline-card,
+:root[data-compatibility-mode="true"] .feed-item-button,
+:root[data-compatibility-mode="true"] .notification-card,
+:root[data-compatibility-mode="true"] .project-detail-card,
+:root[data-compatibility-mode="true"] .explore-project-card {
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+:root[data-compatibility-mode="true"] .welcome-card {
+  background: var(--bg-card) !important;
 }
 
 :root[data-compatibility-mode="true"] .welcome-card::after,
-:root[data-compatibility-mode="true"] .card-shimmer,
-:root[data-compatibility-mode="true"] [class*="backdrop-filter"] {
-  display: none;
-  backdrop-filter: none;
+:root[data-compatibility-mode="true"] .featured-card::after,
+:root[data-compatibility-mode="true"] .timeline-card::after,
+:root[data-compatibility-mode="true"] .feed-item::after,
+:root[data-compatibility-mode="true"] .profile-project-card::after,
+:root[data-compatibility-mode="true"] .notification-card::after,
+:root[data-compatibility-mode="true"] .admin-tool-card::after,
+:root[data-compatibility-mode="true"] .explore-project-card::after,
+:root[data-compatibility-mode="true"] .project-detail-card::after,
+:root[data-compatibility-mode="true"] .people-modal-item::after {
+  display: none !important;
+  animation: none !important;
+  content: none !important;
+}
+
+:root[data-compatibility-mode="true"] * {
+  animation: none !important;
+  transition: none !important;
 }
 
 :root[data-compatibility-mode="true"] .welcome-card,
@@ -2268,5 +2304,5 @@ body {
 :root[data-compatibility-mode="true"] .feed-item-button,
 :root[data-compatibility-mode="true"] .sidebar,
 :root[data-compatibility-mode="true"] .header {
-  box-shadow: none;
+  box-shadow: none !important;
 }
