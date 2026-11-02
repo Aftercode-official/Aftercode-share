@@ -1648,7 +1648,7 @@ body {
 }
 .welcome-card {
   position: relative;
-  min-height: 190px;
+  min-height: 290px;
   justify-content: center;
   overflow: hidden;
   padding: 2.25rem 2.5rem;
@@ -1906,6 +1906,13 @@ body {
   min-width: 232px;
 }
 .app-layout.has-sidebar .workspace .main-feed-container {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  box-sizing: border-box;
+  align-self: stretch;
+}
+.app-layout:not(.has-sidebar) .workspace .main-feed-container {
   width: 100%;
   max-width: none;
   margin: 0;
