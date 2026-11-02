@@ -1996,6 +1996,18 @@ body {
   color: #111318;
 }
 
+:root:not([data-theme="dark"]) .welcome-card {
+  border-color: #d5d9e0;
+  background: linear-gradient(125deg, #ffffff 0%, #f4f6fa 100%);
+  color: #17191f;
+}
+:root:not([data-theme="dark"]) .welcome-card h1 {
+  color: #17191f;
+}
+:root:not([data-theme="dark"]) .welcome-card p {
+  color: #5b6472;
+}
+
 /* Full-width card shimmer */
 .featured-card,
 .timeline-card,
