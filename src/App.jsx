@@ -194,7 +194,7 @@ export default function App() {
   );
   const [theme, setTheme] = useState(() => {
     const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-    return savedTheme === "dark" ? "dark" : "light";
+    return savedTheme === "light" ? "light" : "dark";
   });
 
   useEffect(() => {

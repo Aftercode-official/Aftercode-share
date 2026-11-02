@@ -1944,6 +1944,26 @@ body {
   min-height: 120px;
 }
 
+.timeline-card .feed-item-button {
+  min-height: 48px;
+  padding: 0.65rem 0.8rem;
+  line-height: 1.3;
+}
+.timeline-card .feed-text {
+  margin: 0;
+  line-height: 1.35;
+}
+.timeline-card .feed-time {
+  display: block;
+  margin-top: 3px;
+  line-height: 1.2;
+}
+
+:root:not([data-theme="dark"]) .workspace .header {
+  background: #d9dde3;
+  color: #17191f;
+}
+
 /* Full-width card shimmer */
 .featured-card,
 .timeline-card,
