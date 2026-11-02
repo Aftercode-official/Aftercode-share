@@ -59,16 +59,6 @@ function getEmbedUrl(rawUrl) {
   }
 }
 
-function isYouTubeHome(rawUrl) {
-  try {
-    const url = new URL(rawUrl.match(/^https?:\/\//i) ? rawUrl : `https://${rawUrl}`);
-    return ["youtube.com", "www.youtube.com", "m.youtube.com"].includes(url.hostname)
-      && (url.pathname === "/" || url.pathname === "");
-  } catch {
-    return false;
-  }
-}
-
 export default function WebStudio({ isOpen, onClose }) {
   const [initial] = useState(() => readSaved());
   const [html, setHtml] = useState(initial.html);
@@ -177,9 +167,7 @@ export default function WebStudio({ isOpen, onClose }) {
                   </header>
                   <div className="studio-window-tools"><input aria-label="Window URL" value={item.url} placeholder="https://example.com" onChange={(event) => updateWindow(item.id, { url: event.target.value })} /><input aria-label="Window title" value={item.title} onChange={(event) => updateWindow(item.id, { title: event.target.value })} /></div>
                   {item.url
-                    ? isYouTubeHome(item.url)
-                      ? <div className="studio-window-empty">This page cannot be embedded.<a href={getEmbedUrl(item.url)} target="_blank" rel="noreferrer">Open in new tab ↗</a></div>
-                      : <iframe title={item.title} src={getEmbedUrl(item.url)} />
+                    ? <iframe title={item.title} src={getEmbedUrl(item.url)} />
                     : <div className="studio-window-empty">Paste a URL above to load a web page</div>}
                 </article>
               ))}
