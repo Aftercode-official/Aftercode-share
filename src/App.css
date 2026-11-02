@@ -1895,6 +1895,19 @@ body {
   .welcome-card h1 { font-size: 1.55rem; }
 }
 
+/* Keep the page scroll area flush with the sidebar. */
+.app-layout.has-sidebar .workspace {
+  width: 0;
+  min-width: 0;
+}
+.app-layout.has-sidebar .workspace .main-feed-container {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  box-sizing: border-box;
+  align-self: stretch;
+}
+
 /* Full-width card shimmer */
 .featured-card,
 .timeline-card,
