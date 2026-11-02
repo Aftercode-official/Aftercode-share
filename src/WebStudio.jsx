@@ -101,7 +101,7 @@ export default function WebStudio({ isOpen, onClose }) {
       <section className="studio-shell">
         {!isApplied && <header className="studio-header">
           <div><span className="studio-kicker">AFTERCODE</span><h2>Web Studio</h2></div>
-          <div className="studio-actions"><button type="button" onClick={addWindow}>+ New window</button><button className="studio-close" type="button" onClick={onClose}>Close</button></div>
+          <div className="studio-actions"><button type="button" onClick={addWindow}>+ New window</button><button type="button" onClick={() => setIsApplied(true)}>Apply windows</button><button className="studio-close" type="button" onClick={onClose}>Close</button></div>
         </header>}
         <div className="studio-body">
           {!isApplied && <aside className="studio-editor">
