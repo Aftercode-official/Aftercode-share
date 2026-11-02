@@ -1937,7 +1937,7 @@ body {
 
 /* Keep Community Activity from collapsing when the activity request is empty or delayed. */
 .timeline-card {
-  min-height: 220px;
+  min-height: 520px;
 }
 .timeline-card > .feed-empty {
   display: grid;
