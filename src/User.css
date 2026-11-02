@@ -359,6 +359,30 @@
   font-size: 0.82rem;
 }
 
+.customize-preference-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.customize-preference-toggle input {
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+  accent-color: var(--accent-orange);
+}
+
+.customize-preference-toggle span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.customize-preference-toggle small {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
 .people-modal {
   width: min(380px, calc(100% - 2rem));
   align-self: center;

@@ -292,11 +292,7 @@
 /* The loading screen follows the selected site skin before React mounts. */
 .loading-screen-current {
   background-color: #08090c;
-  background-image:
-    linear-gradient(rgb(255 210 31 / 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 210 31 / 0.045) 1px, transparent 1px),
-    radial-gradient(circle at 50% 42%, rgb(255 210 31 / 0.12), transparent 28%);
-  background-size: 32px 32px, 32px 32px, auto;
+  background-image: none;
 }
 
 .loading-screen-classic {

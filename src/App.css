@@ -2250,3 +2250,23 @@ body {
 .people-modal-item:hover::after {
   animation: aftercode-shimmer 900ms cubic-bezier(.4, 0, .2, 1) both;
 }
+
+/* Optional fallback mode for older browsers and constrained devices. */
+:root[data-compatibility-mode="true"] .app-layout::before {
+  display: none;
+}
+
+:root[data-compatibility-mode="true"] .welcome-card::after,
+:root[data-compatibility-mode="true"] .card-shimmer,
+:root[data-compatibility-mode="true"] [class*="backdrop-filter"] {
+  display: none;
+  backdrop-filter: none;
+}
+
+:root[data-compatibility-mode="true"] .welcome-card,
+:root[data-compatibility-mode="true"] .featured-card,
+:root[data-compatibility-mode="true"] .feed-item-button,
+:root[data-compatibility-mode="true"] .sidebar,
+:root[data-compatibility-mode="true"] .header {
+  box-shadow: none;
+}

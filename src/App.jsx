@@ -19,6 +19,7 @@ import LoadingScreen from "./LoadingScreen.jsx";
 
 const THEME_STORAGE_KEY = "aftercode-share-theme";
 const SITE_STYLE_STORAGE_KEY = "aftercode-share-site-style";
+const COMPATIBILITY_MODE_STORAGE_KEY = "aftercode-share-compatibility-mode";
 const CUSTOMIZATION_STORAGE_KEY = "aftercode-share-customization";
 const PUBLIC_DATA_CACHE_KEY = "aftercode-share-public-data-v1";
 const APP_BASE_PATH = new URL(import.meta.env.BASE_URL, window.location.origin).pathname.replace(/\/$/, "");
@@ -197,6 +198,9 @@ export default function App() {
   });
   const [siteStyle, setSiteStyle] = useState(() => (
     window.localStorage.getItem(SITE_STYLE_STORAGE_KEY) === "classic" ? "classic" : "current"
+  ));
+  const [compatibilityMode, setCompatibilityMode] = useState(() => (
+    window.localStorage.getItem(COMPATIBILITY_MODE_STORAGE_KEY) === "true"
   ));
 
   useEffect(() => {
@@ -569,6 +573,11 @@ export default function App() {
   }, [siteStyle]);
 
   useEffect(() => {
+    document.documentElement.dataset.compatibilityMode = compatibilityMode ? "true" : "false";
+    window.localStorage.setItem(COMPATIBILITY_MODE_STORAGE_KEY, String(compatibilityMode));
+  }, [compatibilityMode]);
+
+  useEffect(() => {
     if (!supabase) {
       return undefined;
     }
@@ -886,6 +895,8 @@ export default function App() {
           onOpenCustomizer={openCustomizer}
           onCloseCustomizer={() => setIsCustomizeOpen(false)}
           onSaveCustomization={handleSaveCustomization}
+          compatibilityMode={compatibilityMode}
+          onCompatibilityModeChange={setCompatibilityMode}
           projects={projects}
           onProjectOpen={openProject}
           selectedUserId={selectedUserId}

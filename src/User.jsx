@@ -37,6 +37,8 @@ export default function User({
   onOpenCustomizer,
   onCloseCustomizer,
   onSaveCustomization,
+  compatibilityMode,
+  onCompatibilityModeChange,
   projects,
   onProjectOpen,
   selectedUserId,
@@ -543,6 +545,21 @@ export default function User({
                   {label}
                 </label>
               ))}
+            </fieldset>
+
+            <fieldset className="customize-section customize-preferences">
+              <legend>User Settings</legend>
+              <label className="customize-preference-toggle">
+                <input
+                  type="checkbox"
+                  checked={compatibilityMode}
+                  onChange={(event) => onCompatibilityModeChange(event.target.checked)}
+                />
+                <span>
+                  <strong>Compatibility mode</strong>
+                  <small>Use simpler effects and solid surfaces for older browsers.</small>
+                </span>
+              </label>
             </fieldset>
 
             <div className="customize-actions">
