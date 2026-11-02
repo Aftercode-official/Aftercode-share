@@ -137,3 +137,31 @@
     padding: 1.2rem;
   }
 }
+
+:root[data-site-style="classic"] .upload-backdrop {
+  background: #d7d7d7;
+}
+
+:root[data-site-style="classic"][data-theme="dark"] .upload-backdrop {
+  background: #202124;
+}
+
+:root[data-site-style="classic"] .upload-panel,
+:root[data-site-style="classic"] .upload-file-picker {
+  border-radius: 2px;
+  border-color: var(--border-color);
+  background: var(--bg-card);
+  box-shadow: none;
+}
+
+:root[data-site-style="classic"] .upload-form input:not([type="file"]),
+:root[data-site-style="classic"] .upload-form select,
+:root[data-site-style="classic"] .upload-form textarea {
+  border-radius: 2px;
+  background: var(--bg-main);
+}
+
+:root[data-site-style="classic"] .upload-progress-track,
+:root[data-site-style="classic"] .upload-progress-fill {
+  border-radius: 0;
+}

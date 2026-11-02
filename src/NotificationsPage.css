@@ -56,3 +56,30 @@
   .notification-card { gap: 0.5rem; padding: 0.7rem; }
   .notification-avatar, .notification-actor { width: 34px; height: 34px; flex-basis: 34px; }
 }
+
+:root[data-site-style="classic"] .notifications-page,
+:root[data-site-style="classic"] .notifications-page-header,
+:root[data-site-style="classic"] .notification-card,
+:root[data-site-style="classic"] .notifications-empty {
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+:root[data-site-style="classic"] .notifications-page-header,
+:root[data-site-style="classic"] .notification-card,
+:root[data-site-style="classic"] .notifications-empty {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+:root[data-site-style="classic"] .notifications-filters button,
+:root[data-site-style="classic"] .notifications-read-all,
+:root[data-site-style="classic"] .notification-view-profile {
+  border-radius: 2px;
+  background: var(--bg-card);
+}
+
+:root[data-site-style="classic"] .notification-card.is-unread,
+:root[data-site-style="classic"] .notification-card.is-event-notification {
+  background: var(--bg-card);
+}

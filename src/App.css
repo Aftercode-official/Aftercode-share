@@ -2158,6 +2158,53 @@ body {
 :root[data-site-style="classic"][data-theme="dark"] .sidebar-profile-copy span,
 :root[data-site-style="classic"][data-theme="dark"] .sidebar-section-label { color: #f1f3f4; }
 
+/* Classic 2000s YouTube: solid surfaces, square UI, almost no motion. */
+:root[data-site-style="classic"] *,
+:root[data-site-style="classic"] *::before,
+:root[data-site-style="classic"] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+:root[data-site-style="classic"] button:not(:disabled):hover,
+:root[data-site-style="classic"] a:hover,
+:root[data-site-style="classic"] .featured-card:hover,
+:root[data-site-style="classic"] .timeline-card:hover,
+:root[data-site-style="classic"] .home-event-card:hover,
+:root[data-site-style="classic"] .notification-card:hover,
+:root[data-site-style="classic"] .project-card:hover {
+  transform: none !important;
+}
+:root[data-site-style="classic"] .app-layout::before,
+:root[data-site-style="classic"] .welcome-card::after {
+  display: none;
+}
+:root[data-site-style="classic"] .welcome-card,
+:root[data-site-style="classic"] .featured-hero,
+:root[data-site-style="classic"] .timeline-card,
+:root[data-site-style="classic"] .home-announcements-section,
+:root[data-site-style="classic"] .home-events-section,
+:root[data-site-style="classic"] .featured-card,
+:root[data-site-style="classic"] .feed-item,
+:root[data-site-style="classic"] .notification-card,
+:root[data-site-style="classic"] .sidebar-profile,
+:root[data-site-style="classic"] .sidebar-nav-btn {
+  border-radius: 2px;
+  box-shadow: none;
+}
+:root[data-site-style="classic"] .sidebar-nav-btn {
+  background-color: var(--bg-card);
+}
+:root[data-site-style="classic"] .sidebar-nav-btn:hover {
+  background-color: var(--bg-hover);
+}
+:root[data-site-style="classic"] .home-announcement-card,
+:root[data-site-style="classic"] .home-event-card,
+:root[data-site-style="classic"] .feed-item-button,
+:root[data-site-style="classic"] .feed-empty {
+  background-color: var(--bg-main);
+  background-image: none;
+}
+
 /* Full-width card shimmer */
 .featured-card,
 .timeline-card,

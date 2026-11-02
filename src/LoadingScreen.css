@@ -259,6 +259,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
   gap: 0;
   background: #08090c;
 }
@@ -287,3 +288,51 @@
   100% { left: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .loading-simple-progress span { animation: none; left: 27.5%; } }
+
+/* The loading screen follows the selected site skin before React mounts. */
+.loading-screen-current {
+  background-color: #08090c;
+  background-image:
+    linear-gradient(rgb(255 210 31 / 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 210 31 / 0.045) 1px, transparent 1px),
+    radial-gradient(circle at 50% 42%, rgb(255 210 31 / 0.12), transparent 28%);
+  background-size: 32px 32px, 32px 32px, auto;
+}
+
+.loading-screen-classic {
+  background: #f1f1f1;
+  border-top: 3px solid #315b86;
+  color: #222;
+}
+
+.loading-screen-classic .loading-center-icon {
+  filter: none;
+}
+
+.loading-screen-classic .loading-simple-progress {
+  border: 1px solid #bdbdbd;
+  border-radius: 2px;
+  background: #d7d7d7;
+}
+
+.loading-screen-classic .loading-simple-progress span {
+  position: relative;
+  left: 0;
+  width: 100%;
+  border-radius: 0;
+  background: #315b86;
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: loading-classic-progress 1.8s steps(10, end) infinite !important;
+}
+
+.loading-screen-classic .loading-experience {
+  color: #666;
+  font-family: Arial, Helvetica, sans-serif;
+  letter-spacing: 0;
+}
+
+@keyframes loading-classic-progress {
+  0% { transform: scaleX(0); }
+  85%, 100% { transform: scaleX(1); }
+}

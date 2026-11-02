@@ -647,3 +647,49 @@
   display: flex;
   align-items: center;
 }
+
+/* Classic project and Explore pages stay opaque and deliberately low-motion. */
+:root[data-site-style="classic"] .explore-heading,
+:root[data-site-style="classic"] .explore-controls,
+:root[data-site-style="classic"] .explore-project-card,
+:root[data-site-style="classic"] .explore-empty,
+:root[data-site-style="classic"] .project-player,
+:root[data-site-style="classic"] .project-detail-card,
+:root[data-site-style="classic"] .project-detail-aside,
+:root[data-site-style="classic"] .project-comments,
+:root[data-site-style="classic"] .project-edit-dialog {
+  border-radius: 2px;
+  border-color: var(--border-color);
+  background: var(--bg-card);
+  box-shadow: none;
+}
+
+:root[data-site-style="classic"] .explore-heading,
+:root[data-site-style="classic"] .explore-controls,
+:root[data-site-style="classic"] .project-detail-card,
+:root[data-site-style="classic"] .project-detail-aside,
+:root[data-site-style="classic"] .project-comments {
+  color: var(--text-primary);
+}
+
+:root[data-site-style="classic"] .explore-search .search-input,
+:root[data-site-style="classic"] .explore-controls select,
+:root[data-site-style="classic"] .project-action,
+:root[data-site-style="classic"] .project-share-button,
+:root[data-site-style="classic"] .project-comment-form textarea,
+:root[data-site-style="classic"] .project-comment-form input {
+  border-radius: 2px;
+  background: var(--bg-main);
+}
+
+:root[data-site-style="classic"] .project-edit-backdrop {
+  background: #d7d7d7;
+}
+
+:root[data-site-style="classic"][data-theme="dark"] .project-edit-backdrop {
+  background: #202124;
+}
+
+:root[data-site-style="classic"] .project-edit-dialog {
+  border: 1px solid var(--border-color);
+}
