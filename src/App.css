@@ -2079,6 +2079,24 @@ body {
 :root[data-site-style="classic"] .home-event-card { border-radius: 3px; background: #ffffff; }
 :root[data-site-style="classic"] .featured-badge { background: #315b86; color: #ffffff; }
 :root[data-site-style="classic"] .featured-card:hover { box-shadow: none; }
+:root[data-site-style="classic"] .section-title,
+:root[data-site-style="classic"] .timeline-header h3,
+:root[data-site-style="classic"] .home-announcements-section h2,
+:root[data-site-style="classic"] .home-events-section h2,
+:root[data-site-style="classic"] .featured-hero h2,
+:root[data-site-style="classic"] .featured-hero h3 {
+  color: #222222;
+}
+:root[data-site-style="classic"] .section-title { border-bottom-color: #d5d5d5; }
+:root[data-site-style="classic"] .featured-hero .featured-author,
+:root[data-site-style="classic"] .featured-hero .project-sequence {
+  color: #666666;
+}
+:root[data-site-style="classic"] .sidebar-profile-copy strong,
+:root[data-site-style="classic"] .sidebar-profile-copy span,
+:root[data-site-style="classic"] .sidebar-section-label {
+  color: #555555;
+}
 
 /* Full-width card shimmer */
 .featured-card,
