@@ -1963,6 +1963,17 @@ body {
   background: #d9dde3;
   color: #17191f;
 }
+:root:not([data-theme="dark"]) .workspace .header .icon-btn,
+:root:not([data-theme="dark"]) .workspace .header .sidebar-toggle,
+:root:not([data-theme="dark"]) .workspace .header .topbar-nav .icon-btn,
+:root:not([data-theme="dark"]) .workspace .header .header-right .icon-btn {
+  color: #20242a;
+}
+:root:not([data-theme="dark"]) .workspace .header .icon-btn:hover,
+:root:not([data-theme="dark"]) .workspace .header .sidebar-toggle:hover {
+  background: #c7ccd4;
+  color: #111318;
+}
 
 /* Full-width card shimmer */
 .featured-card,
