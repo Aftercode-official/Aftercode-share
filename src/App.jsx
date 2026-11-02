@@ -18,6 +18,7 @@ import { isAdminUserId } from "../shared/adminUsers.js";
 import LoadingScreen from "./LoadingScreen.jsx";
 
 const THEME_STORAGE_KEY = "aftercode-share-theme";
+const SITE_STYLE_STORAGE_KEY = "aftercode-share-site-style";
 const CUSTOMIZATION_STORAGE_KEY = "aftercode-share-customization";
 const PUBLIC_DATA_CACHE_KEY = "aftercode-share-public-data-v1";
 const APP_BASE_PATH = new URL(import.meta.env.BASE_URL, window.location.origin).pathname.replace(/\/$/, "");
@@ -194,6 +195,9 @@ export default function App() {
     const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     return savedTheme === "light" ? "light" : "dark";
   });
+  const [siteStyle, setSiteStyle] = useState(() => (
+    window.localStorage.getItem(SITE_STYLE_STORAGE_KEY) === "classic" ? "classic" : "current"
+  ));
 
   useEffect(() => {
     const handleAccountBanned = (event) => {
@@ -560,6 +564,11 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
+    document.documentElement.dataset.siteStyle = siteStyle;
+    window.localStorage.setItem(SITE_STYLE_STORAGE_KEY, siteStyle);
+  }, [siteStyle]);
+
+  useEffect(() => {
     if (!supabase) {
       return undefined;
     }
@@ -832,6 +841,14 @@ export default function App() {
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           >
             {theme === "dark" ? "Light" : "Dark"}
+          </button>
+          <button
+            className="icon-btn style-toggle"
+            type="button"
+            aria-label={siteStyle === "classic" ? "Use current style" : "Use classic YouTube style"}
+            onClick={() => setSiteStyle(siteStyle === "classic" ? "current" : "classic")}
+          >
+            {siteStyle === "classic" ? "Classic" : "Current"}
           </button>
 
           {!isLoggedIn && (
