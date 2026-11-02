@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { getCachedProfileStats, getCachedPublicProfile, loadPublicProfile, apiFollow, cacheProfileStats, loadFollowList } from "./userStorage.js";
 import { supabase } from "./supabase.js";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
@@ -459,7 +460,7 @@ export default function User({
         </>
       )}
 
-      {isCustomizeOpen && (
+      {isCustomizeOpen && createPortal((
         <div
           className="customize-backdrop"
           onMouseDown={(event) => {
@@ -552,7 +553,7 @@ export default function User({
             </div>
           </form>
         </div>
-      )}
+      ), document.body)}
 
       {peopleModal && (
         <div
