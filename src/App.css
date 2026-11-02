@@ -1930,6 +1930,20 @@ body {
   z-index: 1;
 }
 
+/* Keep Community Activity from collapsing when the activity request is empty or delayed. */
+.timeline-card {
+  min-height: 220px;
+}
+.timeline-card > .feed-empty {
+  display: grid;
+  min-height: 105px;
+  place-items: center;
+  margin: 0;
+}
+.timeline-card .feed-list {
+  min-height: 120px;
+}
+
 /* Full-width card shimmer */
 .featured-card,
 .timeline-card,
