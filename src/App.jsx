@@ -739,7 +739,14 @@ export default function App() {
             {isProjectAdmin && <button className={`sidebar-nav-btn${page === "admin" ? " is-active" : ""}`} type="button" onClick={() => navigateTo("admin")}>⚙ <span>Admin Panel</span></button>}
             <button className="sidebar-nav-btn" type="button" onClick={() => navigateTo("profile")}>◉ <span>View Profile</span></button>
             <button className="sidebar-nav-btn" type="button" onClick={openCustomizer}>⚙ <span>Customize Page</span></button>
-            <button className="sidebar-nav-btn" type="button" onClick={() => setIsWebStudioOpen(true)}>Web <span>Web Studio</span></button>
+            <button
+              className="sidebar-nav-btn"
+              type="button"
+              onClick={() => {
+                setIsWebStudioOpen(true);
+                window.dispatchEvent(new Event("aftercode:web-studio-reopen"));
+              }}
+            >Web <span>Web Studio</span></button>
           </nav>
           <div className="sidebar-account">
             <span className="sidebar-section-label">ACCOUNT</span>

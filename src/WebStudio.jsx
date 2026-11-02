@@ -65,6 +65,12 @@ export default function WebStudio({ isOpen, onClose }) {
   }, [background]);
 
   useEffect(() => {
+    const reopenStudio = () => setIsApplied(false);
+    window.addEventListener("aftercode:web-studio-reopen", reopenStudio);
+    return () => window.removeEventListener("aftercode:web-studio-reopen", reopenStudio);
+  }, []);
+
+  useEffect(() => {
     const move = (event) => {
       if (!dragRef.current) return;
       const { id, startX, startY, originX, originY } = dragRef.current;

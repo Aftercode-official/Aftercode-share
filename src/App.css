@@ -1900,6 +1900,11 @@ body {
   width: 0;
   min-width: 0;
 }
+.app-layout.has-sidebar > .sidebar {
+  flex: 0 0 232px;
+  width: 232px;
+  min-width: 232px;
+}
 .app-layout.has-sidebar .workspace .main-feed-container {
   width: 100%;
   max-width: none;
