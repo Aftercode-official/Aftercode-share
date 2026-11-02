@@ -2098,6 +2098,66 @@ body {
   color: #555555;
 }
 
+/* Classic skin also follows the Light/Dark toggle as one complete palette. */
+:root[data-site-style="classic"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg-main: #202124;
+  --bg-card: #292a2d;
+  --bg-hover: #383a3e;
+  --border-color: #45464a;
+  --text-primary: #f1f3f4;
+  --text-muted: #b0b3b8;
+  --accent-yellow: #e5bd45;
+  --accent-orange: #e5bd45;
+  --accent-purple: #527ba6;
+}
+:root[data-site-style="classic"][data-theme="dark"] body { background: #202124; }
+:root[data-site-style="classic"][data-theme="dark"] .app-layout {
+  background-color: #202124;
+  background-image: linear-gradient(rgb(255 255 255 / 3%) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 3%) 1px, transparent 1px);
+}
+:root[data-site-style="classic"][data-theme="dark"] .workspace .header {
+  border-top-color: #e5bd45;
+  border-bottom-color: #45464a;
+  background: linear-gradient(#303135, #252629);
+  color: #f1f3f4;
+}
+:root[data-site-style="classic"][data-theme="dark"] .topbar-brand,
+:root[data-site-style="classic"][data-theme="dark"] .header .icon-btn,
+:root[data-site-style="classic"][data-theme="dark"] .header .sidebar-toggle,
+:root[data-site-style="classic"][data-theme="dark"] .header .header-right .icon-btn {
+  color: #f1f3f4;
+}
+:root[data-site-style="classic"][data-theme="dark"] .header .icon-btn:hover,
+:root[data-site-style="classic"][data-theme="dark"] .header .sidebar-toggle:hover { background: #383a3e; color: #ffffff; }
+:root[data-site-style="classic"][data-theme="dark"] .welcome-card,
+:root[data-site-style="classic"][data-theme="dark"] .featured-hero,
+:root[data-site-style="classic"][data-theme="dark"] .timeline-card,
+:root[data-site-style="classic"][data-theme="dark"] .home-announcements-section,
+:root[data-site-style="classic"][data-theme="dark"] .home-events-section {
+  border-color: #45464a;
+  background: #292a2d;
+  color: #f1f3f4;
+}
+:root[data-site-style="classic"][data-theme="dark"] .welcome-card h1,
+:root[data-site-style="classic"][data-theme="dark"] .welcome-card p,
+:root[data-site-style="classic"][data-theme="dark"] .section-title,
+:root[data-site-style="classic"][data-theme="dark"] .timeline-header h3,
+:root[data-site-style="classic"][data-theme="dark"] .featured-hero h2,
+:root[data-site-style="classic"][data-theme="dark"] .featured-hero h3 {
+  color: #f1f3f4;
+}
+:root[data-site-style="classic"][data-theme="dark"] .section-title { border-bottom-color: #45464a; }
+:root[data-site-style="classic"][data-theme="dark"] .sidebar {
+  border-left-color: #45464a;
+  background: #292a2d;
+}
+:root[data-site-style="classic"][data-theme="dark"] .sidebar-profile { border-color: #45464a; background: #303135; }
+:root[data-site-style="classic"][data-theme="dark"] .sidebar-nav-btn,
+:root[data-site-style="classic"][data-theme="dark"] .sidebar-profile-copy strong,
+:root[data-site-style="classic"][data-theme="dark"] .sidebar-profile-copy span,
+:root[data-site-style="classic"][data-theme="dark"] .sidebar-section-label { color: #f1f3f4; }
+
 /* Full-width card shimmer */
 .featured-card,
 .timeline-card,
