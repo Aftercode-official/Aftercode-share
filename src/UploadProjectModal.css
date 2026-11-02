@@ -6,7 +6,6 @@
   place-items: center;
   padding: 1rem;
   background: rgb(20 16 12 / 62%);
-  backdrop-filter: blur(5px);
 }
 .upload-progress {
   display: flex;
