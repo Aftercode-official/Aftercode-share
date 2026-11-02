@@ -43,6 +43,32 @@ function previewDocument(html, css, background) {
   return `<!doctype html><html><head><meta charset="UTF-8"><style>${css}${safeBackground}</style></head><body>${html}</body></html>`;
 }
 
+function getEmbedUrl(rawUrl) {
+  try {
+    const url = new URL(rawUrl.match(/^https?:\/\//i) ? rawUrl : `https://${rawUrl}`);
+    const host = url.hostname.replace(/^www\./, "");
+    if (host === "youtube.com" && url.pathname === "/watch" && url.searchParams.get("v")) {
+      return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(url.searchParams.get("v"))}`;
+    }
+    if (host === "youtu.be" && url.pathname.length > 1) {
+      return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(url.pathname.slice(1))}`;
+    }
+    return url.toString();
+  } catch {
+    return rawUrl;
+  }
+}
+
+function isYouTubeHome(rawUrl) {
+  try {
+    const url = new URL(rawUrl.match(/^https?:\/\//i) ? rawUrl : `https://${rawUrl}`);
+    return ["youtube.com", "www.youtube.com", "m.youtube.com"].includes(url.hostname)
+      && (url.pathname === "/" || url.pathname === "");
+  } catch {
+    return false;
+  }
+}
+
 export default function WebStudio({ isOpen, onClose }) {
   const [initial] = useState(() => readSaved());
   const [html, setHtml] = useState(initial.html);
@@ -150,7 +176,11 @@ export default function WebStudio({ isOpen, onClose }) {
                     <button type="button" onClick={() => removeWindow(item.id)}>×</button>
                   </header>
                   <div className="studio-window-tools"><input aria-label="Window URL" value={item.url} placeholder="https://example.com" onChange={(event) => updateWindow(item.id, { url: event.target.value })} /><input aria-label="Window title" value={item.title} onChange={(event) => updateWindow(item.id, { title: event.target.value })} /></div>
-                  {item.url ? <iframe title={item.title} src={item.url} /> : <div className="studio-window-empty">Paste a URL above to load a web page</div>}
+                  {item.url
+                    ? isYouTubeHome(item.url)
+                      ? <div className="studio-window-empty">This page cannot be embedded.<a href={getEmbedUrl(item.url)} target="_blank" rel="noreferrer">Open in new tab ↗</a></div>
+                      : <iframe title={item.title} src={getEmbedUrl(item.url)} />
+                    : <div className="studio-window-empty">Paste a URL above to load a web page</div>}
                 </article>
               ))}
             </div>
