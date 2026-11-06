@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     if (req.method === "GET") {
       const { data, error } = await client
         .from("events")
-        .select("id, title, description, starts_at, location, thumbnail_url, created_at")
+        .select("id, title, description, starts_at, location, thumbnail_url, banner_html, created_at")
         .eq("is_public", true)
         .gte("starts_at", new Date().toISOString())
         .order("starts_at", { ascending: true })
@@ -82,8 +82,9 @@ export default async function handler(req, res) {
     const description = typeof body.description === "string" ? body.description.trim() : "";
     const location = typeof body.location === "string" ? body.location.trim() : "";
     const thumbnailPath = typeof body.thumbnailPath === "string" ? body.thumbnailPath.trim() : "";
+    const bannerHtml = typeof body.bannerHtml === "string" ? body.bannerHtml : "";
     const startsAt = typeof body.startsAt === "string" ? new Date(body.startsAt) : null;
-    if (!title || title.length > 120 || description.length > 2000 || location.length > 120
+    if (!title || title.length > 120 || description.length > 2000 || location.length > 120 || bannerHtml.length > 10000
       || !startsAt || Number.isNaN(startsAt.valueOf()) || startsAt <= new Date()
       || !thumbnailPath.startsWith(`${user.id}/event-thumbnails/`)) {
       sendJson(res, 400, { error: "Provide a title, valid future start time, event thumbnail, and description/location within their limits." });
@@ -98,9 +99,10 @@ export default async function handler(req, res) {
         description,
         location,
         thumbnail_url: thumbnailPath,
+        banner_html: bannerHtml,
         starts_at: startsAt.toISOString()
       })
-      .select("id, title, description, starts_at, location, thumbnail_url, created_at")
+      .select("id, title, description, starts_at, location, thumbnail_url, banner_html, created_at")
       .single();
 
     if (error) {

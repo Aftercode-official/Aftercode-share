@@ -972,6 +972,29 @@ export default function App() {
 
           {page === "home" && (
             <>
+              {events.length > 0 && (
+                <section className="home-events-section" aria-labelledby="home-events-title">
+                  <h2 className="section-title" id="home-events-title">Upcoming Events</h2>
+                  <div className="home-event-list">
+                    {events.map((event) => (
+                      <article className="home-event-card" key={event.id}>
+                        {event.thumbnail_url
+                          ? <img src={supabase.storage.from("project-files").getPublicUrl(event.thumbnail_url).data.publicUrl} alt="" loading="lazy" decoding="async" />
+                          : <div className="home-event-placeholder" aria-hidden="true">EVENT</div>}
+                        <div className="home-event-copy">
+                          {event.banner_html && <iframe className="home-event-banner" title={`${event.title} banner`} sandbox="" srcDoc={event.banner_html} />}
+                          <span className="home-update-label">COMMUNITY EVENT</span>
+                          <h3>{event.title}</h3>
+                          <time dateTime={event.starts_at}>{new Date(event.starts_at).toLocaleString()}</time>
+                          {event.location && <p className="home-event-location">{event.location}</p>}
+                          {event.description && <p>{event.description}</p>}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               {announcements.some((announcement) => !dismissedAnnouncementIds.includes(String(announcement.id))) && (
                 <section className="home-announcements-section" aria-labelledby="home-announcements-title">
                   <h2 className="section-title" id="home-announcements-title">Announcements</h2>
@@ -987,28 +1010,6 @@ export default function App() {
                           <time dateTime={announcement.created_at}>{new Date(announcement.created_at).toLocaleString()}</time>
                           <button className="home-announcement-dismiss" type="button" onClick={() => dismissAnnouncement(announcement.id)}>OK</button>
                         </footer>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {events.length > 0 && (
-                <section className="home-events-section" aria-labelledby="home-events-title">
-                  <h2 className="section-title" id="home-events-title">Upcoming Events</h2>
-                  <div className="home-event-list">
-                    {events.map((event) => (
-                      <article className="home-event-card" key={event.id}>
-                        {event.thumbnail_url
-                          ? <img src={supabase.storage.from("project-files").getPublicUrl(event.thumbnail_url).data.publicUrl} alt="" loading="lazy" decoding="async" />
-                          : <div className="home-event-placeholder" aria-hidden="true">EVENT</div>}
-                        <div className="home-event-copy">
-                          <span className="home-update-label">COMMUNITY EVENT</span>
-                          <h3>{event.title}</h3>
-                          <time dateTime={event.starts_at}>{new Date(event.starts_at).toLocaleString()}</time>
-                          {event.location && <p className="home-event-location">{event.location}</p>}
-                          {event.description && <p>{event.description}</p>}
-                        </div>
                       </article>
                     ))}
                   </div>
