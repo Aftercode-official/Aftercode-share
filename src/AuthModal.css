@@ -126,6 +126,29 @@
   transform: none;
 }
 
+.auth-forgot-link,
+.auth-back-link {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-orange);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-forgot-link {
+  justify-self: end;
+  margin-top: -0.55rem;
+}
+
+.auth-back-link {
+  justify-self: center;
+  color: var(--text-muted);
+}
+
 .auth-notice,
 .auth-error,
 .auth-success {

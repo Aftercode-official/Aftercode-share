@@ -91,6 +91,13 @@ export default function ProjectPages({
 
   if (view === "project" && selectedProject) {
     const currentInteraction = interaction ?? EMPTY_INTERACTION;
+    const editorProjectUrl = selectedProject.projectUrl
+      || (selectedProject.scratchProjectId
+        ? `https://projects.scratch.mit.edu/${selectedProject.scratchProjectId}`
+        : "");
+    const seeInsideUrl = editorProjectUrl
+      ? `https://aftercode-official.github.io/aftercode-editor/editor.html?project_url=${encodeURIComponent(editorProjectUrl)}&project_title=${encodeURIComponent(selectedProject.title)}`
+      : "";
 
     const submitComment = async (event) => {
       event.preventDefault();
@@ -310,6 +317,16 @@ export default function ProjectPages({
                   )}
                 </div>
                 <div className="project-action-group">
+                  {seeInsideUrl && (
+                    <a
+                      className="project-action project-see-inside"
+                      href={seeInsideUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      See Inside
+                    </a>
+                  )}
                   <button
                     className={`project-action${currentInteraction.liked ? " is-active" : ""}`}
                     type="button"

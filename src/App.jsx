@@ -55,7 +55,9 @@ function routePathFromLocation(pathname) {
 function toProject(record) {
   const projectUrl = record.asset_path
     ? supabase.storage.from("project-files").getPublicUrl(record.asset_path).data.publicUrl
-    : null;
+    : (record.scratch_project_id
+      ? `https://projects.scratch.mit.edu/${record.scratch_project_id}`
+      : null);
   const thumb = record.thumbnail_url
     ? (record.thumbnail_url.startsWith("http")
       ? record.thumbnail_url
@@ -162,6 +164,7 @@ export default function App() {
   const viewRequestTimesRef = useRef(new Map());
   const [accountBanNotice, setAccountBanNotice] = useState("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState("sign-in");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [authError, setAuthError] = useState("");
   const isLoggedIn = Boolean(user);
@@ -340,6 +343,7 @@ export default function App() {
 
   const openAuthModal = () => {
     setAuthError("");
+    setAuthModalMode("sign-in");
     setIsAuthModalOpen(true);
   };
 
@@ -599,7 +603,11 @@ export default function App() {
       setIsRestoringSession(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setAuthModalMode("reset-password");
+        setIsAuthModalOpen(true);
+      }
       setUser(session?.user ?? null);
     });
 
@@ -944,7 +952,9 @@ export default function App() {
                     assetPath: record.asset_path,
                     projectUrl: record.asset_path
                       ? supabase.storage.from("project-files").getPublicUrl(record.asset_path).data.publicUrl
-                      : null
+                      : (record.scratch_project_id
+                        ? `https://projects.scratch.mit.edu/${record.scratch_project_id}`
+                        : null)
                   }
                   : current);
                 try {
@@ -982,7 +992,6 @@ export default function App() {
                           ? <img src={supabase.storage.from("project-files").getPublicUrl(event.thumbnail_url).data.publicUrl} alt="" loading="lazy" decoding="async" />
                           : <div className="home-event-placeholder" aria-hidden="true">EVENT</div>}
                         <div className="home-event-copy">
-                          {event.banner_html && <iframe className="home-event-banner" title={`${event.title} banner`} sandbox="" srcDoc={event.banner_html} />}
                           <span className="home-update-label">COMMUNITY EVENT</span>
                           <h3>{event.title}</h3>
                           <time dateTime={event.starts_at}>{new Date(event.starts_at).toLocaleString()}</time>
@@ -1182,6 +1191,7 @@ export default function App() {
           <AuthModal
             onClose={() => setIsAuthModalOpen(false)}
             onAuthenticated={handleAuthentication}
+            initialMode={authModalMode}
           />
         </Suspense>
       )}

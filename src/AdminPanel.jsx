@@ -7,7 +7,7 @@ import "./AdminPanel.css";
 export default function AdminPanel({ projects, events, user, onToggleFeatured, onOpenProject, onCreateAnnouncement, onCreateEvent, onDeleteEvent, error }) {
   const featuredCount = projects.filter((project) => project.isFeatured).length;
   const [announcement, setAnnouncement] = useState({ title: "", message: "" });
-  const [eventDraft, setEventDraft] = useState({ title: "", description: "", location: "", startsAt: "", bannerHtml: "" });
+  const [eventDraft, setEventDraft] = useState({ title: "", description: "", location: "", startsAt: "" });
   const [eventImage, setEventImage] = useState(null);
   const [eventImagePreview, setEventImagePreview] = useState("");
   const [isSendingAnnouncement, setIsSendingAnnouncement] = useState(false);
@@ -88,7 +88,7 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
 
       const result = await onCreateEvent({ ...eventDraft, thumbnailPath });
       thumbnailPath = null;
-      setEventDraft({ title: "", description: "", location: "", startsAt: "", bannerHtml: "" });
+      setEventDraft({ title: "", description: "", location: "", startsAt: "" });
       setEventImage(null);
       setEventImagePreview("");
       setSuccessMessage(`Event notification sent to ${result?.sent ?? "all"} users.`);
@@ -201,8 +201,6 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
           <p>Create an event notice with its own date, location, and thumbnail.</p>
           <label>Title<input required maxLength={120} value={eventDraft.title} onChange={(event) => setEventDraft((current) => ({ ...current, title: event.target.value }))} /></label>
           <label>Description<textarea maxLength={2000} rows={3} value={eventDraft.description} onChange={(event) => setEventDraft((current) => ({ ...current, description: event.target.value }))} /></label>
-          <label>Banner HTML / CSS<textarea maxLength={10000} rows={6} placeholder={'<style>body { margin: 0; background: #18243a; color: white; font: 700 28px sans-serif; }</style>\n<div style="padding: 24px">Your event banner</div>'} value={eventDraft.bannerHtml} onChange={(event) => setEventDraft((current) => ({ ...current, bannerHtml: event.target.value }))} /></label>
-          <p className="admin-tool-description">HTML and CSS are shown in an isolated banner. Scripts are disabled.</p>
           <div className="admin-event-fields">
             <label>Location<input maxLength={120} value={eventDraft.location} onChange={(event) => setEventDraft((current) => ({ ...current, location: event.target.value }))} /></label>
             <label>Starts at<input required type="datetime-local" value={eventDraft.startsAt} onChange={(event) => setEventDraft((current) => ({ ...current, startsAt: event.target.value }))} /></label>

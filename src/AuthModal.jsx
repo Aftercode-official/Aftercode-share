@@ -4,11 +4,12 @@ import { apiRequest } from "./api.js";
 import "./AuthModal.css";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
 
-export default function AuthModal({ onClose, onAuthenticated }) {
-  const [mode, setMode] = useState("sign-in");
+export default function AuthModal({ onClose, onAuthenticated, initialMode = "sign-in" }) {
+  const [mode, setMode] = useState(initialMode);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -37,8 +38,7 @@ export default function AuthModal({ onClose, onAuthenticated }) {
     setError("");
     setMessage("");
 
-    // Bắt buộc phải có captcha
-    if (!captchaToken) {
+    if (mode !== "reset-password" && !captchaToken) {
       setError("Please complete the captcha.");
       return;
     }
@@ -46,7 +46,29 @@ export default function AuthModal({ onClose, onAuthenticated }) {
     setIsSubmitting(true);
 
     try {
-      if (mode === "sign-up") {
+      if (mode === "forgot-password") {
+        const trimmedEmail = email.trim();
+        if (!trimmedEmail) throw new Error("Enter your account email.");
+        const redirectUrl = new URL(import.meta.env.BASE_URL, window.location.origin);
+        redirectUrl.searchParams.set("passwordReset", "1");
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
+          redirectTo: redirectUrl.toString(),
+          captchaToken
+        });
+        if (resetError) throw resetError;
+        setMessage("Password reset instructions have been sent to your email.");
+        setEmail("");
+      } else if (mode === "reset-password") {
+        if (password.length < 6) throw new Error("Your new password must be at least 6 characters.");
+        if (password !== confirmPassword) throw new Error("Passwords do not match.");
+        const { error: updateError } = await supabase.auth.updateUser({ password });
+        if (updateError) throw updateError;
+        await supabase.auth.signOut();
+        setPassword("");
+        setConfirmPassword("");
+        setMode("sign-in");
+        setMessage("Password changed successfully. Please sign in with your new password.");
+      } else if (mode === "sign-up") {
         const trimmedName = displayName.trim();
         const trimmedEmail = email.trim();
 
@@ -138,31 +160,42 @@ export default function AuthModal({ onClose, onAuthenticated }) {
           ×
         </button>
         <span className="welcome-eyebrow">WELCOME TO AFTERCODE</span>
-        <h2 id="auth-title">{mode === "sign-in" ? "Sign in to your account" : "Create your account"}</h2>
+        <h2 id="auth-title">
+          {mode === "sign-in" ? "Sign in to your account"
+            : mode === "sign-up" ? "Create your account"
+            : mode === "forgot-password" ? "Reset your password"
+            : "Choose a new password"}
+        </h2>
         <p className="auth-intro">
           {mode === "sign-in"
             ? "Sign in to save projects and join the community."
-            : "Create an account to start sharing your projects."}
+            : mode === "sign-up"
+              ? "Create an account to start sharing your projects."
+              : mode === "forgot-password"
+                ? "Enter the email address used for your account."
+                : "Enter and confirm your new password."}
         </p>
 
-        <div className="auth-tabs" role="tablist" aria-label="Account access">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "sign-in"}
-            onClick={() => changeMode("sign-in")}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "sign-up"}
-            onClick={() => changeMode("sign-up")}
-          >
-            Create Account
-          </button>
-        </div>
+        {(mode === "sign-in" || mode === "sign-up") && (
+          <div className="auth-tabs" role="tablist" aria-label="Account access">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "sign-in"}
+              onClick={() => changeMode("sign-in")}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "sign-up"}
+              onClick={() => changeMode("sign-up")}
+            >
+              Create Account
+            </button>
+          </div>
+        )}
 
         {!isSupabaseConfigured && (
           <p className="auth-notice" role="status">
@@ -200,7 +233,7 @@ export default function AuthModal({ onClose, onAuthenticated }) {
                 placeholder="your-username"
               />
             </label>
-          ) : (
+          ) : (mode === "sign-up" || mode === "forgot-password") ? (
             <label>
               Email
               <input
@@ -211,39 +244,72 @@ export default function AuthModal({ onClose, onAuthenticated }) {
                 onChange={(event) => setEmail(event.target.value)}
               />
             </label>
+          ) : null}
+
+          {(mode === "sign-in" || mode === "sign-up" || mode === "reset-password") && (
+            <label>
+              {mode === "reset-password" ? "New password" : "Password"}
+              <input
+                autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
+                type="password"
+                minLength={6}
+                required
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </label>
           )}
 
-          <label>
-            Password
-            <input
-              autoComplete={mode === "sign-up" ? "new-password" : "current-password"}
-              type="password"
-              minLength={6}
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-          </label>
+          {mode === "reset-password" && (
+            <label>
+              Confirm new password
+              <input
+                autoComplete="new-password"
+                type="password"
+                minLength={6}
+                required
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+              />
+            </label>
+          )}
 
-          <div className="auth-captcha">
-            <HCaptcha
-              ref={captchaRef}
-              sitekey="3052ee80-e7ac-4b88-a35e-f64ca4fe8bc8"
-              onVerify={setCaptchaToken}
-              onExpire={() => setCaptchaToken("")}
-              onError={() => setCaptchaToken("")}
-            />
-          </div>
+          {mode === "sign-in" && (
+            <button className="auth-forgot-link" type="button" onClick={() => changeMode("forgot-password")}>
+              Forgot password?
+            </button>
+          )}
+
+          {mode !== "reset-password" && (
+            <div className="auth-captcha">
+              <HCaptcha
+                ref={captchaRef}
+                sitekey="3052ee80-e7ac-4b88-a35e-f64ca4fe8bc8"
+                onVerify={setCaptchaToken}
+                onExpire={() => setCaptchaToken("")}
+                onError={() => setCaptchaToken("")}
+              />
+            </div>
+          )}
 
           <button
             className="signin-btn auth-submit"
             type="submit"
-            disabled={!isSupabaseConfigured || isSubmitting || !captchaToken}
+            disabled={!isSupabaseConfigured || isSubmitting || (mode !== "reset-password" && !captchaToken)}
           >
             {isSubmitting
               ? "Please wait..."
-              : mode === "sign-in" ? "Sign In" : "Create Account"}
+              : mode === "sign-in" ? "Sign In"
+                : mode === "sign-up" ? "Create Account"
+                  : mode === "forgot-password" ? "Send reset email"
+                    : "Change password"}
           </button>
+
+          {(mode === "forgot-password" || mode === "reset-password") && (
+            <button className="auth-back-link" type="button" onClick={() => changeMode("sign-in")}>
+              Back to sign in
+            </button>
+          )}
         </form>
       </section>
     </div>

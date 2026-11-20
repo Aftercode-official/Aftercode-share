@@ -388,6 +388,17 @@
   color: var(--accent-orange);
 }
 
+.project-see-inside {
+  border-color: var(--accent-orange);
+  background: var(--accent-orange);
+  color: white;
+  text-decoration: none;
+}
+
+.project-see-inside:hover {
+  filter: brightness(0.95);
+}
+
 .project-action span {
   margin-left: 0.2rem;
   color: var(--text-muted);
