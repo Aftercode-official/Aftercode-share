@@ -417,7 +417,7 @@
 }
 
 .profile-page .profile-banner {
-  height: clamp(88px, 12vw, 128px);
+  height: clamp(104px, 14vw, 148px);
   border-bottom: 1px solid var(--brutal-ink);
 }
 
