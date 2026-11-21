@@ -33,6 +33,8 @@ export default function User({
   page,
   user,
   customization,
+  decorations = [],
+  ownedDecorationIds = [],
   customizationError,
   isCustomizeOpen,
   onOpenCustomizer,
@@ -69,6 +71,10 @@ export default function User({
   const [peopleList, setPeopleList] = useState([]);
   const [peopleError, setPeopleError] = useState("");
   const [isPeopleLoading, setIsPeopleLoading] = useState(false);
+  const ownedDecorations = decorations.filter((item) => ownedDecorationIds.includes(item.id));
+  const avatarFrameImage = (frameId) => frameId === "bear"
+    ? BearAvatarFrame
+    : decorations.find((item) => item.id === frameId)?.imageUrl || "";
 
   useEffect(() => {
     if (isCustomizeOpen) setDraft({ ...customization });
@@ -303,8 +309,8 @@ export default function User({
                 {customization.avatarUrl
                   ? <img src={customization.avatarUrl} alt={`${customization.displayName} avatar`} decoding="async" fetchPriority="high" />
                   : customization.displayName.slice(0, 1)}
-                {customization.avatarFrame === "bear" && (
-                  <img className="avatar-frame-overlay" src={BearAvatarFrame} alt="" aria-hidden="true" />
+                {avatarFrameImage(customization.avatarFrame) && (
+                  <img className="avatar-frame-overlay" src={avatarFrameImage(customization.avatarFrame)} alt="" aria-hidden="true" />
                 )}
               </div>
               <div className="profile-identity-main">
@@ -396,8 +402,8 @@ export default function User({
                     {publicProfile.avatar_url
                       ? <img src={publicProfile.avatar_url} alt="" decoding="async" fetchPriority="high" />
                       : (publicProfile.display_name || "?").slice(0, 1)}
-                    {publicProfile.avatar_frame === "bear" && (
-                      <img className="avatar-frame-overlay" src={BearAvatarFrame} alt="" aria-hidden="true" />
+                    {avatarFrameImage(publicProfile.avatar_frame) && (
+                      <img className="avatar-frame-overlay" src={avatarFrameImage(publicProfile.avatar_frame)} alt="" aria-hidden="true" />
                     )}
                   </div>
                   <div className="profile-identity-main">
@@ -532,13 +538,18 @@ export default function User({
                   <option value="neon">Neon</option>
                   <option value="pixel">Pixel</option>
                   <option value="bear">Bear</option>
+                  {ownedDecorations.length > 0 && (
+                    <optgroup label="Purchased frames">
+                      {ownedDecorations.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
+                    </optgroup>
+                  )}
                 </select>
                 <div className="profile-avatar customize-avatar-frame-preview" data-avatar-frame={draft.avatarFrame || "none"}>
                   {draft.avatarUrl
                     ? <img src={draft.avatarUrl} alt="" />
                     : draft.displayName.slice(0, 1).toUpperCase()}
-                  {draft.avatarFrame === "bear" && (
-                    <img className="avatar-frame-overlay" src={BearAvatarFrame} alt="" aria-hidden="true" />
+                  {avatarFrameImage(draft.avatarFrame) && (
+                    <img className="avatar-frame-overlay" src={avatarFrameImage(draft.avatarFrame)} alt="" aria-hidden="true" />
                   )}
                 </div>
               </label>

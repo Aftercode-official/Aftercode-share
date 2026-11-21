@@ -3,6 +3,7 @@ import { apiRequest } from "./api.js";
 import { supabase } from "./supabase.js";
 import { getProjectIdsFromText } from "./projectLinks.js";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
+import BearAvatarFrame from "./assets/bear-avatar-frame.png";
 
 const EMOJI_GROUPS = [
   { label: "Smileys", items: ["😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃", "😉", "😊", "😇", "🥰", "😍", "🤩", "😘", "😗", "😋", "😛", "😜", "🤪", "😎", "🤓", "🧐", "🤔", "🫡", "🤭", "🫢", "🤫", "🤗", "🥳", "😏", "😴", "🥱", "😮", "😱", "🥺", "😢", "😭", "😤", "😡", "🤯", "😵", "🤒", "🤧", "🥶", "🥵", "😈", "👻", "💀", "🤖", "💩","👽"] },
@@ -93,7 +94,7 @@ function toProjectPreview(record, interaction) {
   };
 }
 
-export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserProfile }) {
+export default function ChatCenter({ user, avatarFrame = "none", decorations = [], onSignIn, onOpenProject, onOpenUserProfile }) {
   const [messages, setMessages] = useState(readCachedChatMessages);
   const [isLoadingMessages, setIsLoadingMessages] = useState(() => readCachedChatMessages().length === 0);
   const [hasOlderMessages, setHasOlderMessages] = useState(readCachedHasOlderMessages);
@@ -472,10 +473,17 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
           </div>
         ) : messages.length ? messages.map((message) => {
           const replyTarget = message.reply_to ?? messages.find((item) => item.id === message.reply_to_message_id);
+          const frameId = message.avatar_frame && message.avatar_frame !== "none"
+            ? message.avatar_frame
+            : message.user_id === user?.id ? avatarFrame : message.avatar_frame || "none";
+          const frameImage = frameId === "bear"
+            ? BearAvatarFrame
+            : decorations.find((item) => item.id === frameId)?.imageUrl;
           return (
           <article id={`chat-message-${message.id}`} className={`chat-message${message.user_id === user?.id ? " is-own-message" : ""}${message.pending ? " is-pending" : ""}`} key={message.id}>
             <button
               className="chat-avatar-link"
+              data-avatar-frame={frameId}
               type="button"
               aria-label={`View ${message.author}'s profile`}
               onClick={() => message.user_id && onOpenUserProfile?.(message.user_id)}
@@ -484,6 +492,9 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
               {message.avatar_url
                 ? <img className="chat-avatar" src={message.avatar_url} alt="" loading="lazy" decoding="async" />
                 : <span className="chat-avatar chat-avatar-fallback" aria-hidden="true">{message.author.slice(0, 1).toUpperCase()}</span>}
+              {frameImage
+                ? <img className="chat-avatar-frame-overlay" src={frameImage} alt="" aria-hidden="true" />
+                : null}
             </button>
             <div className="chat-message-body">
               <div className="chat-message-meta">

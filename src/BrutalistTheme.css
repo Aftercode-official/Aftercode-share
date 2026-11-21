@@ -258,6 +258,8 @@ body {
 }
 
 .chat-avatar-link {
+  position: relative;
+  overflow: visible !important;
   display: grid;
   flex: 0 0 34px;
   width: 34px;
@@ -267,6 +269,45 @@ body {
   border: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
+}
+
+.chat-avatar-frame-overlay,
+.project-comment-avatar-frame-overlay {
+  position: absolute;
+  z-index: 3;
+  top: -13%;
+  left: -27%;
+  width: 154%;
+  height: 126%;
+  object-fit: fill;
+  pointer-events: none;
+}
+
+.chat-avatar-link[data-avatar-frame="gold"],
+.project-comment-avatar-btn[data-avatar-frame="gold"] {
+  box-shadow: 0 0 0 2px #765400, 0 0 0 4px #ffd166 !important;
+}
+
+.chat-avatar-link[data-avatar-frame="neon"],
+.project-comment-avatar-btn[data-avatar-frame="neon"] {
+  box-shadow: 0 0 0 2px #083b66, 0 0 10px 4px rgb(34 224 255 / 68%) !important;
+}
+
+.chat-avatar-link[data-avatar-frame="pixel"],
+.project-comment-avatar-btn[data-avatar-frame="pixel"] {
+  outline: 3px double #f0c400;
+  outline-offset: 2px;
+}
+
+.chat-avatar-link[data-avatar-frame="bear"],
+.project-comment-avatar-btn[data-avatar-frame="bear"] {
+  border-radius: 50%;
+}
+
+.chat-avatar-link[data-avatar-frame="bear"] .chat-avatar,
+.project-comment-avatar-btn[data-avatar-frame="bear"] .project-comment-avatar,
+.project-comment-avatar-btn[data-avatar-frame="bear"] .avatar {
+  border-radius: 50%;
 }
 
 .chat-avatar,

@@ -3,6 +3,7 @@ import { createAdminClient, getAuthenticatedUser } from "../../server/supabase.j
 
 const MAX_NAME = 40;
 const MAX_BIO = 300;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function sanitizeProfile(body) {
   const updates = {};
@@ -36,7 +37,7 @@ function sanitizeProfile(body) {
     }
   }
   if (Object.hasOwn(body, "avatarFrame")) {
-    if (!["none", "gold", "neon", "pixel", "bear"].includes(body.avatarFrame)) {
+    if (!["none", "gold", "neon", "pixel", "bear"].includes(body.avatarFrame) && !UUID_RE.test(body.avatarFrame)) {
       return { error: "Choose a valid avatar frame." };
     }
     updates.avatar_frame = body.avatarFrame;
@@ -136,6 +137,19 @@ export default async function handler(req, res) {
     if (validation.error) {
       sendJson(res, 400, { error: validation.error });
       return;
+    }
+    if (UUID_RE.test(validation.updates.avatar_frame || "")) {
+      const { data: ownedDecoration, error: ownershipError } = await client
+        .from("user_profile_decorations")
+        .select("decoration_id")
+        .eq("user_id", user.id)
+        .eq("decoration_id", validation.updates.avatar_frame)
+        .maybeSingle();
+      if (ownershipError) throw ownershipError;
+      if (!ownedDecoration) {
+        sendJson(res, 403, { error: "You can only equip profile frames that you own." });
+        return;
+      }
     }
 
     const { data, error } = await client

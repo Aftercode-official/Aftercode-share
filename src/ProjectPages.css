@@ -650,6 +650,8 @@
 }
 
 .project-comment-avatar-btn {
+  position: relative;
+  overflow: visible;
   border: 0;
   background: transparent;
   padding: 0;

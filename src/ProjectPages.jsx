@@ -5,6 +5,7 @@ import { supabase } from "./supabase.js";
 import { validateScratchProjectFile } from "./scratchProjectFile.js";
 import { projectShareUrl } from "./projectLinks.js";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
+import BearAvatarFrame from "./assets/bear-avatar-frame.png";
 
 const EMOJI_GROUPS = [
   { name: "Smileys", emojis: ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😍", "🥰", "😘", "😋", "😎", "🤩", "🥳", "😏", "😢", "😭", "😡", "🤔", "🤯", "🥺", "😴", "🤗", "🤭", "🫡", "🫠"] },
@@ -32,6 +33,7 @@ export default function ProjectPages({
   onOpenProject,
   onBack,
   interaction,
+  decorations = [],
   onInteractionChange,
   user,
   onSignIn,
@@ -419,11 +421,16 @@ export default function ProjectPages({
                 </button>
               </form>
               <div className="project-comment-list">
-                {currentInteraction.comments.map((comment) => (
+                {currentInteraction.comments.map((comment) => {
+                  const frameImage = comment.avatarFrame === "bear"
+                    ? BearAvatarFrame
+                    : decorations.find((item) => item.id === comment.avatarFrame)?.imageUrl;
+                  return (
                   <article className={`project-comment${comment.pending ? " is-pending" : ""}`} key={comment.id}>
                     <button
                       type="button"
                       className="project-comment-avatar-btn"
+                      data-avatar-frame={comment.avatarFrame || "none"}
                       aria-label={`View ${comment.author}'s profile`}
                       disabled={!comment.userId}
                       onClick={() => comment.userId && onOpenUserProfile?.(comment.userId)}
@@ -431,6 +438,9 @@ export default function ProjectPages({
                       {comment.avatarUrl
                         ? <img className="project-comment-avatar" src={comment.avatarUrl} alt="" loading="lazy" decoding="async" />
                         : <div className="avatar">{comment.author.slice(0, 1)}</div>}
+                      {frameImage
+                        ? <img className="project-comment-avatar-frame-overlay" src={frameImage} alt="" aria-hidden="true" />
+                        : null}
                     </button>
                     <div>
                       <button
@@ -444,7 +454,8 @@ export default function ProjectPages({
                       <p>{comment.text}</p>
                     </div>
                   </article>
-                ))}
+                  );
+                })}
                 {currentInteraction.comments.length === 0 && <p className="project-empty-comments">Be the first to comment.</p>}
               </div>
             </section>

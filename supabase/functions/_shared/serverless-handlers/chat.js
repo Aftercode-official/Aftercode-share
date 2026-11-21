@@ -45,7 +45,7 @@ export default async function handler(req, res) {
         ...(replies ?? []).map((message) => message.user_id)
       ])];
       const { data: profiles, error: profilesError } = userIds.length
-        ? await client.from("profiles").select("user_id, display_name, avatar_url").in("user_id", userIds)
+        ? await client.from("profiles").select("user_id, display_name, avatar_url, avatar_frame").in("user_id", userIds)
         : { data: [], error: null };
       if (profilesError) throw profilesError;
       const profileMap = new Map((profiles ?? []).map((profile) => [profile.user_id, profile]));
@@ -59,6 +59,7 @@ export default async function handler(req, res) {
             ...message,
             author: profile?.display_name?.trim() || message.author,
             avatar_url: profile?.avatar_url || message.avatar_url,
+            avatar_frame: profile?.avatar_frame || "none",
             reply_to: replyMap.has(message.reply_to_message_id) ? {
               id: message.reply_to_message_id,
               author: profileMap.get(replyMap.get(message.reply_to_message_id).user_id)?.display_name?.trim()
@@ -198,7 +199,7 @@ export default async function handler(req, res) {
     const metadata = user.user_metadata ?? {};
     const [rateLimit, profileResult] = await Promise.all([
       checkRateLimit(client, `chat-message:${user.id}`, 10, 60_000),
-      client.from("profiles").select("display_name, avatar_url").eq("user_id", user.id).maybeSingle()
+      client.from("profiles").select("display_name, avatar_url, avatar_frame").eq("user_id", user.id).maybeSingle()
     ]);
     if (!rateLimit.ok) {
       res.setHeader("Retry-After", String(Math.max(1, rateLimit.retryAfter)));
@@ -224,7 +225,7 @@ export default async function handler(req, res) {
       })
       .select(CHAT_FIELDS).single();
     if (error) throw error;
-    sendJson(res, 201, { message: { ...data, reply_to: replyTo } });
+    sendJson(res, 201, { message: { ...data, avatar_frame: profile?.avatar_frame || "none", reply_to: replyTo } });
   } catch (error) {
     logApiError("Unable to process chat request.", error);
     sendJson(res, 500, { error: "Unable to process the chat request." });

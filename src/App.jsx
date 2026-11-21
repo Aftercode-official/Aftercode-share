@@ -12,6 +12,7 @@ import ProjectThumbnail from "./ProjectThumbnail.jsx";
 const ChatCenter = lazy(() => import("./ChatCenter.jsx"));
 const AdminPanel = lazy(() => import("./AdminPanel.jsx"));
 const NotificationsPage = lazy(() => import("./NotificationsPage.jsx"));
+const ProfileShop = lazy(() => import("./ProfileShop.jsx"));
 import { getProjectIdFromUrl, projectShareUrl } from "./projectLinks.js";
 import "./App.css";
 import { isAdminUserId } from "../shared/adminUsers.js";
@@ -104,6 +105,9 @@ function getInitialRoute() {
   if (parts.length === 1 && parts[0] === "chat") {
     return { page: "chat", username: "", peopleList: null };
   }
+  if (parts.length === 1 && parts[0] === "shop") {
+    return { page: "shop", username: "", peopleList: null };
+  }
   if (parts.length === 1 && ["explorer", "explore"].includes(parts[0])) {
     return { page: "explore", username: "", peopleList: null };
   }
@@ -153,7 +157,8 @@ function normalizeCustomization(saved = {}) {
   if (typeof saved.accentColor !== "string" || saved.accentColor.toLowerCase() === "#238a45") {
     normalized.accentColor = DEFAULT_CUSTOMIZATION.accentColor;
   }
-  if (!["none", "gold", "neon", "pixel", "bear"].includes(normalized.avatarFrame)) {
+  if (!["none", "gold", "neon", "pixel", "bear"].includes(normalized.avatarFrame)
+    && !(typeof normalized.avatarFrame === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalized.avatarFrame))) {
     normalized.avatarFrame = DEFAULT_CUSTOMIZATION.avatarFrame;
   }
   return normalized;
@@ -242,9 +247,30 @@ export default function App() {
   }, [isProfileMenuOpen, isAppearanceMenuOpen]);
   const [customization, setCustomization] = useState(DEFAULT_CUSTOMIZATION);
   const [customizationError, setCustomizationError] = useState("");
+  const [shopData, setShopData] = useState({ decorations: [], balance: null, dailyClaimedAt: null, ownedIds: [], error: "", loading: true });
   const isProjectAdmin = isAdminUserId(user?.id);
   const featuredProjects = projects.filter((project) => project.isFeatured);
   const visibleAnnouncements = announcements.filter((item) => !dismissedAnnouncementIds.includes(String(item.id)));
+  const equippedDecoration = shopData.decorations.find((item) => item.id === customization.avatarFrame);
+
+  useEffect(() => {
+    let active = true;
+    setShopData((current) => ({ ...current, loading: true, error: "", balance: null, dailyClaimedAt: null, ownedIds: [] }));
+    apiRequest("/api/shop", { authenticated: Boolean(user) })
+      .then((result) => {
+        if (active) setShopData({ ...result, error: "", loading: false });
+      })
+      .catch((error) => {
+        if (active) setShopData((current) => ({ ...current, error: error.message, loading: false }));
+      });
+    return () => { active = false; };
+  }, [user?.id]);
+
+  const refreshShopData = async () => {
+    const result = await apiRequest("/api/shop", { authenticated: Boolean(user) });
+    setShopData({ ...result, error: "", loading: false });
+    return result;
+  };
 
   const loadProjects = async () => {
     const { projects: records } = await apiRequest("/api/projects");
@@ -402,6 +428,7 @@ export default function App() {
     let pathname = appRoutePath("/");
     if (nextPage === "notifications") pathname = appRoutePath("/notification");
     else if (nextPage === "chat") pathname = appRoutePath("/chat");
+    else if (nextPage === "shop") pathname = appRoutePath("/shop");
     else if (nextPage === "explore") pathname = appRoutePath("/explorer");
     else if (nextPage === "user" || nextPage === "profile") pathname = userPagePath(routeUsername || options.userId);
     setProfileRouteUsername(routeUsername || "");
@@ -556,6 +583,7 @@ export default function App() {
         userId: user.id,
         author: customization.displayName || user.user_metadata?.display_name || user.email?.split("@")[0] || "You",
         avatarUrl: customization.avatarUrl || user.user_metadata?.avatar_url || "",
+        avatarFrame: customization.avatarFrame || "none",
         text: details.text,
         createdAt: new Date().toISOString(),
         pending: true
@@ -598,8 +626,10 @@ export default function App() {
       await persistCustomization(nextCustomization);
       setCustomization(nextCustomization);
       setIsCustomizeOpen(false);
+      return true;
     } catch (error) {
       setCustomizationError(`Unable to save settings: ${error.message}`);
+      return false;
     }
   };
 
@@ -808,6 +838,7 @@ export default function App() {
             </a>
             <button className="icon-btn" type="button" onClick={() => navigateTo("explore")}>Explore</button>
             <button className={`icon-btn${page === "chat" ? " is-active" : ""}`} type="button" onClick={() => navigateTo("chat")}>Chat</button>
+            <button className={`icon-btn${page === "shop" ? " is-active" : ""}`} type="button" onClick={() => navigateTo("shop")}>Shop</button>
           </nav>
 
           <label className="header-center header-search">
@@ -917,9 +948,8 @@ export default function App() {
                 {customization.avatarUrl
                   ? <img src={customization.avatarUrl} alt="" />
                   : <span>{customization.displayName.slice(0, 1).toUpperCase()}</span>}
-                {customization.avatarFrame === "bear" && (
-                  <img className="header-avatar-frame" src={BearAvatarFrame} alt="" aria-hidden="true" />
-                )}
+                {customization.avatarFrame === "bear" && <img className="header-avatar-frame" src={BearAvatarFrame} alt="" aria-hidden="true" />}
+                {equippedDecoration && <img className="header-avatar-frame" src={equippedDecoration.imageUrl} alt="" aria-hidden="true" />}
               </button>
               {isProfileMenuOpen && (
                 <div className="profile-dropdown" role="menu">
@@ -954,7 +984,7 @@ export default function App() {
           </div>
         </header>
         <main
-          className={`main-feed-container${page === "home" ? ` scratch-home${!isLoggedIn ? " guest-home" : ""}${events.length ? " has-home-events" : ""}` : ""}${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}`}
+          className={`main-feed-container${page === "home" ? ` scratch-home${!isLoggedIn ? " guest-home" : ""}${events.length ? " has-home-events" : ""}` : ""}${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}${page === "shop" ? " shop-page-container" : ""}`}
         >
           <Suspense fallback={siteStyle === "classic"
             ? <LoadingScreen siteStyle={siteStyle} inline />
@@ -964,6 +994,8 @@ export default function App() {
           page={page}
           user={user}
           customization={customization}
+          decorations={shopData.decorations}
+          ownedDecorationIds={shopData.ownedIds}
           customizationError={customizationError}
           isCustomizeOpen={isCustomizeOpen}
           onOpenCustomizer={openCustomizer}
@@ -990,6 +1022,7 @@ export default function App() {
               onOpenProject={openProject}
               onBack={() => navigateTo("explore")}
               user={user}
+              decorations={shopData.decorations}
               onOpenUserProfile={openUserProfile}
               onProjectDeleted={async () => {
                 await loadProjects();
@@ -1213,7 +1246,17 @@ export default function App() {
               </section>
             </>
           )}
-          {page === "chat" && <ChatCenter user={user} onSignIn={openAuthModal} onOpenProject={openProject} onOpenUserProfile={openUserProfile} />}
+          {page === "chat" && <ChatCenter user={user} avatarFrame={customization.avatarFrame} decorations={shopData.decorations} onSignIn={openAuthModal} onOpenProject={openProject} onOpenUserProfile={openUserProfile} />}
+          {page === "shop" && (
+            <ProfileShop
+              user={user}
+              shopData={shopData}
+              onRefreshShop={refreshShopData}
+              equippedFrame={customization.avatarFrame}
+              onEquipFrame={(frame) => handleSaveCustomization({ ...customization, avatarFrame: frame })}
+              onSignIn={openAuthModal}
+            />
+          )}
           {page === "notifications" && user && (
             <NotificationsPage
               notifications={notifications}
@@ -1230,6 +1273,7 @@ export default function App() {
               user={user}
               onToggleFeatured={toggleProjectFeatured}
               onOpenProject={openProject}
+              onDecorationAdded={() => refreshShopData()}
               onCreateAnnouncement={async (payload) => {
                 const result = await apiRequest("/api/announcements", { method: "POST", authenticated: true, body: payload });
                 if (result.announcement) {

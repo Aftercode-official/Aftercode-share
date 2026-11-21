@@ -4,7 +4,7 @@ import ProjectThumbnail from "./ProjectThumbnail.jsx";
 import { supabase } from "./supabase.js";
 import "./AdminPanel.css";
 
-export default function AdminPanel({ projects, events, user, onToggleFeatured, onOpenProject, onCreateAnnouncement, onCreateEvent, onDeleteEvent, error }) {
+export default function AdminPanel({ projects, events, user, onToggleFeatured, onOpenProject, onCreateAnnouncement, onCreateEvent, onDeleteEvent, onDecorationAdded, error }) {
   const featuredCount = projects.filter((project) => project.isFeatured).length;
   const [announcement, setAnnouncement] = useState({ title: "", message: "" });
   const [eventDraft, setEventDraft] = useState({ title: "", description: "", location: "", startsAt: "", customCss: "" });
@@ -24,6 +24,13 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
   const [chatReports, setChatReports] = useState([]);
   const [isLoadingChatReports, setIsLoadingChatReports] = useState(true);
   const [chatReportActionId, setChatReportActionId] = useState("");
+  const [decorationDraft, setDecorationDraft] = useState({ name: "", author: "", description: "", price: "250" });
+  const [decorationImage, setDecorationImage] = useState(null);
+  const [decorationImagePreview, setDecorationImagePreview] = useState("");
+  const [decorations, setDecorations] = useState([]);
+  const [isLoadingDecorations, setIsLoadingDecorations] = useState(true);
+  const [isCreatingDecoration, setIsCreatingDecoration] = useState(false);
+  const [decorationRemoveId, setDecorationRemoveId] = useState("");
 
   useEffect(() => {
     apiRequest("/api/admin/bans", { authenticated: true })
@@ -39,9 +46,90 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
       .finally(() => setIsLoadingChatReports(false));
   }, []);
 
+  useEffect(() => {
+    apiRequest("/api/admin/decorations", { authenticated: true })
+      .then((result) => setDecorations(result.decorations ?? []))
+      .catch((loadError) => setFormError(loadError.message))
+      .finally(() => setIsLoadingDecorations(false));
+  }, []);
+
   useEffect(() => () => {
     if (eventImagePreview) URL.revokeObjectURL(eventImagePreview);
   }, [eventImagePreview]);
+
+  useEffect(() => () => {
+    if (decorationImagePreview) URL.revokeObjectURL(decorationImagePreview);
+  }, [decorationImagePreview]);
+
+  const submitDecoration = async (event) => {
+    event.preventDefault();
+    if (isCreatingDecoration) return;
+    if (!decorationImage) {
+      setFormError("Choose an avatar frame image.");
+      return;
+    }
+    if (!["image/png", "image/jpeg", "image/webp", "image/gif"].includes(decorationImage.type) || decorationImage.size > 5 * 1024 * 1024) {
+      setFormError("Frame images must be a supported image format and 5 MB or smaller.");
+      return;
+    }
+
+    setIsCreatingDecoration(true);
+    setFormError("");
+    setSuccessMessage("");
+    let imagePath;
+    try {
+      if (!supabase) throw new Error("Image storage is not configured.");
+      const extension = (decorationImage.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+      imagePath = `${user.id}/profile-decorations/${crypto.randomUUID()}.${extension}`;
+      const { error: uploadError } = await supabase.storage.from("project-files").upload(imagePath, decorationImage, {
+        contentType: decorationImage.type,
+        cacheControl: "31536000",
+        upsert: false
+      });
+      if (uploadError) throw uploadError;
+
+      const result = await apiRequest("/api/admin/decorations", {
+        method: "POST",
+        authenticated: true,
+        body: { ...decorationDraft, price: Number(decorationDraft.price), imagePath }
+      });
+      imagePath = null;
+      setDecorations((current) => [result.decoration, ...current]);
+      setDecorationDraft({ name: "", author: "", description: "", price: "250" });
+      setDecorationImage(null);
+      setDecorationImagePreview("");
+      setSuccessMessage("Profile frame added to the decoration shop.");
+      if (onDecorationAdded) onDecorationAdded().catch((refreshError) => setFormError(refreshError.message));
+    } catch (submitError) {
+      if (imagePath && supabase) await supabase.storage.from("project-files").remove([imagePath]).catch(() => {});
+      setFormError(submitError.message);
+    } finally {
+      setIsCreatingDecoration(false);
+    }
+  };
+
+  const removeDecoration = async (item) => {
+    if (!window.confirm(`Remove ${item.name} from the shop? Users who already own it will keep it.`)) return;
+    setDecorationRemoveId(item.id);
+    setFormError("");
+    setSuccessMessage("");
+    try {
+      const result = await apiRequest("/api/admin/decorations", {
+        method: "PATCH",
+        authenticated: true,
+        body: { action: "remove", id: item.id }
+      });
+      setDecorations((current) => current.map((decoration) => (
+        decoration.id === item.id ? result.decoration : decoration
+      )));
+      setSuccessMessage(`${item.name} was removed from the shop. Existing owners keep it.`);
+      if (onDecorationAdded) onDecorationAdded().catch((refreshError) => setFormError(refreshError.message));
+    } catch (removeError) {
+      setFormError(removeError.message);
+    } finally {
+      setDecorationRemoveId("");
+    }
+  };
 
   const submitAnnouncement = async (event) => {
     event.preventDefault();
@@ -234,7 +322,46 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
           <label>Message<textarea required maxLength={2000} rows={4} value={announcement.message} onChange={(event) => setAnnouncement((current) => ({ ...current, message: event.target.value }))} /></label>
           <button className="admin-feature-button" type="submit" disabled={isSendingAnnouncement}>{isSendingAnnouncement ? "Sending..." : "Send global announcement"}</button>
         </form>
+
+        <form className="admin-tool-card admin-decoration-tool" onSubmit={submitDecoration}>
+          <h2>Profile decoration frame</h2>
+          <p>Upload an avatar frame for the shop and set its virtual credit price.</p>
+          <label>Frame name<input required maxLength={60} value={decorationDraft.name} onChange={(event) => setDecorationDraft((current) => ({ ...current, name: event.target.value }))} /></label>
+          <label>Author name<input required maxLength={60} value={decorationDraft.author} onChange={(event) => setDecorationDraft((current) => ({ ...current, author: event.target.value }))} /></label>
+          <label>Description<textarea maxLength={300} rows={3} value={decorationDraft.description} onChange={(event) => setDecorationDraft((current) => ({ ...current, description: event.target.value }))} /></label>
+          <label>Price in credits<input required type="number" min="1" max="100000" step="1" value={decorationDraft.price} onChange={(event) => setDecorationDraft((current) => ({ ...current, price: event.target.value }))} /></label>
+          <label>Frame image<input required type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => {
+            const file = event.currentTarget.files?.[0] ?? null;
+            setDecorationImage(file);
+            setDecorationImagePreview(file ? URL.createObjectURL(file) : "");
+          }} /></label>
+          {decorationImagePreview && <img className="admin-decoration-preview" src={decorationImagePreview} alt="Avatar frame preview" />}
+          <button className="admin-feature-button" type="submit" disabled={isCreatingDecoration}>
+            {isCreatingDecoration ? "Adding frame..." : "Add frame to shop"}
+          </button>
+        </form>
       </div>
+
+      <section className="admin-decoration-management">
+        <h2>Profile frames in shop</h2>
+        {isLoadingDecorations ? <p className="admin-panel-empty">Loading decorations...</p> : decorations.length
+          ? <div className="admin-decoration-list">{decorations.map((item) => (
+            <article className="admin-decoration-row" key={item.id}>
+              <img src={item.imageUrl} alt="" loading="lazy" decoding="async" />
+              <span>
+                <strong>{item.name}</strong>
+                <small>by {item.author} · {item.description || "Profile avatar frame"}</small>
+              </span>
+              <strong>{item.price.toLocaleString()} credits</strong>
+              {item.is_active
+                ? <button className="admin-delete-event-button" type="button" disabled={Boolean(decorationRemoveId)} onClick={() => removeDecoration(item)}>
+                  {decorationRemoveId === item.id ? "Removing..." : "Remove"}
+                </button>
+                : <span className="admin-decoration-removed">Removed</span>}
+            </article>
+          ))}</div>
+          : <p className="admin-panel-empty">No profile frames have been added yet.</p>}
+      </section>
 
       <section className="admin-ban-management">
         <h2>Permanent account bans</h2>

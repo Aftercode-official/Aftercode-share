@@ -23,6 +23,13 @@ async function loadInteractions(client, projectId, userId) {
     if (result.error) throw result.error;
   }
 
+  const commentUserIds = [...new Set((comments.data ?? []).map((comment) => comment.user_id).filter(Boolean))];
+  const { data: profiles, error: profilesError } = commentUserIds.length
+    ? await client.from("profiles").select("user_id, avatar_frame").in("user_id", commentUserIds)
+    : { data: [], error: null };
+  if (profilesError) throw profilesError;
+  const avatarFrames = new Map((profiles ?? []).map((profile) => [profile.user_id, profile.avatar_frame]));
+
   return {
     likes: likes.count ?? 0,
     favorites: favorites.count ?? 0,
@@ -33,6 +40,7 @@ async function loadInteractions(client, projectId, userId) {
       userId: comment.user_id,
       author: comment.author,
       avatarUrl: comment.avatar_url,
+      avatarFrame: avatarFrames.get(comment.user_id) || "none",
       text: comment.text,
       createdAt: comment.created_at
     }))
