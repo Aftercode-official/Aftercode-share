@@ -1313,3 +1313,7 @@ input[type="file"]::file-selector-button {
   border-radius: 8px;
   box-shadow: none;
 }
+
+:root[data-site-style="classic"] .scratch-home .timeline-header h3 {
+  color: #000 !important;
+}
