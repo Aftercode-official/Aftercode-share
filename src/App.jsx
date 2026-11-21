@@ -883,6 +883,14 @@ export default function App() {
                   }}>
                     Account Settings
                   </button>
+                  {isProjectAdmin && (
+                    <button type="button" role="menuitem" onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      navigateTo("admin");
+                    }}>
+                      Admin Panel
+                    </button>
+                  )}
                   <button type="button" role="menuitem" className="profile-dropdown-signout" onClick={handleSignOut}>
                     Sign Out
                   </button>
