@@ -983,11 +983,15 @@ export default function App() {
           {page === "home" && (
             <>
               {events.length > 0 && (
-                <section className="home-events-section" aria-labelledby="home-events-title">
-                  <h2 className="section-title" id="home-events-title">Upcoming Events</h2>
+                <section className="home-events-section" aria-label="Events">
                   <div className="home-event-list">
                     {events.map((event) => (
-                      <article className="home-event-card" key={event.id}>
+                      <article
+                        className="home-event-card"
+                        key={event.id}
+                        data-event-id={event.id}
+                      >
+                        {event.custom_css && <style>{event.custom_css}</style>}
                         {event.thumbnail_url
                           ? <img src={supabase.storage.from("project-files").getPublicUrl(event.thumbnail_url).data.publicUrl} alt="" loading="lazy" decoding="async" />
                           : <div className="home-event-placeholder" aria-hidden="true">EVENT</div>}

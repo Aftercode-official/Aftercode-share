@@ -128,6 +128,14 @@
 .admin-tool-card input, .admin-tool-card textarea { width: 100%; box-sizing: border-box; padding: 0.65rem 0.7rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); color: var(--text-primary); font: inherit; }
 .admin-event-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
 .admin-event-preview { width: 100%; max-height: 220px; object-fit: cover; border-radius: 9px; border: 1px solid var(--border-color); }
+.admin-event-custom-css {
+  min-height: 150px;
+  resize: vertical;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  tab-size: 2;
+}
 .admin-featured-management { display: grid; gap: 0.75rem; }
 .admin-ban-management { display: grid; gap: 0.75rem; padding: 1rem; border: 1px solid color-mix(in srgb, #d06a5e, var(--border-color) 50%); border-radius: 12px; background: color-mix(in srgb, var(--bg-card), #d06a5e 4%); }
 .admin-chat-reports { display: grid; gap: 0.75rem; padding: 1rem; border: 1px solid color-mix(in srgb, #d6a629, var(--border-color) 50%); border-radius: 12px; background: color-mix(in srgb, var(--bg-card), #d6a629 4%); }

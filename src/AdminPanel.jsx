@@ -7,7 +7,7 @@ import "./AdminPanel.css";
 export default function AdminPanel({ projects, events, user, onToggleFeatured, onOpenProject, onCreateAnnouncement, onCreateEvent, onDeleteEvent, error }) {
   const featuredCount = projects.filter((project) => project.isFeatured).length;
   const [announcement, setAnnouncement] = useState({ title: "", message: "" });
-  const [eventDraft, setEventDraft] = useState({ title: "", description: "", location: "", startsAt: "" });
+  const [eventDraft, setEventDraft] = useState({ title: "", description: "", location: "", startsAt: "", customCss: "" });
   const [eventImage, setEventImage] = useState(null);
   const [eventImagePreview, setEventImagePreview] = useState("");
   const [isSendingAnnouncement, setIsSendingAnnouncement] = useState(false);
@@ -88,7 +88,7 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
 
       const result = await onCreateEvent({ ...eventDraft, thumbnailPath });
       thumbnailPath = null;
-      setEventDraft({ title: "", description: "", location: "", startsAt: "" });
+      setEventDraft({ title: "", description: "", location: "", startsAt: "", customCss: "" });
       setEventImage(null);
       setEventImagePreview("");
       setSuccessMessage(`Event notification sent to ${result?.sent ?? "all"} users.`);
@@ -205,6 +205,17 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
             <label>Location<input maxLength={120} value={eventDraft.location} onChange={(event) => setEventDraft((current) => ({ ...current, location: event.target.value }))} /></label>
             <label>Starts at<input required type="datetime-local" value={eventDraft.startsAt} onChange={(event) => setEventDraft((current) => ({ ...current, startsAt: event.target.value }))} /></label>
           </div>
+          <label>
+            Custom CSS
+            <textarea
+              className="admin-event-custom-css"
+              maxLength={10000}
+              rows={7}
+              placeholder={'.home-event-card { border-radius: 24px; }\n.home-event-copy h3 { color: #ffb700; }'}
+              value={eventDraft.customCss}
+              onChange={(event) => setEventDraft((current) => ({ ...current, customCss: event.target.value }))}
+            />
+          </label>
           <label>Event thumbnail<input required type="file" accept="image/*" onChange={(event) => {
             const file = event.currentTarget.files?.[0] ?? null;
             setEventImage(file);

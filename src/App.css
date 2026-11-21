@@ -328,15 +328,82 @@ body {
 .home-announcement-footer { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
 .home-announcement-dismiss { flex: 0 0 auto; min-width: 56px; padding: 0.4rem 0.8rem; border: 1px solid color-mix(in srgb, #d6a629, var(--border-color) 40%); border-radius: 7px; background: var(--bg-card); color: var(--text-primary); font-weight: 700; cursor: pointer; }
 .home-announcement-dismiss:hover { background: color-mix(in srgb, var(--bg-card), #d6a629 12%); }
-.home-event-card { display: flex; min-width: 0; overflow: hidden; border: 1px solid color-mix(in srgb, #648edb, var(--border-color) 55%); border-radius: 10px; background: color-mix(in srgb, var(--bg-main), #648edb 5%); }
-.home-event-card > img, .home-event-placeholder { width: 180px; min-height: 140px; flex: 0 0 180px; object-fit: cover; background: color-mix(in srgb, var(--bg-main), #648edb 14%); }
-.home-event-placeholder { display: grid; place-items: center; color: var(--text-muted); font-weight: 800; letter-spacing: 0.1em; }
-.home-event-copy { display: grid; align-content: center; gap: 0.2rem; min-width: 0; padding: 0.8rem 1rem; }
-.home-event-copy .home-event-location { color: var(--text-primary); font-size: 0.85rem; }
+.home-event-card {
+  position: relative;
+  display: block;
+  min-width: 0;
+  min-height: 220px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, #648edb, var(--border-color) 55%);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-main), #648edb 14%);
+  isolation: isolate;
+}
+
+.home-event-card > img,
+.home-event-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.home-event-card > img {
+  filter: brightness(0.72) saturate(0.95);
+}
+
+.home-event-placeholder {
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  background: linear-gradient(135deg, #1d3557, #648edb);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.home-event-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgb(8 18 35 / 82%) 0%, rgb(8 18 35 / 42%) 58%, rgb(8 18 35 / 12%) 100%);
+  pointer-events: none;
+}
+
+.home-event-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-content: end;
+  min-height: 220px;
+  padding: 1.25rem;
+  color: #ffffff;
+  text-shadow: 0 2px 12px rgb(0 0 0 / 45%);
+}
+
+.home-event-card h3 {
+  margin: 0.25rem 0;
+  color: #ffffff;
+  font-size: clamp(1.15rem, 2.5vw, 1.6rem);
+}
+
+.home-event-card p,
+.home-event-card time,
+.home-event-copy .home-event-location {
+  color: rgb(255 255 255 / 88%);
+  font-size: 0.82rem;
+}
+
+.home-event-copy .home-update-label {
+  color: #b8cff5;
+}
 
 @media (max-width: 560px) {
-  .home-event-card { flex-direction: column; }
-  .home-event-card > img, .home-event-placeholder { width: 100%; height: 160px; min-height: 160px; flex-basis: 160px; }
+  .home-event-card,
+  .home-event-copy { min-height: 190px; }
+  .home-event-copy { padding: 1rem; }
 }
 
 .featured-card {
@@ -2226,7 +2293,75 @@ body {
 :root[data-site-style="classic"] .feed-item-button,
 :root[data-site-style="classic"] .feed-empty {
   background-color: var(--bg-main);
-  background-image: none;
+}
+
+/* Custom event banner */
+.home-events-section {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.home-events-section .home-event-list {
+  gap: 0.75rem;
+}
+
+.home-events-section .home-event-card {
+  width: 100%;
+  min-height: 280px;
+  border: 0;
+  border-radius: 16px;
+  background: #101722;
+  box-shadow: 0 12px 34px rgb(0 0 0 / 18%);
+}
+
+.home-events-section .home-event-card::before {
+  z-index: -1;
+  background: linear-gradient(90deg, rgb(5 12 24 / 88%) 0%, rgb(5 12 24 / 58%) 46%, rgb(5 12 24 / 8%) 100%);
+}
+
+.home-events-section .home-event-copy {
+  min-height: 280px;
+  align-content: end;
+  padding: clamp(1.25rem, 4vw, 2.25rem);
+}
+
+.home-events-section .home-event-card h3 {
+  max-width: 720px;
+  margin: 0.35rem 0;
+  font-size: clamp(1.45rem, 4vw, 2.25rem);
+  line-height: 1.05;
+}
+
+.home-events-section .home-event-card p,
+.home-events-section .home-event-card time,
+.home-events-section .home-event-location {
+  max-width: 620px;
+  font-size: 0.88rem;
+}
+
+:root[data-site-style="classic"] .home-events-section {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+:root[data-site-style="classic"] .home-events-section .home-event-card {
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 14%);
+}
+
+@media (max-width: 560px) {
+  .home-events-section .home-event-card,
+  .home-events-section .home-event-copy {
+    min-height: 210px;
+  }
+
+  .home-events-section .home-event-card h3 {
+    font-size: 1.35rem;
+  }
 }
 
 /* Full-width card shimmer */
