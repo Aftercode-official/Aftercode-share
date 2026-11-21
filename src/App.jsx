@@ -1,5 +1,4 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import "./App.css";
 const User = lazy(() => import("./User.jsx"));
 const ProjectPages = lazy(() => import("./ProjectPages.jsx"));
 import { getCachedPublicProfileByUsername, loadCustomization, saveCustomization as persistCustomization } from "./userStorage.js";
@@ -13,9 +12,10 @@ const ChatCenter = lazy(() => import("./ChatCenter.jsx"));
 const AdminPanel = lazy(() => import("./AdminPanel.jsx"));
 const NotificationsPage = lazy(() => import("./NotificationsPage.jsx"));
 import { getProjectIdFromUrl, projectShareUrl } from "./projectLinks.js";
-import "./ClassicTheme.css";
+import "./App.css";
 import { isAdminUserId } from "../shared/adminUsers.js";
 import LoadingScreen from "./LoadingScreen.jsx";
+import "./BrutalistTheme.css";
 
 const THEME_STORAGE_KEY = "aftercode-share-theme";
 const SITE_STYLE_STORAGE_KEY = "aftercode-share-site-style";
@@ -172,6 +172,8 @@ export default function App() {
   const [activities, setActivities] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [announcements, setAnnouncements] = useState(initialPublicCache?.announcements ?? []);
+  const [isLoadingAnnouncements, setIsLoadingAnnouncements] = useState(!initialPublicCache);
+  const [announcementError, setAnnouncementError] = useState("");
   const [dismissedAnnouncementIds, setDismissedAnnouncementIds] = useState([]);
   const [events, setEvents] = useState(initialPublicCache?.events ?? []);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
@@ -192,15 +194,12 @@ export default function App() {
   const [projectSearch, setProjectSearch] = useState("");
   const [projectInteractions, setProjectInteractions] = useState({});
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(() =>
-    window.matchMedia("(min-width: 761px)").matches
-  );
   const [theme, setTheme] = useState(() => {
     const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     return savedTheme === "light" ? "light" : "dark";
   });
   const [siteStyle, setSiteStyle] = useState(() => (
-    window.localStorage.getItem(SITE_STYLE_STORAGE_KEY) === "classic" ? "classic" : "current"
+    "brutalist"
   ));
   const [compatibilityMode, setCompatibilityMode] = useState(() => (
     window.localStorage.getItem(COMPATIBILITY_MODE_STORAGE_KEY) === "true"
@@ -217,6 +216,7 @@ export default function App() {
   const [customizationError, setCustomizationError] = useState("");
   const isProjectAdmin = isAdminUserId(user?.id);
   const featuredProjects = projects.filter((project) => project.isFeatured);
+  const visibleAnnouncements = announcements.filter((item) => !dismissedAnnouncementIds.includes(String(item.id)));
 
   const loadProjects = async () => {
     const { projects: records } = await apiRequest("/api/projects");
@@ -227,14 +227,27 @@ export default function App() {
   const loadPublicUpdates = async () => {
     const viewer = user?.id ?? "guest";
     const localDismissed = JSON.parse(window.localStorage.getItem(`aftercode-dismissed-announcements:${viewer}`) || "[]");
-    const [announcementResult, eventResult] = await Promise.all([
-      apiRequest(user ? "/api/announcements?viewer=auth" : "/api/announcements", { authenticated: Boolean(user) }),
-      apiRequest("/api/events")
-    ]);
-    writePublicDataCache({ announcements: announcementResult.announcements, events: eventResult.events });
-    setAnnouncements(announcementResult.announcements);
-    setDismissedAnnouncementIds([...new Set([...(announcementResult.dismissedIds ?? []).map(String), ...localDismissed.map(String)])]);
-    setEvents(eventResult.events);
+    setIsLoadingAnnouncements(true);
+    setAnnouncementError("");
+    const announcementsPromise = apiRequest(
+      user ? "/api/announcements?viewer=auth" : "/api/announcements",
+      { authenticated: Boolean(user) }
+    ).then((announcementResult) => {
+      writePublicDataCache({ announcements: announcementResult.announcements });
+      setAnnouncements(announcementResult.announcements);
+      setDismissedAnnouncementIds([...new Set([
+        ...(announcementResult.dismissedIds ?? []).map(String),
+        ...localDismissed.map(String)
+      ])]);
+    }).catch((error) => {
+      setAnnouncementError(error.message);
+      throw error;
+    }).finally(() => setIsLoadingAnnouncements(false));
+    const eventsPromise = apiRequest("/api/events").then((eventResult) => {
+      writePublicDataCache({ events: eventResult.events });
+      setEvents(eventResult.events);
+    });
+    await Promise.all([announcementsPromise, eventsPromise]);
   };
 
   const dismissAnnouncement = async (announcementId) => {
@@ -705,7 +718,7 @@ export default function App() {
         isRefreshing = false;
       }
     };
-    const timer = window.setInterval(refreshUnreadNotifications, 60000);
+    const timer = window.setInterval(refreshUnreadNotifications, 15000);
     const refreshWhenVisible = () => {
       if (document.visibilityState === "visible") refreshUnreadNotifications();
     };
@@ -730,7 +743,7 @@ export default function App() {
 
   return (
     <div
-      className={`app-layout${isLoggedIn ? " has-sidebar" : ""}${isSidebarOpen ? "" : " sidebar-collapsed"}`}
+      className="app-layout"
       style={{
         "--accent-yellow": customization.accentColor,
         "--accent-orange": customization.accentColor,
@@ -740,48 +753,6 @@ export default function App() {
           : customization.homeBackground
       }}
     >
-      {isLoggedIn && (
-        <aside
-          className="sidebar"
-          id="app-sidebar"
-          aria-label="Sidebar navigation"
-          inert={!isSidebarOpen}
-        >
-          <div className="sidebar-profile">
-            {customization.avatarUrl
-              ? <img className="sidebar-avatar" src={customization.avatarUrl} alt="" decoding="async" />
-              : <div className="sidebar-avatar" aria-hidden="true">{customization.displayName.slice(0, 1)}</div>}
-            <div className="sidebar-profile-copy">
-              <strong>{customization.displayName}</strong>
-              <span>{customization.username}</span>
-            </div>
-          </div>
-          <nav className="sidebar-nav" aria-label="Account navigation">
-            <button className="sidebar-nav-btn" type="button" onClick={() => navigateTo("home")}>⌂ <span>Home</span></button>
-            <button className="sidebar-nav-btn" type="button" onClick={() => navigateTo("home")}>★ <span>Featured Projects</span></button>
-            <button className="sidebar-nav-btn" type="button" onClick={() => navigateTo("chat")}>◌ <span>Community Chat</span></button>
-            {isProjectAdmin && <button className={`sidebar-nav-btn${page === "admin" ? " is-active" : ""}`} type="button" onClick={() => navigateTo("admin")}>⚙ <span>Admin Panel</span></button>}
-            <button className="sidebar-nav-btn" type="button" onClick={() => navigateTo("profile")}>◉ <span>View Profile</span></button>
-            <button className="sidebar-nav-btn" type="button" onClick={openCustomizer}>⚙ <span>Customize Page</span></button>
-          </nav>
-          <div className="sidebar-account">
-            <span className="sidebar-section-label">ACCOUNT</span>
-            <button className="sidebar-nav-btn" type="button" onClick={handleSignOut}>
-              <span>Sign Out</span>
-            </button>
-          </div>
-        </aside>
-      )}
-
-      {isLoggedIn && isSidebarOpen && (
-        <button
-          className="sidebar-backdrop"
-          type="button"
-          aria-label="Close sidebar"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
       <div className="workspace">
         <header className="header">
           <div className="header-left">
@@ -804,20 +775,10 @@ export default function App() {
               target="_blank"
               rel="noreferrer"
             >
-              ＋ Create
+              Create
             </a>
-            <button className="icon-btn" type="button" onClick={() => navigateTo("explore")}>⌕ Explore</button>
+            <button className="icon-btn" type="button" onClick={() => navigateTo("explore")}>Explore</button>
             <button className={`icon-btn${page === "chat" ? " is-active" : ""}`} type="button" onClick={() => navigateTo("chat")}>Chat</button>
-            <button
-              className="icon-btn upload-project-trigger"
-              type="button"
-              onClick={() => {
-                if (user) setIsUploadModalOpen(true);
-                else openAuthModal();
-              }}
-            >
-              ↑ Upload
-            </button>
           </nav>
 
           <label className="header-center header-search">
@@ -840,33 +801,36 @@ export default function App() {
               <button
                 className="icon-btn notifications-trigger"
                 type="button"
+                aria-label={unreadNotificationCount > 0
+                  ? `Notifications, ${unreadNotificationCount} unread`
+                  : "Notifications"}
                 onClick={() => {
                   navigateTo("notifications");
                   loadNotifications().catch((error) => setDataError(error.message));
                 }}
               >
-                Notifications
-                {unreadNotificationCount > 0 && <span className="notification-count-badge">{unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}</span>}
+                <span aria-hidden="true">✉</span>
+                {unreadNotificationCount > 0 && (
+                  <span
+                    className="notification-count-badge"
+                    role="status"
+                    aria-live="polite"
+                    aria-label={`${unreadNotificationCount} unread notifications`}
+                  >
+                    {unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}
+                  </span>
+                )}
+              </button>
+              <button
+                className="icon-btn upload-project-trigger"
+                type="button"
+                aria-label="Upload project"
+                onClick={() => setIsUploadModalOpen(true)}
+              >
+                <span aria-hidden="true">▱</span>
               </button>
             </>
           )}
-          <button
-            className="icon-btn theme-toggle"
-            type="button"
-            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            aria-pressed={theme === "dark"}
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          >
-            {theme === "dark" ? "Light" : "Dark"}
-          </button>
-          <button
-            className="icon-btn style-toggle"
-            type="button"
-            aria-label={siteStyle === "classic" ? "Use current style" : "Use classic YouTube style"}
-            onClick={() => setSiteStyle(siteStyle === "classic" ? "current" : "classic")}
-          >
-            {siteStyle === "classic" ? "Classic" : "Current"}
-          </button>
 
           {!isLoggedIn && (
             <button className="signin-btn" type="button" onClick={openAuthModal}>
@@ -877,20 +841,20 @@ export default function App() {
           {(authError || dataError) && <p className="auth-global-error" role="alert">{authError || dataError}</p>}
           {isLoggedIn && (
             <button
-              className="sidebar-toggle"
+              className="icon-btn header-profile"
               type="button"
-              aria-label={isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
-              aria-expanded={isSidebarOpen}
-              aria-controls="app-sidebar"
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              aria-label="Open profile"
+              onClick={() => navigateTo("profile")}
             >
-              ☰
+              {customization.avatarUrl
+                ? <img src={customization.avatarUrl} alt="" />
+                : <span>{customization.displayName.slice(0, 1).toUpperCase()}</span>}
             </button>
           )}
           </div>
         </header>
         <main
-          className={`main-feed-container${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}`}
+          className={`main-feed-container${page === "home" ? " scratch-home" : ""}${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}`}
         >
           <Suspense fallback={<p className="featured-empty">Loading page...</p>}>
           <User
@@ -982,53 +946,6 @@ export default function App() {
 
           {page === "home" && (
             <>
-              {events.length > 0 && (
-                <section className="home-events-section" aria-label="Events">
-                  <div className="home-event-list">
-                    {events.map((event) => (
-                      <article
-                        className="home-event-card"
-                        key={event.id}
-                        data-event-id={event.id}
-                      >
-                        {event.custom_css && <style>{event.custom_css}</style>}
-                        {event.thumbnail_url
-                          ? <img src={supabase.storage.from("project-files").getPublicUrl(event.thumbnail_url).data.publicUrl} alt="" loading="lazy" decoding="async" />
-                          : <div className="home-event-placeholder" aria-hidden="true">EVENT</div>}
-                        <div className="home-event-copy">
-                          <span className="home-update-label">COMMUNITY EVENT</span>
-                          <h3>{event.title}</h3>
-                          <time dateTime={event.starts_at}>{new Date(event.starts_at).toLocaleString()}</time>
-                          {event.location && <p className="home-event-location">{event.location}</p>}
-                          {event.description && <p>{event.description}</p>}
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {announcements.some((announcement) => !dismissedAnnouncementIds.includes(String(announcement.id))) && (
-                <section className="home-announcements-section" aria-labelledby="home-announcements-title">
-                  <h2 className="section-title" id="home-announcements-title">Announcements</h2>
-                  <div className="home-announcement-list">
-                    {announcements.filter((announcement) => !dismissedAnnouncementIds.includes(String(announcement.id))).map((announcement) => (
-                      <article className="home-announcement-card" key={announcement.id}>
-                        <div className="home-announcement-copy">
-                          <span className="home-update-label">AFTERCODE UPDATE</span>
-                          <h3>{announcement.title}</h3>
-                          <p>{announcement.message}</p>
-                        </div>
-                        <footer className="home-announcement-footer">
-                          <time dateTime={announcement.created_at}>{new Date(announcement.created_at).toLocaleString()}</time>
-                          <button className="home-announcement-dismiss" type="button" onClick={() => dismissAnnouncement(announcement.id)}>OK</button>
-                        </footer>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              )}
-
               {!isLoggedIn && customization.showWelcome && (
                 <section className="welcome-card">
                   <span className="welcome-eyebrow">WELCOME TO AFTERCODE</span>
@@ -1043,11 +960,11 @@ export default function App() {
                 </section>
               )}
 
-              {isLoggedIn && customization.showFeed && (
+              {customization.showFeed && (
                 <section className="timeline-card">
                   <div className="timeline-header">
-                    <h3>Community Activity</h3>
-                    <span className="status-badge">Signed In</span>
+                    <h3>What's Happening?</h3>
+                    <span className="status-badge">{isLoggedIn ? "Signed In" : "Community"}</span>
                   </div>
                   {dataError
                     ? <p className="feed-empty">{dataError}</p>
@@ -1059,9 +976,7 @@ export default function App() {
                             className="feed-item feed-item-button"
                             key={activity.id}
                             onClick={() => {
-                              if (activity.actor_id) {
-                                openUserProfile(activity.actor_id);
-                              }
+                              if (activity.actor_id) openUserProfile(activity.actor_id);
                             }}
                           >
                             {activity.actor_avatar
@@ -1083,53 +998,87 @@ export default function App() {
                           </button>
                         ))}
                       </div>
-                      : <p className="feed-empty">{isLoadingProjects ? "Loading activity..." : "No activity yet."}</p>}
+                      : (
+                        <div className="feed-list">
+                          <div className="feed-item feed-item-button"><div className="avatar">A</div><div><p className="feed-text"><strong>Aftercode</strong> community projects are ready</p></div></div>
+                          <div className="feed-item feed-item-button"><div className="avatar">S</div><div><p className="feed-text"><strong>Scratch</strong> style layout is active</p></div></div>
+                        </div>
+                      )}
                 </section>
               )}
 
+              <section className="home-announcements-section" aria-labelledby="scratch-news-title">
+                <h2 className="section-title" id="scratch-news-title">Scratch News</h2>
+                <div className="home-announcement-list">
+                  {visibleAnnouncements.length > 0
+                    ? visibleAnnouncements.slice(0, 4).map((item) => (
+                        <article className="home-announcement-card" key={item.id}>
+                          <div className="home-announcement-copy">
+                            <span className="home-update-label">AFTERCODE UPDATE</span>
+                            <h3>{item.title}</h3>
+                            <p>{item.message}</p>
+                          </div>
+                        </article>
+                      ))
+                    : <p className="home-announcement-empty" role={announcementError ? "alert" : "status"}>
+                        {announcementError || (isLoadingAnnouncements
+                          ? "Loading announcements..."
+                          : "No announcements yet.")}
+                      </p>}
+                </div>
+              </section>
+
               {customization.showFeatured && (
                 <section className="featured-hero" id="featured-projects">
-                  <h2 className="section-title">Featured Projects</h2>
-                  {featuredProjects.length > 0 ? (
+                  <ProjectRail
+                    title="Featured Projects"
+                    onViewAll={() => navigateTo("explore")}
+                  >
+                    {featuredProjects.length > 0 ? (
+                      <div className="featured-grid">
+                        {featuredProjects.map((project, index) => (
+                          <ProjectCard
+                            key={project.id}
+                            project={project}
+                            index={index}
+                            onOpenProject={openProject}
+                            showFeaturedBadge
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="featured-empty">
+                        {dataError || (isLoadingProjects
+                          ? "Loading projects..."
+                          : isProjectAdmin
+                            ? "No featured projects yet. Choose projects in Recent Projects below."
+                            : "No featured projects have been selected yet.")}
+                      </p>
+                    )}
+                  </ProjectRail>
+                </section>
+              )}
+
+              <section className="featured-hero recent-projects-section" id="recent-projects">
+                <ProjectRail
+                  title="Recent Projects"
+                  onViewAll={() => navigateTo("explore")}
+                >
+                  {projects.length > 0 ? (
                     <div className="featured-grid">
-                      {featuredProjects.map((project, index) => (
+                      {projects.map((project, index) => (
                         <ProjectCard
                           key={project.id}
                           project={project}
                           index={index}
                           onOpenProject={openProject}
-                          showFeaturedBadge
                         />
                       ))}
                     </div>
                   ) : (
-                    <p className="featured-empty">
-                      {dataError || (isLoadingProjects
-                        ? "Loading projects..."
-                        : isProjectAdmin
-                          ? "No featured projects yet. Choose projects in Recent Projects below."
-                          : "No featured projects have been selected yet.")}
-                    </p>
+                    <p className="featured-empty">{dataError || (isLoadingProjects ? "Loading projects..." : "No projects have been uploaded yet.")}</p>
                   )}
-                </section>
-              )}
-
-              <section className="featured-hero recent-projects-section" id="recent-projects">
-                <h2 className="section-title">Recent Projects</h2>
-                {projects.length > 0 ? (
-                  <div className="featured-grid">
-                    {projects.map((project, index) => (
-                      <ProjectCard
-                        key={project.id}
-                        project={project}
-                        index={index}
-                        onOpenProject={openProject}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="featured-empty">{dataError || (isLoadingProjects ? "Loading projects..." : "No projects have been uploaded yet.")}</p>
-                )}
+                </ProjectRail>
               </section>
             </>
           )}
@@ -1183,6 +1132,7 @@ export default function App() {
           </Suspense>
           <footer className="site-footer">
             <span>© {new Date().getFullYear()} Aftercode</span>
+            <span className="footer-divider" aria-hidden="true" />
             <a href="https://discord.gg/vK2cAfdsP" target="_blank" rel="noreferrer">
               <svg aria-hidden="true" viewBox="0 0 20 19"><use href="/icons.svg#discord-icon" /></svg>
               <span>Join our Discord</span>
@@ -1216,6 +1166,33 @@ export default function App() {
           />
         </Suspense>
       )}
+    </div>
+  );
+}
+
+function ProjectRail({ title, onViewAll, children }) {
+  const railRef = useRef(null);
+
+  const scrollRail = (direction) => {
+    railRef.current?.scrollBy({
+      left: direction * 360,
+      behavior: "smooth"
+    });
+  };
+
+  return (
+    <div className="project-rail">
+      <div className="project-rail-header">
+        <h2 className="section-title">{title}</h2>
+        <div className="project-rail-actions">
+          <button className="project-scroll-btn" type="button" aria-label={`Scroll ${title} left`} onClick={() => scrollRail(-1)}>‹</button>
+          <button className="project-scroll-btn" type="button" aria-label={`Scroll ${title} right`} onClick={() => scrollRail(1)}>›</button>
+          <button className="project-view-all" type="button" onClick={onViewAll}>View All</button>
+        </div>
+      </div>
+      <div className="project-scroll-wrapper" ref={railRef}>
+        {children}
+      </div>
     </div>
   );
 }

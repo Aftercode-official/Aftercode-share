@@ -157,6 +157,19 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
     if (distanceFromBottom < 160) scrollToBottom();
   };
 
+  const scrollToRepliedMessage = (messageId) => {
+    const target = document.getElementById(`chat-message-${messageId}`);
+    if (!target) return;
+
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.classList.remove("chat-message-highlight");
+    void target.offsetWidth;
+    target.classList.add("chat-message-highlight");
+    window.setTimeout(() => {
+      target.classList.remove("chat-message-highlight");
+    }, 1400);
+  };
+
   useEffect(() => {
     let active = true;
     let isLoading = false;
@@ -483,7 +496,7 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
                 <button
                   className="chat-reply-reference"
                   type="button"
-                  onClick={() => document.getElementById(`chat-message-${message.reply_to_message_id}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                  onClick={() => scrollToRepliedMessage(message.reply_to_message_id)}
                 >
                   <strong>{replyTarget?.author || "Replied message"}</strong>
                   <span>{replyTarget?.text || (replyTarget?.media_type ? `[${replyTarget.media_type.startsWith("video/") ? "video" : "image"}]` : "Original message is no longer available.")}</span>

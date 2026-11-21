@@ -584,29 +584,31 @@ export default function User({
               <h2>{peopleModal === "followers" ? "Followers" : "Following"}</h2>
               <button className="customize-close" type="button" aria-label="Close" onClick={closePeopleModal}>×</button>
             </div>
-            {isPeopleLoading && <p className="feed-empty">Loading...</p>}
-            {peopleError && <p className="customize-error" role="alert">{peopleError}</p>}
-            {!isPeopleLoading && !peopleError && peopleList.length === 0 && (
-              <p className="feed-empty">
-                {peopleModal === "followers" ? "No followers yet." : "No following yet."}
-              </p>
-            )}
-            {peopleList.map((person) => (
-              <button
-                type="button"
-                className="feed-item people-modal-item"
-                key={person.user_id}
-                onClick={() => openPersonProfile(person.user_id)}
-              >
-                {person.avatar_url
-                  ? <img className="project-comment-avatar" src={person.avatar_url} alt="" />
-                  : <div className="avatar">{(person.display_name || "?").slice(0, 1).toUpperCase()}</div>}
-                <div>
-                  <strong>{person.display_name}</strong>
-                  {person.username && <p className="feed-time">@{person.username.replace(/^@/, "")}</p>}
-                </div>
-              </button>
-            ))}
+            <div className="people-list">
+              {isPeopleLoading && <p className="feed-empty">Loading...</p>}
+              {peopleError && <p className="customize-error" role="alert">{peopleError}</p>}
+              {!isPeopleLoading && !peopleError && peopleList.length === 0 && (
+                <p className="feed-empty">
+                  {peopleModal === "followers" ? "No followers yet." : "No following yet."}
+                </p>
+              )}
+              {peopleList.map((person) => (
+                <button
+                  type="button"
+                  className="feed-item people-modal-item"
+                  key={person.user_id}
+                  onClick={() => openPersonProfile(person.user_id)}
+                >
+                  {person.avatar_url
+                    ? <img className="project-comment-avatar" src={person.avatar_url} alt="" />
+                    : <div className="avatar">{(person.display_name || "?").slice(0, 1).toUpperCase()}</div>}
+                  <div>
+                    <strong>{person.display_name}</strong>
+                    {person.username && <p className="feed-time">@{person.username.replace(/^@/, "")}</p>}
+                  </div>
+                </button>
+              ))}
+            </div>
           </section>
         </div>
       )}
