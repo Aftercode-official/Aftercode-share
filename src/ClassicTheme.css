@@ -1317,3 +1317,13 @@ input[type="file"]::file-selector-button {
 :root[data-site-style="classic"] .scratch-home .timeline-header h3 {
   color: #000 !important;
 }
+
+:root[data-site-style="classic"] .auth-backdrop,
+:root[data-site-style="classic"] .customize-backdrop,
+:root[data-site-style="classic"] .upload-backdrop,
+:root[data-site-style="classic"] .project-edit-backdrop,
+:root[data-site-style="classic"] .chat-image-lightbox {
+  background: rgb(195 225 242 / 8%) !important;
+  backdrop-filter: blur(2px) saturate(108%) !important;
+  -webkit-backdrop-filter: blur(2px) saturate(108%) !important;
+}
