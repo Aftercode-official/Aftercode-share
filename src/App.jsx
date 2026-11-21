@@ -846,7 +846,7 @@ export default function App() {
                 }}
               >
                 Notifications
-                {unreadNotificationCount > 0 && <span className="notification-count-badge">{unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}</span>}
+                {unreadNotificationCount > 0 && <span className="notification-count-badge">{unreadNotificationCount > 99 ? " (99+)" : ` (${unreadNotificationCount})`}</span>}
               </button>
             </>
           )}
