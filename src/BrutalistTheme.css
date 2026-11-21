@@ -44,6 +44,34 @@ body {
   letter-spacing: -0.01em;
 }
 
+@media (max-width: 850px) {
+  html,
+  body,
+  #root {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .header,
+  .workspace,
+  .main-feed-container {
+    max-width: 100vw;
+  }
+
+  .main-feed-container.chat-page-container,
+  .main-feed-container.profile-page,
+  .explore-page,
+  .project-detail-page {
+    max-width: calc(100vw - 20px);
+  }
+
+  .header-right .signin-btn {
+    max-width: 82px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 .app-layout,
 .workspace {
   height: auto;
