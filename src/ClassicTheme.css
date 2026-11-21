@@ -1472,3 +1472,107 @@ input[type="file"]::file-selector-button {
     font-size: 8px !important;
   }
 }
+
+:root[data-site-style="classic"] .header {
+  border-bottom-color: var(--accent-color) !important;
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    color-mix(in srgb, var(--accent-color), #ffffff 82%) 44%,
+    color-mix(in srgb, var(--accent-color), #ffffff 56%) 50%,
+    color-mix(in srgb, var(--accent-color), #ffffff 78%) 100%
+  ) !important;
+}
+
+:root[data-site-style="classic"][data-theme="dark"] .header {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-color), #ffffff 40%) 0%,
+    color-mix(in srgb, var(--accent-color), #172b3b 52%) 48%,
+    color-mix(in srgb, var(--accent-color), #172b3b 72%) 52%,
+    color-mix(in srgb, var(--accent-color), #172b3b 58%) 100%
+  ) !important;
+}
+
+:root[data-site-style="classic"] .header .topbar-brand,
+:root[data-site-style="classic"] .header .icon-btn,
+:root[data-site-style="classic"] .header .signin-btn,
+:root[data-site-style="classic"] .header .sidebar-toggle,
+:root[data-site-style="classic"] .topbar-nav .icon-btn,
+:root[data-site-style="classic"] .appearance-option button,
+:root[data-site-style="classic"] .profile-dropdown button,
+:root[data-site-style="classic"] .project-action,
+:root[data-site-style="classic"] .project-share-button,
+:root[data-site-style="classic"] .project-back-btn,
+:root[data-site-style="classic"] .notifications-filters button,
+:root[data-site-style="classic"] .notifications-read-all,
+:root[data-site-style="classic"] .notification-view-profile,
+:root[data-site-style="classic"] .admin-feature-button,
+:root[data-site-style="classic"] .project-scroll-btn,
+:root[data-site-style="classic"] .project-view-all,
+:root[data-site-style="classic"] .upload-submit,
+:root[data-site-style="classic"] .auth-submit,
+:root[data-site-style="classic"] .customize-actions button {
+  border-color: color-mix(in srgb, var(--accent-color), #ffffff 24%) !important;
+}
+
+:root[data-site-style="classic"] .header .icon-btn:hover,
+:root[data-site-style="classic"] .header .icon-btn:active,
+:root[data-site-style="classic"] .header .icon-btn.is-active,
+:root[data-site-style="classic"] .header .signin-btn:hover,
+:root[data-site-style="classic"] .topbar-nav .icon-btn:hover,
+:root[data-site-style="classic"] .topbar-nav .icon-btn.is-active,
+:root[data-site-style="classic"] .appearance-option button:hover,
+:root[data-site-style="classic"] .appearance-option button[aria-pressed="true"],
+:root[data-site-style="classic"] .profile-dropdown button:hover,
+:root[data-site-style="classic"] .notifications-filters button.is-active,
+:root[data-site-style="classic"] .project-action:hover,
+:root[data-site-style="classic"] .project-share-button:hover,
+:root[data-site-style="classic"] .project-back-btn:hover,
+:root[data-site-style="classic"] .notifications-read-all:not(:disabled):hover,
+:root[data-site-style="classic"] .admin-feature-button:hover,
+:root[data-site-style="classic"] .project-scroll-btn:hover,
+:root[data-site-style="classic"] .project-view-all:hover,
+:root[data-site-style="classic"] .upload-submit:hover,
+:root[data-site-style="classic"] .auth-submit:hover {
+  border-color: var(--accent-color) !important;
+  background: linear-gradient(
+    #ffffff,
+    color-mix(in srgb, var(--accent-color), #ffffff 72%)
+  ) !important;
+}
+
+:root[data-site-style="classic"] .scratch-home .featured-card:hover,
+:root[data-site-style="classic"] .project-card:hover,
+:root[data-site-style="classic"] .explore-project-card:hover,
+:root[data-site-style="classic"] .profile-project-card:hover,
+:root[data-site-style="classic"] .notification-card:hover,
+:root[data-site-style="classic"] .scratch-home .feed-item-button:hover,
+:root[data-site-style="classic"] .admin-ban-row:hover,
+:root[data-site-style="classic"] .admin-project-row:hover,
+:root[data-site-style="classic"] .admin-event-row:hover,
+:root[data-site-style="classic"] .chat-message:hover,
+:root[data-site-style="classic"] .chat-project-preview:hover {
+  border-color: var(--accent-color) !important;
+}
+
+:root[data-site-style="classic"] .featured-badge,
+:root[data-site-style="classic"] .project-category,
+:root[data-site-style="classic"] .project-tags span,
+:root[data-site-style="classic"] .chat-project-tags,
+:root[data-site-style="classic"] .chat-live {
+  border-color: color-mix(in srgb, var(--accent-color), #ffffff 24%) !important;
+}
+
+:root[data-site-style="classic"] .customize-section input[type="checkbox"],
+:root[data-site-style="classic"] input[type="checkbox"],
+:root[data-site-style="classic"] input[type="radio"] {
+  accent-color: var(--accent-color) !important;
+}
+
+:root[data-site-style="classic"] input:focus,
+:root[data-site-style="classic"] textarea:focus,
+:root[data-site-style="classic"] select:focus {
+  border-color: var(--accent-color) !important;
+  outline-color: color-mix(in srgb, var(--accent-color), transparent 65%) !important;
+}

@@ -767,6 +767,9 @@ export default function App() {
         "--accent-yellow": customization.accentColor,
         "--accent-orange": customization.accentColor,
         "--accent-color": customization.accentColor,
+        "--brutal-yellow": customization.accentColor,
+        "--brutal-orange": customization.accentColor,
+        "--yellow": customization.accentColor,
         "--custom-home-background": theme === "dark"
           ? "var(--bg-main)"
           : customization.homeBackground
