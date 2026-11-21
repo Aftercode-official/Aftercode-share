@@ -226,6 +226,17 @@ export default function User({
           }
           const image = new Image();
           image.onload = () => {
+            if (file.type.toLowerCase() === "image/gif") {
+              const maxDataLength = field === "avatarUrl" ? 500000 : 2000000;
+              if (reader.result.length > maxDataLength) {
+                reject(new Error(field === "avatarUrl"
+                  ? "GIF profile pictures must be smaller than 375 KB."
+                  : "GIF profile banners must be smaller than 1.5 MB."));
+                return;
+              }
+              resolve(reader.result);
+              return;
+            }
             const maxDimension = field === "avatarUrl" ? 256 : 1600;
             const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
             const canvas = document.createElement("canvas");
