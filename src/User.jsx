@@ -529,7 +529,7 @@ export default function User({
               <label>
                 Accent Color
                 <input type="color" value={draft.accentColor} onChange={(event) => updateDraft("accentColor", event.target.value)} />
-                <small>Applies to both Brutalist and Aero.</small>
+                <small>Applies to the Brutalist theme.</small>
               </label>
               <label>
                 Home Page Background

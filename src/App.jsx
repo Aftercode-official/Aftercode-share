@@ -760,16 +760,18 @@ export default function App() {
     );
   }
 
+  const activeAccentColor = siteStyle === "brutalist" ? customization.accentColor : "#2679b9";
+
   return (
     <div
       className="app-layout"
       style={{
-        "--accent-yellow": customization.accentColor,
-        "--accent-orange": customization.accentColor,
-        "--accent-color": customization.accentColor,
-        "--brutal-yellow": customization.accentColor,
-        "--brutal-orange": customization.accentColor,
-        "--yellow": customization.accentColor,
+        "--accent-yellow": activeAccentColor,
+        "--accent-orange": activeAccentColor,
+        "--accent-color": activeAccentColor,
+        "--brutal-yellow": activeAccentColor,
+        "--brutal-orange": activeAccentColor,
+        "--yellow": activeAccentColor,
         "--custom-home-background": theme === "dark"
           ? "var(--bg-main)"
           : customization.homeBackground
@@ -1126,8 +1128,8 @@ export default function App() {
               )}
 
               {isLoggedIn && (
-                <section className="home-announcements-section" aria-labelledby="scratch-news-title">
-                  <h2 className="section-title" id="scratch-news-title">Scratch News</h2>
+                <section className="home-announcements-section" aria-labelledby="aftercode-news-title">
+                  <h2 className="section-title" id="aftercode-news-title">Aftercode News</h2>
                   <div className="home-announcement-list">
                     {visibleAnnouncements.length > 0
                       ? visibleAnnouncements.slice(0, 4).map((item) => (

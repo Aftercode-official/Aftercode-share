@@ -1180,6 +1180,22 @@ button:hover,
   transform: none !important;
 }
 
+:root[data-site-style="brutalist"][data-theme="light"] button:hover *,
+:root[data-site-style="brutalist"][data-theme="light"] button:active *,
+:root[data-site-style="brutalist"][data-theme="light"] button[aria-pressed="true"] *,
+:root[data-site-style="brutalist"][data-theme="light"] .scratch-home .featured-card:hover *,
+:root[data-site-style="brutalist"][data-theme="light"] .scratch-home .feed-item-button:hover *,
+:root[data-site-style="brutalist"][data-theme="light"] .scratch-home .home-announcement-card:hover *,
+:root[data-site-style="brutalist"][data-theme="light"] .project-card:hover *,
+:root[data-site-style="brutalist"][data-theme="light"] .explore-project-card:hover *,
+:root[data-site-style="brutalist"][data-theme="light"] .notification-card:hover *,
+:root[data-site-style="brutalist"][data-theme="light"] .chat-message:hover *,
+:root[data-site-style="brutalist"][data-theme="light"] .profile-project-card:hover *,
+:root[data-site-style="brutalist"][data-theme="light"] .admin-tool-card:hover *,
+:root[data-site-style="brutalist"][data-theme="light"] .people-modal-item:hover * {
+  color: var(--brutal-ink) !important;
+}
+
 :root[data-site-style="brutalist"] .featured-thumb-wrapper {
   position: relative !important;
   overflow: hidden;
