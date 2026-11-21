@@ -211,7 +211,7 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
               className="admin-event-custom-css"
               maxLength={10000}
               rows={7}
-              placeholder={'& {\n  border-color: #ffd21f;\n}\n& .notification-event-title {\n  color: #ffd21f;\n}'}
+              placeholder={'& {\n  border-color: #ffd21f;\n}\n& .home-event-title {\n  color: #ffd21f;\n}'}
               value={eventDraft.customCss}
               onChange={(event) => setEventDraft((current) => ({ ...current, customCss: event.target.value }))}
             />

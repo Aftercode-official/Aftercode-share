@@ -377,6 +377,76 @@ a {
   flex-direction: column;
 }
 
+.scratch-home.has-home-events:not(.guest-home) {
+  grid-template-areas:
+    "events events"
+    "activity news"
+    "featured featured"
+    "recent recent";
+}
+
+.scratch-home .home-event-card {
+  position: relative;
+  grid-area: events;
+  min-height: 190px;
+  overflow: hidden;
+  border: 2px solid #648edb;
+  background: var(--panel);
+  box-shadow: 6px 6px 0 #315b86;
+}
+
+.scratch-home .home-event-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scratch-home .home-event-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-height: 190px;
+  align-content: center;
+  justify-items: start;
+  gap: 8px;
+  padding: 20px 28px;
+  background: linear-gradient(90deg, rgb(16 16 16 / 94%) 0%, rgb(16 16 16 / 78%) 58%, rgb(16 16 16 / 18%) 100%);
+}
+
+.home-event-label {
+  color: #82aaff;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.home-event-title {
+  color: var(--white);
+  font-size: clamp(1.5rem, 3.5vw, 2.4rem);
+  font-weight: 900;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.home-event-copy p {
+  max-width: 700px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.home-event-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .scratch-home .timeline-card,
 .scratch-home .featured-hero,
 .scratch-home .recent-projects-section {
@@ -1052,6 +1122,33 @@ a {
     gap: 14px;
   }
 
+  .scratch-home.has-home-events:not(.guest-home) {
+    grid-template-areas:
+      "events"
+      "activity"
+      "news"
+      "featured"
+      "recent";
+  }
+
+  .scratch-home .home-event-card,
+  .scratch-home .home-event-copy {
+    min-height: 160px;
+  }
+
+  .scratch-home .home-event-copy {
+    gap: 6px;
+    padding: 16px;
+  }
+
+  .home-event-title {
+    font-size: clamp(1.25rem, 6vw, 1.8rem);
+  }
+
+  .home-event-copy p {
+    font-size: 11px;
+  }
+
   .scratch-home .featured-card {
     flex: 0 0 156px;
     width: 156px;
@@ -1146,6 +1243,15 @@ a {
     flex-basis: 54px;
     width: 54px;
     height: 54px;
+  }
+
+  .scratch-home .home-event-card,
+  .scratch-home .home-event-copy {
+    min-height: 148px;
+  }
+
+  .scratch-home .home-event-copy {
+    padding: 12px;
   }
 
   .home-announcements-section,

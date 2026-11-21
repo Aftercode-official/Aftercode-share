@@ -901,7 +901,7 @@ export default function App() {
           </div>
         </header>
         <main
-          className={`main-feed-container${page === "home" ? ` scratch-home${!isLoggedIn ? " guest-home" : ""}` : ""}${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}`}
+          className={`main-feed-container${page === "home" ? ` scratch-home${!isLoggedIn ? " guest-home" : ""}${events.length ? " has-home-events" : ""}` : ""}${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}`}
         >
           <Suspense fallback={<p className="featured-empty">Loading page...</p>}>
           <User
@@ -993,6 +993,30 @@ export default function App() {
 
           {page === "home" && (
             <>
+              {events.slice(0, 1).map((event) => {
+                const eventScope = `home-event-${String(event.id).replace(/[^a-zA-Z0-9_-]/g, "")}`;
+                const thumbnailUrl = event.thumbnail_url && supabase
+                  ? supabase.storage.from("project-files").getPublicUrl(event.thumbnail_url).data.publicUrl
+                  : "";
+                return (
+                  <article className="home-event-card" data-event-scope={eventScope} key={event.id}>
+                    {event.custom_css && (
+                      <style>{`[data-event-scope="${eventScope}"] { ${event.custom_css} }`}</style>
+                    )}
+                    {thumbnailUrl && <img className="home-event-image" src={thumbnailUrl} alt="" />}
+                    <div className="home-event-copy">
+                      <span className="home-event-label">EVENT</span>
+                      <h2 className="home-event-title">{event.title}</h2>
+                      {event.description && <p>{event.description}</p>}
+                      <div className="home-event-meta">
+                        <time dateTime={event.starts_at}>{new Date(event.starts_at).toLocaleString()}</time>
+                        {event.location && <span>{event.location}</span>}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+
               {!isLoggedIn && customization.showWelcome && (
                 <section className="welcome-card">
                   <div className="welcome-card-copy">
