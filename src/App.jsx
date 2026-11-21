@@ -323,7 +323,6 @@ export default function App() {
     setUser(authenticatedUser);
     setIsAuthModalOpen(false);
     setAuthError("");
-    setIsSidebarOpen(window.matchMedia("(min-width: 761px)").matches);
   };
 
   const toggleProjectFeatured = async (project) => {
@@ -355,7 +354,6 @@ export default function App() {
         return;
       }
       setIsProfileMenuOpen(false);
-      setIsSidebarOpen(false);
       setIsCustomizeOpen(false);
       setPage("home");
       setSelectedProject(null);
@@ -402,9 +400,6 @@ export default function App() {
     url.searchParams.delete("project");
     window.history.pushState({}, "", url);
 
-    if (!window.matchMedia("(min-width: 761px)").matches) {
-      setIsSidebarOpen(false);
-    }
   };
 
   const navigateToPeopleList = (list) => {
@@ -1003,7 +998,7 @@ export default function App() {
                       Get Started
                     </button>
                   </div>
-                  <img className="welcome-card-icon" src="/favicon.svg" alt="" aria-hidden="true" />
+                  <img className="welcome-card-icon" src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" aria-hidden="true" />
                 </section>
               )}
 
