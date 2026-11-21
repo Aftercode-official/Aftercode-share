@@ -166,6 +166,7 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState("sign-in");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [authError, setAuthError] = useState("");
   const isLoggedIn = Boolean(user);
   const [projects, setProjects] = useState(() => (initialPublicCache?.projects ?? []).map(toProject));
@@ -212,6 +213,22 @@ export default function App() {
     window.addEventListener("aftercode:account-banned", handleAccountBanned);
     return () => window.removeEventListener("aftercode:account-banned", handleAccountBanned);
   }, []);
+
+  useEffect(() => {
+    if (!isProfileMenuOpen) return undefined;
+    const closeMenu = (event) => {
+      if (!event.target.closest(".header-profile-menu-wrap")) setIsProfileMenuOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setIsProfileMenuOpen(false);
+    };
+    document.addEventListener("mousedown", closeMenu);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeMenu);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isProfileMenuOpen]);
   const [customization, setCustomization] = useState(DEFAULT_CUSTOMIZATION);
   const [customizationError, setCustomizationError] = useState("");
   const isProjectAdmin = isAdminUserId(user?.id);
@@ -337,6 +354,7 @@ export default function App() {
         setAuthError(`Unable to sign out: ${error.message}`);
         return;
       }
+      setIsProfileMenuOpen(false);
       setIsSidebarOpen(false);
       setIsCustomizeOpen(false);
       setPage("home");
@@ -354,9 +372,9 @@ export default function App() {
     }
   };
 
-  const openAuthModal = () => {
+  const openAuthModal = (mode = "sign-in") => {
     setAuthError("");
-    setAuthModalMode("sign-in");
+    setAuthModalMode(typeof mode === "string" ? mode : "sign-in");
     setIsAuthModalOpen(true);
   };
 
@@ -833,28 +851,54 @@ export default function App() {
           )}
 
           {!isLoggedIn && (
-            <button className="signin-btn" type="button" onClick={openAuthModal}>
-              Sign In
-            </button>
+            <div className="header-auth-actions">
+              <button className="signin-btn" type="button" onClick={openAuthModal}>
+                Sign In
+              </button>
+            </div>
           )}
 
           {(authError || dataError) && <p className="auth-global-error" role="alert">{authError || dataError}</p>}
           {isLoggedIn && (
-            <button
-              className="icon-btn header-profile"
-              type="button"
-              aria-label="Open profile"
-              onClick={() => navigateTo("profile")}
-            >
-              {customization.avatarUrl
-                ? <img src={customization.avatarUrl} alt="" />
-                : <span>{customization.displayName.slice(0, 1).toUpperCase()}</span>}
-            </button>
+            <div className="header-profile-menu-wrap">
+              <button
+                className={`icon-btn header-profile${isProfileMenuOpen ? " is-active" : ""}`}
+                type="button"
+                aria-label="Open profile menu"
+                aria-haspopup="menu"
+                aria-expanded={isProfileMenuOpen}
+                onClick={() => setIsProfileMenuOpen((open) => !open)}
+              >
+                {customization.avatarUrl
+                  ? <img src={customization.avatarUrl} alt="" />
+                  : <span>{customization.displayName.slice(0, 1).toUpperCase()}</span>}
+              </button>
+              {isProfileMenuOpen && (
+                <div className="profile-dropdown" role="menu">
+                  <button type="button" role="menuitem" onClick={() => {
+                    setIsProfileMenuOpen(false);
+                    navigateTo("profile");
+                  }}>
+                    My Profile
+                  </button>
+                  <button type="button" role="menuitem" onClick={() => {
+                    setIsProfileMenuOpen(false);
+                    navigateTo("profile");
+                    setIsCustomizeOpen(true);
+                  }}>
+                    Account Settings
+                  </button>
+                  <button type="button" role="menuitem" className="profile-dropdown-signout" onClick={handleSignOut}>
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
           )}
           </div>
         </header>
         <main
-          className={`main-feed-container${page === "home" ? " scratch-home" : ""}${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}`}
+          className={`main-feed-container${page === "home" ? ` scratch-home${!isLoggedIn ? " guest-home" : ""}` : ""}${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}`}
         >
           <Suspense fallback={<p className="featured-empty">Loading page...</p>}>
           <User
@@ -948,19 +992,22 @@ export default function App() {
             <>
               {!isLoggedIn && customization.showWelcome && (
                 <section className="welcome-card">
-                  <span className="welcome-eyebrow">WELCOME TO AFTERCODE</span>
-                  <h1>Discover and share creative projects</h1>
-                  <p>
-                    Sign in to follow activity, save your favorite projects, and connect
-                    with the community.
-                  </p>
-                  <button className="signin-btn" type="button" onClick={openAuthModal}>
-                    Get Started
-                  </button>
+                  <div className="welcome-card-copy">
+                    <span className="welcome-eyebrow">WELCOME TO AFTERCODE</span>
+                    <h1>Discover and share creative projects</h1>
+                    <p>
+                      Sign in to follow activity, save your favorite projects, and connect
+                      with the community.
+                    </p>
+                    <button className="signin-btn" type="button" onClick={openAuthModal}>
+                      Get Started
+                    </button>
+                  </div>
+                  <img className="welcome-card-icon" src="/favicon.svg" alt="" aria-hidden="true" />
                 </section>
               )}
 
-              {customization.showFeed && (
+              {isLoggedIn && customization.showFeed && (
                 <section className="timeline-card">
                   <div className="timeline-header">
                     <h3>What's Happening?</h3>
@@ -1007,26 +1054,28 @@ export default function App() {
                 </section>
               )}
 
-              <section className="home-announcements-section" aria-labelledby="scratch-news-title">
-                <h2 className="section-title" id="scratch-news-title">Scratch News</h2>
-                <div className="home-announcement-list">
-                  {visibleAnnouncements.length > 0
-                    ? visibleAnnouncements.slice(0, 4).map((item) => (
-                        <article className="home-announcement-card" key={item.id}>
-                          <div className="home-announcement-copy">
-                            <span className="home-update-label">AFTERCODE UPDATE</span>
-                            <h3>{item.title}</h3>
-                            <p>{item.message}</p>
-                          </div>
-                        </article>
-                      ))
-                    : <p className="home-announcement-empty" role={announcementError ? "alert" : "status"}>
-                        {announcementError || (isLoadingAnnouncements
-                          ? "Loading announcements..."
-                          : "No announcements yet.")}
-                      </p>}
-                </div>
-              </section>
+              {isLoggedIn && (
+                <section className="home-announcements-section" aria-labelledby="scratch-news-title">
+                  <h2 className="section-title" id="scratch-news-title">Scratch News</h2>
+                  <div className="home-announcement-list">
+                    {visibleAnnouncements.length > 0
+                      ? visibleAnnouncements.slice(0, 4).map((item) => (
+                          <article className="home-announcement-card" key={item.id}>
+                            <div className="home-announcement-copy">
+                              <span className="home-update-label">AFTERCODE UPDATE</span>
+                              <h3>{item.title}</h3>
+                              <p>{item.message}</p>
+                            </div>
+                          </article>
+                        ))
+                      : <p className="home-announcement-empty" role={announcementError ? "alert" : "status"}>
+                          {announcementError || (isLoadingAnnouncements
+                            ? "Loading announcements..."
+                            : "No announcements yet.")}
+                        </p>}
+                  </div>
+                </section>
+              )}
 
               {customization.showFeatured && (
                 <section className="featured-hero" id="featured-projects">
@@ -1130,15 +1179,15 @@ export default function App() {
             />
           )}
           </Suspense>
-          <footer className="site-footer">
-            <span>© {new Date().getFullYear()} Aftercode</span>
-            <span className="footer-divider" aria-hidden="true" />
-            <a href="https://discord.gg/vK2cAfdsP" target="_blank" rel="noreferrer">
-              <svg aria-hidden="true" viewBox="0 0 20 19"><use href="/icons.svg#discord-icon" /></svg>
-              <span>Join our Discord</span>
-            </a>
-          </footer>
         </main>
+        <footer className="site-footer">
+          <span>© {new Date().getFullYear()} Aftercode</span>
+          <span className="footer-divider" aria-hidden="true" />
+          <a href="https://discord.gg/vK2cAfdsP" target="_blank" rel="noreferrer">
+            <svg aria-hidden="true" viewBox="0 0 20 19"><use href="/icons.svg#discord-icon" /></svg>
+            <span>Join our Discord</span>
+          </a>
+        </footer>
       </div>
       {isAuthModalOpen && (
         <Suspense fallback={null}>

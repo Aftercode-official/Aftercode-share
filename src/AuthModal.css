@@ -216,6 +216,34 @@
 
 @media (max-width: 480px) {
   .auth-panel {
-    padding: 1.5rem;
+    width: calc(100vw - 20px);
+    max-height: calc(100vh - 20px);
+    padding: 1.1rem;
+  }
+
+  .auth-tabs {
+    margin: 0.85rem 0;
+  }
+
+  .auth-form {
+    gap: 0.65rem;
+  }
+
+  .auth-form input {
+    height: 42px;
+    padding: 0.55rem 0.65rem;
+  }
+
+  .auth-captcha {
+    overflow-x: auto;
+  }
+
+  .auth-panel h2 {
+    padding-right: 2.5rem;
+    font-size: 1.15rem;
+  }
+
+  .auth-intro {
+    font-size: 0.78rem;
   }
 }

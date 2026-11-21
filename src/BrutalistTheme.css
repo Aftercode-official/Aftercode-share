@@ -83,8 +83,8 @@ body {
 }
 
 .main-feed-container {
-  flex: 0 0 auto;
-  min-height: calc(100vh - 58px);
+  flex: 1 0 auto;
+  min-height: 0;
   overflow: visible;
 }
 
@@ -365,6 +365,99 @@ body {
   max-height: calc(100vh - 100px);
   object-fit: contain;
   transition: transform 100ms steps(3, end);
+}
+
+.auth-backdrop {
+  background: rgb(16 16 16 / 78%) !important;
+  backdrop-filter: none;
+}
+
+.auth-panel {
+  width: min(400px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  padding: 1.1rem !important;
+  border: 2px solid var(--brutal-yellow) !important;
+  border-radius: 0 !important;
+  background: var(--brutal-panel) !important;
+  box-shadow: 7px 7px 0 var(--brutal-ink) !important;
+}
+
+.auth-close {
+  border: 1px solid var(--brutal-ink) !important;
+  border-radius: 0 !important;
+  background: var(--brutal-yellow) !important;
+  color: var(--brutal-ink) !important;
+  box-shadow: 2px 2px 0 var(--brutal-ink);
+  line-height: 1;
+}
+
+.auth-panel h2 {
+  margin-top: 0.25rem;
+  color: var(--brutal-yellow) !important;
+  font-size: 1.25rem;
+  text-transform: uppercase;
+}
+
+.auth-intro {
+  margin-top: 0.25rem;
+  font-size: 0.78rem;
+}
+
+.auth-tabs {
+  margin: 0.8rem 0 0.7rem;
+  padding: 3px;
+  border: 1px solid var(--brutal-ink);
+  border-radius: 0;
+  background: var(--brutal-panel-2);
+}
+
+.auth-tabs button {
+  border: 1px solid transparent;
+  border-radius: 0;
+  font-size: 0.76rem;
+}
+
+.auth-tabs button[aria-selected="true"] {
+  border-color: var(--brutal-ink);
+  background: var(--brutal-yellow);
+  color: var(--brutal-ink);
+  box-shadow: 2px 2px 0 var(--brutal-ink);
+}
+
+.auth-form {
+  gap: 0.65rem;
+}
+
+.auth-form label {
+  gap: 0.25rem;
+  font-size: 0.72rem;
+}
+
+.auth-form input {
+  height: 40px;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--brutal-ink) !important;
+  border-radius: 0 !important;
+  background: var(--brutal-panel-2) !important;
+  box-shadow: 2px 2px 0 var(--brutal-ink) !important;
+  font-size: 0.78rem;
+}
+
+.auth-submit {
+  min-height: 40px;
+  padding: 0.55rem 0.8rem;
+  background: var(--brutal-yellow) !important;
+  color: var(--brutal-ink) !important;
+  font-size: 0.76rem;
+}
+
+.auth-error,
+.auth-success,
+.auth-notice {
+  margin-bottom: 0.65rem;
+  border: 1px solid var(--brutal-ink);
+  border-radius: 0;
+  font-size: 0.72rem;
 }
 
 .chat-load-older {
@@ -1009,6 +1102,10 @@ button:hover,
   border-top: 1px solid var(--brutal-ink);
   color: var(--brutal-muted);
   font-size: 0.72rem;
+}
+
+.workspace > .site-footer {
+  margin-top: auto;
 }
 
 .site-footer > span:first-child {
