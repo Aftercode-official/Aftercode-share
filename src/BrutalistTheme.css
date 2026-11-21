@@ -663,8 +663,7 @@ body {
   }
 }
 
-.chat-reply-reference,
-.chat-project-preview {
+.chat-reply-reference {
   display: flex;
   width: 100%;
   align-items: center;
@@ -675,6 +674,129 @@ body {
   background: var(--brutal-panel);
   color: var(--brutal-white);
   text-align: left;
+}
+
+.chat-project-preview {
+  display: grid;
+  width: 100%;
+  gap: 0.4rem;
+  margin: 0.35rem 0;
+  padding: 0.45rem;
+  border: 1px solid var(--brutal-ink);
+  background: var(--brutal-panel);
+  color: var(--brutal-white);
+}
+
+.chat-project-main {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  text-align: left;
+}
+
+.chat-project-main:hover,
+.chat-project-main:active {
+  background: transparent !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  transform: none !important;
+}
+
+.chat-project-footer,
+.chat-project-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.chat-project-footer {
+  justify-content: space-between;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--brutal-ink);
+}
+
+.chat-project-stats {
+  flex-wrap: wrap;
+  color: var(--brutal-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.chat-project-play {
+  flex: 0 0 auto;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--brutal-ink) !important;
+  background: var(--brutal-yellow) !important;
+  box-shadow: 2px 2px 0 var(--brutal-ink) !important;
+  color: var(--brutal-ink) !important;
+  font-size: 0.65rem;
+}
+
+.chat-project-preview-card {
+  width: min(320px, 100%);
+  aspect-ratio: 1;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  overflow: hidden;
+  padding: 0.6rem;
+}
+
+.chat-project-preview-card .chat-project-main {
+  min-height: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+  overflow: hidden;
+}
+
+.chat-project-preview-card .chat-project-thumb {
+  width: 100%;
+  height: 150px;
+  flex: 0 0 150px;
+  aspect-ratio: auto;
+  object-fit: cover;
+}
+
+.chat-project-preview-card .chat-project-copy {
+  flex: 1 1 auto;
+  align-content: start;
+  overflow: hidden;
+}
+
+.chat-project-preview-card .chat-project-title,
+.chat-project-preview-card .chat-project-author > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-project-preview-card .chat-project-description,
+.chat-project-preview-card .chat-project-tags,
+.chat-project-preview-card .chat-project-open {
+  display: none;
+}
+
+.chat-project-preview-card .chat-project-footer {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.chat-project-preview-card .chat-project-stats {
+  justify-content: space-between;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.chat-project-preview-card .chat-project-play {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
 }
 
 .chat-reply-reference {
@@ -1196,6 +1318,31 @@ button:hover,
   color: var(--brutal-ink) !important;
 }
 
+:root[data-site-style="brutalist"][data-theme="light"] .section-title,
+:root[data-site-style="brutalist"][data-theme="light"] .scratch-home .timeline-header,
+:root[data-site-style="brutalist"][data-theme="light"] .scratch-home .timeline-header h3,
+:root[data-site-style="brutalist"][data-theme="light"] .scratch-home .home-announcement-card h3,
+:root[data-site-style="brutalist"][data-theme="light"] .scratch-home .home-update-label,
+:root[data-site-style="brutalist"][data-theme="light"] .scratch-home .feed-time,
+:root[data-site-style="brutalist"][data-theme="light"] .scratch-home .project-rail-header > .section-title,
+:root[data-site-style="brutalist"][data-theme="light"] .welcome-card .welcome-eyebrow,
+:root[data-site-style="brutalist"][data-theme="light"] .chat-user-link,
+:root[data-site-style="brutalist"][data-theme="light"] .auth-panel h2,
+:root[data-site-style="brutalist"][data-theme="light"] .chat-emoji-group h2,
+:root[data-site-style="brutalist"][data-theme="light"] .chat-project-title,
+:root[data-site-style="brutalist"][data-theme="light"] .site-footer a,
+:root[data-site-style="brutalist"][data-theme="light"] .profile-page .profile-stats strong,
+:root[data-site-style="brutalist"][data-theme="light"] .profile-project-card .sb3-thumbnail,
+:root[data-site-style="brutalist"][data-theme="light"] .explore-grid .featured-info .project-sequence,
+:root[data-site-style="brutalist"][data-theme="light"] .explore-grid .sb3-thumbnail,
+:root[data-site-style="brutalist"][data-theme="light"] .project-detail-title,
+:root[data-site-style="brutalist"][data-theme="light"] .explore-heading h1,
+:root[data-site-style="brutalist"][data-theme="light"] .notifications-page h1,
+:root[data-site-style="brutalist"][data-theme="light"] .admin-panel h1,
+:root[data-site-style="brutalist"][data-theme="light"] .admin-panel h2 {
+  color: var(--brutal-ink) !important;
+}
+
 :root[data-site-style="brutalist"] .featured-thumb-wrapper {
   position: relative !important;
   overflow: hidden;
@@ -1226,4 +1373,72 @@ button:hover,
     animation: none !important;
     transition: none !important;
   }
+}
+
+:root[data-site-style="brutalist"] .chat-project-preview-card {
+  border: 2px solid var(--brutal-ink);
+  background: var(--brutal-panel);
+  box-shadow: 4px 4px 0 var(--brutal-yellow);
+  transition: transform 100ms steps(2, end), box-shadow 100ms steps(2, end), border-color 100ms linear;
+}
+
+:root[data-site-style="brutalist"] .chat-project-preview-card:hover {
+  border-color: var(--brutal-ink);
+  box-shadow: 2px 2px 0 var(--brutal-yellow);
+  transform: translate(2px, 2px);
+}
+
+:root[data-site-style="brutalist"] .chat-project-preview-card .chat-project-thumb {
+  border: 2px solid var(--brutal-ink);
+  background: var(--brutal-panel-2);
+}
+
+:root[data-site-style="brutalist"] .chat-project-preview-card .chat-project-title {
+  color: var(--brutal-yellow);
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+:root[data-site-style="brutalist"] .chat-project-preview-card .chat-project-author {
+  font-size: 0.68rem;
+}
+
+:root[data-site-style="brutalist"] .chat-project-preview-card .chat-project-author-fallback {
+  width: 22px;
+  height: 22px;
+  flex-basis: 22px;
+  border: 1px solid var(--brutal-ink);
+  border-radius: 0;
+  background: var(--brutal-yellow);
+  color: var(--brutal-ink);
+}
+
+:root[data-site-style="brutalist"] .chat-project-preview-card .chat-project-footer {
+  border-top: 2px solid var(--brutal-yellow);
+}
+
+:root[data-site-style="brutalist"] .chat-project-preview-card .chat-project-stats span {
+  padding: 0.25rem 0.35rem;
+  border: 1px solid var(--brutal-ink);
+  background: var(--brutal-panel-2);
+  color: var(--brutal-white);
+}
+
+:root[data-site-style="brutalist"] .chat-project-preview-card .chat-project-play {
+  min-height: 34px;
+  border: 2px solid var(--brutal-ink) !important;
+  background: var(--brutal-yellow) !important;
+  box-shadow: 3px 3px 0 var(--brutal-ink) !important;
+  color: var(--brutal-ink) !important;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: transform 80ms steps(2, end), box-shadow 80ms steps(2, end);
+}
+
+:root[data-site-style="brutalist"] .chat-project-preview-card .chat-project-play:hover {
+  box-shadow: 1px 1px 0 var(--brutal-ink) !important;
+  transform: translate(2px, 2px) !important;
 }

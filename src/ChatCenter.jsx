@@ -61,7 +61,7 @@ function mergeChatMessages(current, incoming) {
       || String(left.id).localeCompare(String(right.id)));
 }
 
-function toProjectPreview(record) {
+function toProjectPreview(record, interaction) {
   const thumb = record.thumbnail_url && supabase
     ? (record.thumbnail_url.startsWith("http")
       ? record.thumbnail_url
@@ -87,8 +87,9 @@ function toProjectPreview(record) {
     description: record.description ?? "",
     tags: record.tags ?? [],
     isPublic: record.is_public,
-    likes: record.likes ?? 0,
-    views: 0
+    likes: interaction?.likes ?? record.likes ?? 0,
+    favorites: interaction?.favorites ?? 0,
+    views: record.view_count ?? record.views ?? 0
   };
 }
 
@@ -256,7 +257,11 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
         const { project } = await apiRequest(`/api/projects/${encodeURIComponent(id)}`, {
           authenticated: isAuthenticated
         });
-        return [key, { project: toProjectPreview(project) }];
+        const { interaction } = await apiRequest(
+          `/api/project-interactions?projectId=${encodeURIComponent(project.id)}`,
+          { authenticated: isAuthenticated }
+        );
+        return [key, { project: toProjectPreview(project, interaction) }];
       } catch (previewError) {
         return [key, { error: previewError.message }];
       }
@@ -547,25 +552,42 @@ export default function ChatCenter({ user, onSignIn, onOpenProject, onOpenUserPr
                 }
                 const project = preview.project;
                 return (
-                  <button className="chat-project-preview" type="button" key={projectId} onClick={() => onOpenProject(project)}>
-                    <ProjectThumbnail
-                      project={project}
-                      className="chat-project-thumb"
-                      fallbackClassName="chat-project-thumb chat-project-thumb-empty"
-                    />
-                    <span className="chat-project-copy">
-                      <span className="chat-project-title">{project.title}</span>
-                      <span className="chat-project-author">
-                        {project.authorAvatar
-                          ? <img src={project.authorAvatar} alt="" loading="lazy" decoding="async" />
-                          : <span className="chat-project-author-fallback">{project.author.slice(0, 1).toUpperCase()}</span>}
-                        <span>{project.author} · {project.category} · {project.likes} likes</span>
+                  <div className="chat-project-preview chat-project-preview-card" key={projectId}>
+                    <button className="chat-project-main" type="button" onClick={() => onOpenProject(project)}>
+                      <ProjectThumbnail
+                        project={project}
+                        className="chat-project-thumb"
+                        fallbackClassName="chat-project-thumb chat-project-thumb-empty"
+                      />
+                      <span className="chat-project-copy">
+                        <span className="chat-project-title">{project.title}</span>
+                        <span className="chat-project-author">
+                          {project.authorAvatar
+                            ? <img src={project.authorAvatar} alt="" loading="lazy" decoding="async" />
+                            : <span className="chat-project-author-fallback">{project.author.slice(0, 1).toUpperCase()}</span>}
+                          <span>{project.author} · {project.category}</span>
+                        </span>
+                        {project.description && <span className="chat-project-description">{project.description}</span>}
+                        {project.tags.length > 0 && <span className="chat-project-tags">{project.tags.slice(0, 5).map((tag) => `#{tag}`).join("  ")}</span>}
                       </span>
-                      {project.description && <span className="chat-project-description">{project.description}</span>}
-                      {project.tags.length > 0 && <span className="chat-project-tags">{project.tags.slice(0, 5).map((tag) => `#${tag}`).join("  ")}</span>}
-                    </span>
-                    <span className="chat-project-open" aria-hidden="true">↗</span>
-                  </button>
+                      <span className="chat-project-open" aria-hidden="true">↗</span>
+                    </button>
+                    <div className="chat-project-footer">
+                      <div className="chat-project-stats" aria-label="Project statistics">
+                        <span title="Likes">❤️ {project.likes.toLocaleString()}</span>
+                        <span title="Favorites">⭐ {project.favorites.toLocaleString()}</span>
+                        <span title="Views">👁 {project.views.toLocaleString()}</span>
+                      </div>
+                      <button
+                        className="chat-project-play"
+                        type="button"
+                        onClick={() => onOpenProject(project)}
+                        aria-label={`Play ${project.title}`}
+                      >
+                        ▶ Play
+                      </button>
+                    </div>
+                  </div>
                 );
               })}
               {user && (
