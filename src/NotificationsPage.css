@@ -64,6 +64,9 @@
   padding: 1rem 1.25rem;
   background: linear-gradient(90deg, rgb(16 16 16 / 94%) 0%, rgb(16 16 16 / 78%) 58%, rgb(16 16 16 / 18%) 100%);
 }
+:root[data-theme="light"] .notification-card.is-event-notification .notification-copy {
+  background: linear-gradient(90deg, rgb(255 255 255 / 97%) 0%, rgb(255 255 255 / 88%) 58%, rgb(255 255 255 / 18%) 100%);
+}
 .notification-card.is-event-notification .notification-unread-dot { position: absolute; z-index: 2; top: 12px; right: 12px; }
 .notification-event-label { color: #82aaff; font-size: 0.68rem; font-weight: 900; letter-spacing: 0.12em; }
 .notification-event-title { color: var(--text-primary); font-size: 1.1rem; font-weight: 900; line-height: 1.2; text-transform: uppercase; }

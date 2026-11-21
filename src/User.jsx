@@ -316,7 +316,6 @@ export default function User({
                   <button type="button" onClick={() => openPeopleModal("followers")}>
                     <strong>{followersCount}</strong> Followers
                   </button>
-                  <span><strong>{favoritesCount}</strong> Favorites</span>
                 </div>
               </div>
             </div>
@@ -358,7 +357,6 @@ export default function User({
                     </div>
                     <div className="featured-info">
                       <h3>{project.title}</h3>
-                      <span className="project-sequence">Project #{project.projectNumber ?? index + 1}</span>
                       <p>by {project.author}</p>
                     </div>
                   </button>
@@ -420,7 +418,6 @@ export default function User({
                       <button type="button" onClick={() => openPeopleModal("followers", publicProfile.user_id)}>
                         <strong>{followersCount}</strong> Followers
                       </button>
-                      <span><strong>{favoritesCount}</strong> Favorites</span>
                     </div>
                   </div>
                 </div>
@@ -458,7 +455,6 @@ export default function User({
                       </div>
                       <div className="featured-info">
                         <h3>{project.title}</h3>
-                        <span className="project-sequence">Project #{project.projectNumber ?? index + 1}</span>
                         <p>by {project.author}</p>
                       </div>
                     </button>
@@ -509,6 +505,9 @@ export default function User({
                 Bio
                 <textarea value={draft.bio} maxLength={300} rows={3} onChange={(event) => updateDraft("bio", event.target.value)} />
               </label>
+              <p className="customize-image-note">
+                GIFs uploaded before animation support were saved as still images. Re-upload the original GIF to restore animation.
+              </p>
               <label>
                 Profile Picture
                 <input type="file" accept="image/*" onChange={(event) => handleImageUpload("avatarUrl", event)} />

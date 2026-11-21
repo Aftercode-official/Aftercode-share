@@ -134,9 +134,9 @@ a {
 }
 
 .topbar-brand .logo {
-  height: 26px;
+  height: 32px;
   width: auto;
-  max-width: 110px;
+  max-width: 140px;
   object-fit: contain;
 }
 
@@ -246,6 +246,64 @@ a {
   position: relative;
   display: flex;
   align-items: center;
+}
+
+.header-appearance-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.appearance-dropdown {
+  position: absolute;
+  z-index: 500;
+  top: calc(100% + 8px);
+  right: 0;
+  display: grid;
+  width: 224px;
+  gap: 8px;
+  padding: 8px;
+  border: 2px solid var(--yellow);
+  background: var(--panel);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+
+.appearance-option {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid var(--yellow);
+}
+
+.appearance-option legend {
+  padding: 0 4px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.appearance-option > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.appearance-option button {
+  min-height: 32px;
+  padding: 0 5px;
+  border: 1px solid var(--yellow);
+  background: var(--panel-2);
+  color: var(--yellow);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.appearance-option button[aria-pressed="true"] {
+  background: var(--yellow);
+  color: var(--ink);
 }
 
 .profile-dropdown {
@@ -413,6 +471,10 @@ a {
   gap: 8px;
   padding: 20px 28px;
   background: linear-gradient(90deg, rgb(16 16 16 / 94%) 0%, rgb(16 16 16 / 78%) 58%, rgb(16 16 16 / 18%) 100%);
+}
+
+:root[data-theme="light"] .scratch-home .home-event-copy {
+  background: linear-gradient(90deg, rgb(255 253 246 / 97%) 0%, rgb(255 253 246 / 88%) 58%, rgb(255 253 246 / 18%) 100%);
 }
 
 .home-event-label {
@@ -1189,8 +1251,8 @@ a {
   }
 
   .topbar-brand .logo {
-    height: 22px;
-    max-width: 92px;
+    height: 26px;
+    max-width: 108px;
   }
 
   .topbar-nav .icon-btn {
@@ -1214,6 +1276,13 @@ a {
     top: 48px;
     right: 8px;
     width: 180px;
+  }
+
+  .appearance-dropdown {
+    position: fixed;
+    top: 48px;
+    right: 8px;
+    width: min(224px, calc(100vw - 16px));
   }
 
   .header-right .icon-btn,

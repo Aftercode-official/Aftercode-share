@@ -281,6 +281,15 @@
   resize: vertical;
 }
 
+.customize-image-note {
+  padding: 0.55rem 0.65rem;
+  border-left: 3px solid var(--accent-yellow, #ffb700);
+  background: var(--bg-main);
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
 .customize-section input[type="file"] {
   max-width: 100%;
   padding: 0.45rem;

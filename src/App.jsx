@@ -16,6 +16,7 @@ import "./App.css";
 import { isAdminUserId } from "../shared/adminUsers.js";
 import LoadingScreen from "./LoadingScreen.jsx";
 import "./BrutalistTheme.css";
+import "./ClassicTheme.css";
 
 const THEME_STORAGE_KEY = "aftercode-share-theme";
 const SITE_STYLE_STORAGE_KEY = "aftercode-share-site-style";
@@ -167,6 +168,7 @@ export default function App() {
   const [authModalMode, setAuthModalMode] = useState("sign-in");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isAppearanceMenuOpen, setIsAppearanceMenuOpen] = useState(false);
   const [authError, setAuthError] = useState("");
   const isLoggedIn = Boolean(user);
   const [projects, setProjects] = useState(() => (initialPublicCache?.projects ?? []).map(toProject));
@@ -200,7 +202,7 @@ export default function App() {
     return savedTheme === "light" ? "light" : "dark";
   });
   const [siteStyle, setSiteStyle] = useState(() => (
-    "brutalist"
+    window.localStorage.getItem(SITE_STYLE_STORAGE_KEY) === "classic" ? "classic" : "brutalist"
   ));
   const [compatibilityMode, setCompatibilityMode] = useState(() => (
     window.localStorage.getItem(COMPATIBILITY_MODE_STORAGE_KEY) === "true"
@@ -215,12 +217,16 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!isProfileMenuOpen) return undefined;
+    if (!isProfileMenuOpen && !isAppearanceMenuOpen) return undefined;
     const closeMenu = (event) => {
       if (!event.target.closest(".header-profile-menu-wrap")) setIsProfileMenuOpen(false);
+      if (!event.target.closest(".header-appearance-wrap")) setIsAppearanceMenuOpen(false);
     };
     const closeOnEscape = (event) => {
-      if (event.key === "Escape") setIsProfileMenuOpen(false);
+      if (event.key === "Escape") {
+        setIsProfileMenuOpen(false);
+        setIsAppearanceMenuOpen(false);
+      }
     };
     document.addEventListener("mousedown", closeMenu);
     document.addEventListener("keydown", closeOnEscape);
@@ -228,7 +234,7 @@ export default function App() {
       document.removeEventListener("mousedown", closeMenu);
       document.removeEventListener("keydown", closeOnEscape);
     };
-  }, [isProfileMenuOpen]);
+  }, [isProfileMenuOpen, isAppearanceMenuOpen]);
   const [customization, setCustomization] = useState(DEFAULT_CUSTOMIZATION);
   const [customizationError, setCustomizationError] = useState("");
   const isProjectAdmin = isAdminUserId(user?.id);
@@ -742,7 +748,7 @@ export default function App() {
     };
   }, [user?.id]);
 
-  if (isRestoringSession || isInitialDataLoading) return <LoadingScreen />;
+  if (isRestoringSession || isInitialDataLoading) return <LoadingScreen siteStyle={siteStyle} />;
 
   if (accountBanNotice) {
     return (
@@ -809,6 +815,39 @@ export default function App() {
           </label>
 
           <div className="header-right">
+          <div className="header-appearance-wrap">
+            <button
+              className={`icon-btn appearance-trigger${isAppearanceMenuOpen ? " is-active" : ""}`}
+              type="button"
+              aria-label="Appearance settings"
+              aria-haspopup="true"
+              aria-expanded={isAppearanceMenuOpen}
+              onClick={() => {
+                setIsProfileMenuOpen(false);
+                setIsAppearanceMenuOpen((open) => !open);
+              }}
+            >
+              <span aria-hidden="true">{theme === "dark" ? "☾" : "☀"}</span>
+            </button>
+            {isAppearanceMenuOpen && (
+              <div className="appearance-dropdown" aria-label="Appearance settings">
+                <fieldset className="appearance-option">
+                  <legend>Color mode</legend>
+                  <div>
+                    <button type="button" aria-pressed={theme === "dark"} onClick={() => setTheme("dark")}>Dark</button>
+                    <button type="button" aria-pressed={theme === "light"} onClick={() => setTheme("light")}>Light</button>
+                  </div>
+                </fieldset>
+                <fieldset className="appearance-option">
+                  <legend>Interface</legend>
+                  <div>
+                    <button type="button" aria-pressed={siteStyle === "brutalist"} onClick={() => setSiteStyle("brutalist")}>Brutalist</button>
+                    <button type="button" aria-pressed={siteStyle === "classic"} onClick={() => setSiteStyle("classic")}>Aero</button>
+                  </div>
+                </fieldset>
+              </div>
+            )}
+          </div>
           {isLoggedIn && (
             <>
               <button
@@ -903,7 +942,9 @@ export default function App() {
         <main
           className={`main-feed-container${page === "home" ? ` scratch-home${!isLoggedIn ? " guest-home" : ""}${events.length ? " has-home-events" : ""}` : ""}${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}`}
         >
-          <Suspense fallback={<p className="featured-empty">Loading page...</p>}>
+          <Suspense fallback={siteStyle === "classic"
+            ? <LoadingScreen siteStyle={siteStyle} inline />
+            : <p className="featured-empty">Loading page...</p>}>
           <User
           key={`${page}-${isCustomizeOpen}-${selectedUserId ?? ""}`}
           page={page}
@@ -1288,7 +1329,6 @@ function ProjectCard({ project, index, onOpenProject, showFeaturedBadge = false 
         </div>
         <div className="featured-info">
           <h3>{project.title}</h3>
-          <span className="project-sequence">Project #{project.projectNumber ?? index + 1}</span>
           <p className="featured-author">
             {project.authorAvatar
               ? <img className="avatar avatar-xs avatar-img" src={project.authorAvatar} alt="" loading="lazy" decoding="async" />

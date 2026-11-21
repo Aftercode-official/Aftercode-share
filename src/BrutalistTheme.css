@@ -18,10 +18,38 @@
   --accent-color: var(--brutal-yellow);
 }
 
-:root,
-:root[data-theme="dark"],
-:root[data-theme="light"] {
+:root[data-site-style="brutalist"][data-theme="dark"] {
   color-scheme: dark;
+}
+
+:root[data-site-style="brutalist"][data-theme="light"] {
+  color-scheme: light;
+  --brutal-ink: #171717;
+  --brutal-page: #f0eee6;
+  --brutal-panel: #fffdf6;
+  --brutal-panel-2: #e6e2d8;
+  --brutal-yellow: #c79d00;
+  --brutal-orange: #c44f2d;
+  --brutal-white: #171717;
+  --brutal-muted: #56544e;
+  --bg-main: var(--brutal-page);
+  --bg-card: var(--brutal-panel);
+  --bg-hover: var(--brutal-panel-2);
+  --border-color: var(--brutal-ink);
+  --text-primary: var(--brutal-white);
+  --text-muted: var(--brutal-muted);
+  --accent-yellow: var(--brutal-yellow);
+  --accent-orange: var(--brutal-yellow);
+  --accent-color: var(--brutal-yellow);
+  --ink: var(--brutal-ink);
+  --page: var(--brutal-page);
+  --stripe: #e5e2d9;
+  --panel: var(--brutal-panel);
+  --panel-2: var(--brutal-panel-2);
+  --panel-3: #dad6cc;
+  --white: var(--brutal-white);
+  --muted: var(--brutal-muted);
+  --yellow: var(--brutal-yellow);
 }
 
 html,
@@ -38,10 +66,13 @@ html {
 
 body {
   overflow: visible !important;
-  background: var(--brutal-page) !important;
-  color: var(--brutal-white) !important;
   font-family: Arial, Helvetica, sans-serif !important;
   letter-spacing: -0.01em;
+}
+
+:root[data-site-style="brutalist"] body {
+  background: var(--brutal-page) !important;
+  color: var(--brutal-white) !important;
 }
 
 @media (max-width: 850px) {
@@ -773,6 +804,10 @@ body {
   color: var(--brutal-ink) !important;
 }
 
+:root[data-theme="light"] .header .topbar-brand {
+  background: var(--brutal-panel) !important;
+}
+
 .header .icon-btn:hover,
 .header .icon-btn:active,
 .header .icon-btn.is-active,
@@ -1131,6 +1166,36 @@ button:hover,
 
 .site-footer a:hover {
   color: var(--brutal-white);
+}
+
+:root[data-site-style="brutalist"] .chat-message:hover .chat-user-link {
+  color: var(--brutal-ink) !important;
+}
+
+:root[data-site-style="brutalist"] .chat-message .chat-user-link:hover:not(:disabled) {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: var(--brutal-ink) !important;
+  transform: none !important;
+}
+
+:root[data-site-style="brutalist"] .featured-thumb-wrapper {
+  position: relative !important;
+  overflow: hidden;
+}
+
+:root[data-site-style="brutalist"] .featured-thumb-wrapper > img,
+:root[data-site-style="brutalist"] .featured-thumb-wrapper .featured-thumb {
+  position: relative;
+  z-index: 0;
+}
+
+:root[data-site-style="brutalist"] .featured-badge {
+  position: absolute !important;
+  z-index: 1 !important;
+  top: 6px !important;
+  left: 6px !important;
 }
 
 @keyframes brutal-pop {
