@@ -381,6 +381,22 @@ a {
   font-weight: 900;
 }
 
+.header-profile {
+  overflow: visible;
+}
+
+.header-profile .header-avatar-frame {
+  position: absolute;
+  z-index: 2;
+  top: -13%;
+  left: -27%;
+  width: 154%;
+  height: 126%;
+  border-radius: 0;
+  object-fit: fill;
+  pointer-events: none;
+}
+
 .notification-count-badge {
   position: absolute;
   top: -4px;

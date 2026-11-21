@@ -65,12 +65,13 @@
 }
 
 .profile-avatar {
+  position: relative;
   display: grid;
   flex: 0 0 clamp(64px, 9vw, 90px);
   width: clamp(64px, 9vw, 90px);
   height: clamp(64px, 9vw, 90px);
   place-items: center;
-  overflow: hidden;
+  overflow: visible;
   border: 4px solid var(--bg-card);
   border-radius: 50%;
   background-color: var(--accent-yellow);
@@ -80,9 +81,55 @@
 }
 
 .profile-avatar img {
+  position: relative;
+  z-index: 0;
   width: 100%;
   height: 100%;
+  border-radius: inherit;
   object-fit: cover;
+}
+
+.profile-avatar .avatar-frame-overlay {
+  position: absolute;
+  z-index: 2;
+  top: -13%;
+  left: -27%;
+  width: 154%;
+  height: 126%;
+  border-radius: 0;
+  object-fit: fill;
+  pointer-events: none;
+}
+
+.profile-avatar[data-avatar-frame="bear"] {
+  border-radius: 50%;
+}
+
+.profile-avatar[data-avatar-frame="bear"] > img:not(.avatar-frame-overlay) {
+  border-radius: 50%;
+}
+
+.profile-avatar[data-avatar-frame="gold"] {
+  border-color: #ffd166;
+  box-shadow: 0 0 0 2px #765400, 0 0 0 4px #ffd166;
+}
+
+.profile-avatar[data-avatar-frame="neon"] {
+  border-color: #61f5ff;
+  box-shadow: 0 0 0 2px #083b66, 0 0 10px 4px rgb(34 224 255 / 68%);
+}
+
+.profile-avatar[data-avatar-frame="pixel"] {
+  border: 5px double #171717;
+  box-shadow: 0 0 0 3px #f0c400;
+}
+
+.customize-avatar-frame-preview {
+  width: 64px;
+  height: 64px;
+  flex-basis: 64px;
+  margin: 0.35rem 0.25rem 0.45rem;
+  font-size: 1.4rem;
 }
 
 .profile-identity-main {

@@ -1442,3 +1442,50 @@ button:hover,
   box-shadow: 1px 1px 0 var(--brutal-ink) !important;
   transform: translate(2px, 2px) !important;
 }
+
+:root[data-site-style="brutalist"] .profile-page .profile-avatar[data-avatar-frame="gold"] {
+  border-color: #ffd166;
+  box-shadow: 0 0 0 2px var(--brutal-ink), 0 0 0 4px #ffd166;
+}
+
+:root[data-site-style="brutalist"] .profile-page .profile-avatar[data-avatar-frame="neon"] {
+  border-color: #61f5ff;
+  box-shadow: 0 0 0 2px var(--brutal-ink), 0 0 10px 4px rgb(34 224 255 / 68%);
+}
+
+:root[data-site-style="brutalist"] .profile-page .profile-avatar[data-avatar-frame="pixel"] {
+  border: 5px double var(--brutal-ink);
+  box-shadow: 0 0 0 3px var(--brutal-yellow);
+}
+
+:root[data-site-style="brutalist"] .profile-page .profile-avatar[data-avatar-frame="bear"] {
+  border: 2px solid #f3eadb;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--brutal-ink);
+}
+
+:root[data-site-style="brutalist"] .header .header-profile[data-avatar-frame="gold"] {
+  border-color: #ffd166 !important;
+  box-shadow: 2px 2px 0 var(--brutal-ink), 0 0 0 2px #ffd166 !important;
+}
+
+:root[data-site-style="brutalist"] .header .header-profile[data-avatar-frame="neon"] {
+  border-color: #61f5ff !important;
+  box-shadow: 2px 2px 0 var(--brutal-ink), 0 0 8px 2px rgb(34 224 255 / 72%) !important;
+}
+
+:root[data-site-style="brutalist"] .header .header-profile[data-avatar-frame="pixel"] {
+  border: 3px double var(--brutal-ink) !important;
+  box-shadow: 2px 2px 0 var(--brutal-ink), 0 0 0 2px var(--brutal-yellow) !important;
+}
+
+:root[data-site-style="brutalist"] .header .header-profile[data-avatar-frame="bear"] {
+  border: 2px solid #f3eadb !important;
+  border-radius: 50% !important;
+  box-shadow: 2px 2px 0 var(--brutal-ink) !important;
+}
+
+:root[data-site-style="brutalist"] .header .header-profile[data-avatar-frame="bear"] img:not(.header-avatar-frame),
+:root[data-site-style="brutalist"] .header .header-profile[data-avatar-frame="bear"] span {
+  border-radius: 50%;
+}

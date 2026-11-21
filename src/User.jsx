@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { getCachedProfileStats, getCachedPublicProfile, loadPublicProfile, apiFollow, cacheProfileStats, loadFollowList } from "./userStorage.js";
 import { supabase } from "./supabase.js";
+import BearAvatarFrame from "./assets/bear-avatar-frame.png";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
 import "./User.css";
 
@@ -68,6 +69,10 @@ export default function User({
   const [peopleList, setPeopleList] = useState([]);
   const [peopleError, setPeopleError] = useState("");
   const [isPeopleLoading, setIsPeopleLoading] = useState(false);
+
+  useEffect(() => {
+    if (isCustomizeOpen) setDraft({ ...customization });
+  }, [isCustomizeOpen, customization]);
 
   // Load profile khi xem trang người khác
   useEffect(() => {
@@ -294,10 +299,13 @@ export default function User({
               {customization.bannerUrl && <img src={customization.bannerUrl} alt="" decoding="async" fetchPriority="high" />}
             </div>
             <div className="profile-identity">
-              <div className="profile-avatar">
+              <div className="profile-avatar" data-avatar-frame={customization.avatarFrame}>
                 {customization.avatarUrl
                   ? <img src={customization.avatarUrl} alt={`${customization.displayName} avatar`} decoding="async" fetchPriority="high" />
                   : customization.displayName.slice(0, 1)}
+                {customization.avatarFrame === "bear" && (
+                  <img className="avatar-frame-overlay" src={BearAvatarFrame} alt="" aria-hidden="true" />
+                )}
               </div>
               <div className="profile-identity-main">
                 <div className="profile-title-row">
@@ -384,10 +392,13 @@ export default function User({
                   {publicProfile.banner_url && <img src={publicProfile.banner_url} alt="" decoding="async" fetchPriority="high" />}
                 </div>
                 <div className="profile-identity">
-                  <div className="profile-avatar">
+                  <div className="profile-avatar" data-avatar-frame={publicProfile.avatar_frame || "none"}>
                     {publicProfile.avatar_url
                       ? <img src={publicProfile.avatar_url} alt="" decoding="async" fetchPriority="high" />
                       : (publicProfile.display_name || "?").slice(0, 1)}
+                    {publicProfile.avatar_frame === "bear" && (
+                      <img className="avatar-frame-overlay" src={BearAvatarFrame} alt="" aria-hidden="true" />
+                    )}
                   </div>
                   <div className="profile-identity-main">
                     <div className="profile-title-row">
@@ -512,6 +523,24 @@ export default function User({
                 Profile Picture
                 <input type="file" accept="image/*" onChange={(event) => handleImageUpload("avatarUrl", event)} />
                 {draft.avatarUrl && <img className="customize-image-preview" src={draft.avatarUrl} alt="Profile picture preview" />}
+              </label>
+              <label>
+                Avatar Frame
+                <select value={draft.avatarFrame || "none"} onChange={(event) => updateDraft("avatarFrame", event.target.value)}>
+                  <option value="none">None</option>
+                  <option value="gold">Gold</option>
+                  <option value="neon">Neon</option>
+                  <option value="pixel">Pixel</option>
+                  <option value="bear">Bear</option>
+                </select>
+                <div className="profile-avatar customize-avatar-frame-preview" data-avatar-frame={draft.avatarFrame || "none"}>
+                  {draft.avatarUrl
+                    ? <img src={draft.avatarUrl} alt="" />
+                    : draft.displayName.slice(0, 1).toUpperCase()}
+                  {draft.avatarFrame === "bear" && (
+                    <img className="avatar-frame-overlay" src={BearAvatarFrame} alt="" aria-hidden="true" />
+                  )}
+                </div>
               </label>
               <label>
                 Profile Banner

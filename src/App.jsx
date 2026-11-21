@@ -7,6 +7,7 @@ import { apiRequest } from "./api.js";
 const AuthModal = lazy(() => import("./AuthModal.jsx"));
 const UploadProjectModal = lazy(() => import("./UploadProjectModal.jsx"));
 import LogoIcon from "./assets/Logo.png";
+import BearAvatarFrame from "./assets/bear-avatar-frame.png";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
 const ChatCenter = lazy(() => import("./ChatCenter.jsx"));
 const AdminPanel = lazy(() => import("./AdminPanel.jsx"));
@@ -29,6 +30,7 @@ const DEFAULT_CUSTOMIZATION = {
   username: "@IDName",
   bio: "Sharing the projects I love.",
   avatarUrl: "",
+  avatarFrame: "none",
   bannerUrl: "",
   accentColor: "#ffb700",
   homeBackground: "#fffdfa",
@@ -150,6 +152,9 @@ function normalizeCustomization(saved = {}) {
   const normalized = { ...DEFAULT_CUSTOMIZATION, ...saved };
   if (typeof saved.accentColor !== "string" || saved.accentColor.toLowerCase() === "#238a45") {
     normalized.accentColor = DEFAULT_CUSTOMIZATION.accentColor;
+  }
+  if (!["none", "gold", "neon", "pixel", "bear"].includes(normalized.avatarFrame)) {
+    normalized.avatarFrame = DEFAULT_CUSTOMIZATION.avatarFrame;
   }
   return normalized;
 }
@@ -903,6 +908,7 @@ export default function App() {
               <button
                 className={`icon-btn header-profile${isProfileMenuOpen ? " is-active" : ""}`}
                 type="button"
+                data-avatar-frame={customization.avatarFrame}
                 aria-label="Open profile menu"
                 aria-haspopup="menu"
                 aria-expanded={isProfileMenuOpen}
@@ -911,6 +917,9 @@ export default function App() {
                 {customization.avatarUrl
                   ? <img src={customization.avatarUrl} alt="" />
                   : <span>{customization.displayName.slice(0, 1).toUpperCase()}</span>}
+                {customization.avatarFrame === "bear" && (
+                  <img className="header-avatar-frame" src={BearAvatarFrame} alt="" aria-hidden="true" />
+                )}
               </button>
               {isProfileMenuOpen && (
                 <div className="profile-dropdown" role="menu">

@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     const viewerId = req.authenticatedUser?.id ?? null;
     const [profileResult, projectsResult, favoriteIdsResult, followersResult, followingResult, viewerFollowResult] = await Promise.all([
       client.from("profiles")
-        .select("user_id, display_name, username, bio, avatar_url, banner_url, accent_color, profile_background, created_at")
+        .select("user_id, display_name, username, bio, avatar_url, avatar_frame, banner_url, accent_color, profile_background, created_at")
         .eq("user_id", id)
         .maybeSingle(),
       client.from("projects")
@@ -78,6 +78,7 @@ export default async function handler(req, res) {
         username: "",
         bio: "",
         avatar_url: "",
+        avatar_frame: "none",
         banner_url: "",
         accent_color: "#ffb700",
         profile_background: "#171513"

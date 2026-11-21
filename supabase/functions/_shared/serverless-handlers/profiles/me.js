@@ -35,6 +35,12 @@ function sanitizeProfile(body) {
       updates[column] = body[field];
     }
   }
+  if (Object.hasOwn(body, "avatarFrame")) {
+    if (!["none", "gold", "neon", "pixel", "bear"].includes(body.avatarFrame)) {
+      return { error: "Choose a valid avatar frame." };
+    }
+    updates.avatar_frame = body.avatarFrame;
+  }
   for (const field of [
     "showWelcome", "showFeed", "showFeatured",
     "showProfileBio", "showProfileProjects", "showProfileStats"
