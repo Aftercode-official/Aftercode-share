@@ -27,6 +27,11 @@ export default function NotificationsPage({ notifications, isLoading, onMarkAllR
   const visibleNotifications = useMemo(() => notifications.filter((item) => {
     if (filter === "unread") return !item.is_read;
     return filter === "all" || item.notification_type === filter;
+  }).sort((first, second) => {
+    const firstIsEvent = first.notification_type === "event";
+    const secondIsEvent = second.notification_type === "event";
+    if (firstIsEvent !== secondIsEvent) return firstIsEvent ? -1 : 1;
+    return Date.parse(second.created_at) - Date.parse(first.created_at);
   }), [filter, notifications]);
 
   return (
@@ -51,11 +56,17 @@ export default function NotificationsPage({ notifications, isLoading, onMarkAllR
       </nav>
 
       <div className="notifications-list" aria-live="polite">
-        {isLoading ? <p className="notifications-empty">Loading notifications…</p> : visibleNotifications.length ? visibleNotifications.map((item) => (
+        {isLoading ? <p className="notifications-empty">Loading notifications…</p> : visibleNotifications.length ? visibleNotifications.map((item) => {
+          const eventScope = `event-${String(item.event_id || item.id).replace(/[^a-zA-Z0-9_-]/g, "")}`;
+          return (
           <article
             className={`notification-card${item.is_read ? "" : " is-unread"}${item.notification_type === "event" ? " is-event-notification" : ""}`}
+            data-event-scope={item.notification_type === "event" ? eventScope : undefined}
             key={item.id}
           >
+            {item.notification_type === "event" && item.custom_css && (
+              <style>{`[data-event-scope="${eventScope}"] { ${item.custom_css} }`}</style>
+            )}
             {item.thumbnail_url && supabase && (
               <img
                 className="notification-thumbnail"
@@ -65,42 +76,56 @@ export default function NotificationsPage({ notifications, isLoading, onMarkAllR
                 decoding="async"
               />
             )}
-            <button
-              type="button"
-              className="notification-actor"
-              onClick={() => item.actor_id && onOpenUserProfile?.(item.actor_id)}
-              disabled={!item.actor_id}
-              aria-label={`View ${item.actor_name || "user"}'s profile`}
-            >
-              {item.actor_avatar
-                ? <img className="notification-avatar" src={item.actor_avatar} alt="" loading="lazy" decoding="async" />
-                : <span className="notification-avatar notification-avatar-fallback">{(item.actor_name || "A").slice(0, 1).toUpperCase()}</span>}
-            </button>
+            {item.notification_type !== "event" && (
+              <button
+                type="button"
+                className="notification-actor"
+                onClick={() => item.actor_id && onOpenUserProfile?.(item.actor_id)}
+                disabled={!item.actor_id}
+                aria-label={`View ${item.actor_name || "user"}'s profile`}
+              >
+                {item.actor_avatar
+                  ? <img className="notification-avatar" src={item.actor_avatar} alt="" loading="lazy" decoding="async" />
+                  : <span className="notification-avatar notification-avatar-fallback">{(item.actor_name || "A").slice(0, 1).toUpperCase()}</span>}
+              </button>
+            )}
             <span className="notification-copy">
-              <span className="notification-action-line"><strong>{item.actor_name}</strong> {notificationAction(item.notification_type)}</span>
-              {item.project_title && (
-                <button
-                  type="button"
-                  className="notification-project-link"
-                  onClick={() => onOpenProject?.(item)}
-                  disabled={!item.project_id}
-                >
-                  Project: <strong>{item.project_title}</strong>
-                </button>
-              )}
-              {item.notification_type === "project_commented" && item.message && (
-                <span className="notification-message">“{item.message}”</span>
-              )}
-              <time dateTime={item.created_at}>{new Date(item.created_at).toLocaleString()}</time>
-              {item.actor_id && (
-                <button type="button" className="notification-view-profile" onClick={() => onOpenUserProfile?.(item.actor_id)}>
-                  View profile
-                </button>
+              {item.notification_type === "event" ? (
+                <>
+                  <span className="notification-event-label">EVENT</span>
+                  <strong className="notification-event-title">{item.project_title || "Community event"}</strong>
+                  {item.message && <span className="notification-message">{item.message}</span>}
+                  <time dateTime={item.created_at}>{new Date(item.created_at).toLocaleString()}</time>
+                </>
+              ) : (
+                <>
+                  <span className="notification-action-line"><strong>{item.actor_name}</strong> {notificationAction(item.notification_type)}</span>
+                  {item.project_title && (
+                    <button
+                      type="button"
+                      className="notification-project-link"
+                      onClick={() => onOpenProject?.(item)}
+                      disabled={!item.project_id}
+                    >
+                      Project: <strong>{item.project_title}</strong>
+                    </button>
+                  )}
+                  {item.notification_type === "project_commented" && item.message && (
+                    <span className="notification-message">“{item.message}”</span>
+                  )}
+                  <time dateTime={item.created_at}>{new Date(item.created_at).toLocaleString()}</time>
+                  {item.actor_id && (
+                    <button type="button" className="notification-view-profile" onClick={() => onOpenUserProfile?.(item.actor_id)}>
+                      View profile
+                    </button>
+                  )}
+                </>
               )}
             </span>
             {!item.is_read && <span className="notification-unread-dot" aria-label="Unread" />}
           </article>
-        )) : <p className="notifications-empty">No notifications here.</p>}
+          );
+        }) : <p className="notifications-empty">No notifications here.</p>}
       </div>
     </section>
   );

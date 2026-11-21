@@ -211,10 +211,11 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
               className="admin-event-custom-css"
               maxLength={10000}
               rows={7}
-              placeholder={'.home-event-card { border-radius: 24px; }\n.home-event-copy h3 { color: #ffb700; }'}
+              placeholder={'& {\n  border-color: #ffd21f;\n}\n& .notification-event-title {\n  color: #ffd21f;\n}'}
               value={eventDraft.customCss}
               onChange={(event) => setEventDraft((current) => ({ ...current, customCss: event.target.value }))}
             />
+            <span className="admin-tool-description">Use &amp; to style this event card and its child elements.</span>
           </label>
           <label>Event thumbnail<input required type="file" accept="image/*" onChange={(event) => {
             const file = event.currentTarget.files?.[0] ?? null;

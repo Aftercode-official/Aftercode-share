@@ -40,15 +40,29 @@ export default async function handler(req, res) {
 
     if (error) throw error;
     const actorIds = [...new Set(data.map((notification) => notification.actor_id).filter(Boolean))];
-    const { data: profiles, error: profilesError } = actorIds.length > 0
-      ? await client.from("profiles").select("user_id, avatar_url").in("user_id", actorIds)
-      : { data: [], error: null };
+    const eventIds = [...new Set(data
+      .filter((notification) => notification.notification_type === "event")
+      .map((notification) => notification.event_id)
+      .filter(Boolean))];
+    const [profilesResult, eventsResult] = await Promise.all([
+      actorIds.length > 0
+        ? client.from("profiles").select("user_id, avatar_url").in("user_id", actorIds)
+        : Promise.resolve({ data: [], error: null }),
+      eventIds.length > 0
+        ? client.from("events").select("id, custom_css").in("id", eventIds)
+        : Promise.resolve({ data: [], error: null })
+    ]);
+    const { data: profiles, error: profilesError } = profilesResult;
+    const { data: events, error: eventsError } = eventsResult;
     if (profilesError) throw profilesError;
+    if (eventsError) throw eventsError;
     const avatarByUserId = new Map((profiles ?? []).map((profile) => [profile.user_id, profile.avatar_url]));
+    const customCssByEventId = new Map((events ?? []).map((event) => [String(event.id), event.custom_css || ""]));
     sendJson(res, 200, {
       notifications: data.map((notification) => ({
         ...notification,
-        actor_avatar: avatarByUserId.get(notification.actor_id) || notification.actor_avatar || ""
+        actor_avatar: avatarByUserId.get(notification.actor_id) || notification.actor_avatar || "",
+        custom_css: customCssByEventId.get(String(notification.event_id)) || ""
       }))
     });
   } catch (error) {
