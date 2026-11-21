@@ -1327,3 +1327,148 @@ input[type="file"]::file-selector-button {
   backdrop-filter: blur(2px) saturate(108%) !important;
   -webkit-backdrop-filter: blur(2px) saturate(108%) !important;
 }
+
+@media (max-width: 850px) {
+  :root[data-site-style="classic"] .header {
+    height: 82px !important;
+    min-height: 82px !important;
+    grid-template-rows: 34px 34px !important;
+    gap: 2px 6px !important;
+    padding: 5px 8px !important;
+  }
+
+  :root[data-site-style="classic"] .topbar-nav {
+    height: 34px !important;
+    gap: 4px !important;
+  }
+
+  :root[data-site-style="classic"] .topbar-nav .icon-btn {
+    height: 30px !important;
+    padding: 0 5px !important;
+    font-size: 9px !important;
+  }
+
+  :root[data-site-style="classic"] .header-right {
+    height: 34px !important;
+    gap: 3px !important;
+  }
+
+  :root[data-site-style="classic"] .header-right .icon-btn,
+  :root[data-site-style="classic"] .header-right .signin-btn {
+    min-width: 30px !important;
+    height: 30px !important;
+    padding: 0 5px !important;
+  }
+
+  :root[data-site-style="classic"] .header .topbar-brand {
+    height: 32px !important;
+    padding: 0 5px !important;
+  }
+
+  :root[data-site-style="classic"] .header .topbar-brand .logo {
+    height: 26px !important;
+  }
+
+  :root[data-site-style="classic"] .main-feed-container {
+    min-height: calc(100vh - 82px) !important;
+    padding: 8px 10px 14px !important;
+    gap: 8px !important;
+  }
+
+  :root[data-site-style="classic"] .scratch-home {
+    width: calc(100vw - 16px) !important;
+    gap: 10px !important;
+  }
+
+  :root[data-site-style="classic"] .scratch-home .timeline-card,
+  :root[data-site-style="classic"] .scratch-home .home-announcements-section {
+    height: 260px !important;
+    min-height: 260px !important;
+  }
+
+  :root[data-site-style="classic"] .scratch-home .welcome-card,
+  :root[data-site-style="classic"] .scratch-home .timeline-card,
+  :root[data-site-style="classic"] .scratch-home .featured-hero,
+  :root[data-site-style="classic"] .scratch-home .recent-projects-section,
+  :root[data-site-style="classic"] .scratch-home .home-announcements-section,
+  :root[data-site-style="classic"] .profile-hero,
+  :root[data-site-style="classic"] .profile-bio,
+  :root[data-site-style="classic"] .profile-projects,
+  :root[data-site-style="classic"] .project-detail-card,
+  :root[data-site-style="classic"] .project-detail-aside,
+  :root[data-site-style="classic"] .project-comments,
+  :root[data-site-style="classic"] .notifications-page-header,
+  :root[data-site-style="classic"] .admin-panel {
+    padding: 10px !important;
+  }
+
+  :root[data-site-style="classic"] .section-title {
+    margin-bottom: 8px !important;
+    padding-bottom: 5px !important;
+    font-size: 1rem !important;
+  }
+
+  :root[data-site-style="classic"] .featured-grid {
+    gap: 8px !important;
+  }
+
+  :root[data-site-style="classic"] .scratch-home .featured-card {
+    flex-basis: 140px !important;
+    width: 140px !important;
+  }
+
+  :root[data-site-style="classic"] .people-modal,
+  :root[data-site-style="classic"] .customize-panel,
+  :root[data-site-style="classic"] .auth-modal,
+  :root[data-site-style="classic"] .upload-panel,
+  :root[data-site-style="classic"] .project-edit-dialog {
+    width: min(100% - 24px, 480px) !important;
+    max-height: calc(100dvh - 32px) !important;
+    padding: 12px !important;
+    overflow-y: auto !important;
+  }
+}
+
+@media (max-width: 480px) {
+  :root[data-site-style="classic"] .header {
+    height: 78px !important;
+    min-height: 78px !important;
+  }
+
+  :root[data-site-style="classic"] .main-feed-container {
+    min-height: calc(100vh - 78px) !important;
+    padding: 6px 8px 12px !important;
+  }
+
+  :root[data-site-style="classic"] .scratch-home {
+    width: calc(100vw - 12px) !important;
+    gap: 8px !important;
+  }
+
+  :root[data-site-style="classic"] .scratch-home .timeline-card,
+  :root[data-site-style="classic"] .scratch-home .home-announcements-section {
+    height: 230px !important;
+    min-height: 230px !important;
+  }
+
+  :root[data-site-style="classic"] .scratch-home .featured-card {
+    flex-basis: 132px !important;
+    width: 132px !important;
+  }
+
+  :root[data-site-style="classic"] .header-right {
+    gap: 2px !important;
+  }
+
+  :root[data-site-style="classic"] .header-right .icon-btn,
+  :root[data-site-style="classic"] .header-right .signin-btn {
+    min-width: 28px !important;
+    height: 28px !important;
+    padding: 0 4px !important;
+  }
+
+  :root[data-site-style="classic"] .topbar-nav .icon-btn {
+    padding: 0 3px !important;
+    font-size: 8px !important;
+  }
+}
