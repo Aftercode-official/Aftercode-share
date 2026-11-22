@@ -31,22 +31,26 @@ export default async function handler(req, res) {
         ? client.from("projects").select("id").in("id", projectIds).eq("is_public", true)
         : Promise.resolve({ data: [], error: null }),
       actorIds.length > 0
-        ? client.from("profiles").select("user_id, avatar_url").in("user_id", actorIds)
+        ? client.from("profiles").select("user_id, avatar_url, avatar_frame").in("user_id", actorIds)
         : Promise.resolve({ data: [], error: null })
     ]);
 
     if (projectsResult.error) throw projectsResult.error;
     if (profilesResult.error) throw profilesResult.error;
     const publicProjectIds = new Set((projectsResult.data ?? []).map((project) => project.id));
-    const avatarByUserId = new Map((profilesResult.data ?? []).map((profile) => [profile.user_id, profile.avatar_url]));
+    const profileByUserId = new Map((profilesResult.data ?? []).map((profile) => [profile.user_id, profile]));
 
     sendJson(res, 200, {
       activities: data
         .filter((activity) => !activity.project_id || publicProjectIds.has(activity.project_id))
-        .map((activity) => ({
-          ...activity,
-          actor_avatar: avatarByUserId.get(activity.actor_id) || activity.actor_avatar || ""
-        }))
+        .map((activity) => {
+          const profile = profileByUserId.get(activity.actor_id);
+          return {
+            ...activity,
+            actor_avatar: profile?.avatar_url || activity.actor_avatar || "",
+            actor_avatar_frame: profile?.avatar_frame || "none"
+          };
+        })
         .slice(0, 30)
     });
   } catch (error) {

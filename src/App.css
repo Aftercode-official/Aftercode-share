@@ -851,6 +851,65 @@ a {
   object-fit: cover;
 }
 
+.scratch-home .feed-avatar-frame-wrap {
+  position: relative;
+  display: block;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  overflow: visible;
+  border: 2px solid transparent;
+  border-radius: 50%;
+}
+
+.scratch-home .feed-avatar-frame-wrap > .avatar {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.scratch-home .feed-avatar-frame-overlay {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  width: 147%;
+  height: 125%;
+  transform: translate(-50%, -50%);
+  object-fit: fill;
+  pointer-events: none;
+}
+
+.scratch-home .feed-avatar-frame-overlay.is-bear-avatar-frame {
+  width: 147%;
+  transform: translate(calc(-50% + 2%), -50%);
+}
+
+.scratch-home .feed-avatar-frame-overlay.is-shop-avatar-frame {
+  width: 160%;
+  height: 160%;
+  transform: translate(calc(-50% + 7.5%), calc(-50% - 2.5%));
+}
+
+.scratch-home .feed-avatar-frame-wrap[data-avatar-frame="gold"] {
+  border-color: #ffd166;
+  box-shadow: 0 0 0 2px #765400, 0 0 0 4px #ffd166;
+}
+
+.scratch-home .feed-avatar-frame-wrap[data-avatar-frame="neon"] {
+  border-color: #61f5ff;
+  box-shadow: 0 0 0 2px #083b66, 0 0 10px 4px rgb(34 224 255 / 68%);
+}
+
+.scratch-home .feed-avatar-frame-wrap[data-avatar-frame="pixel"] {
+  border: 5px double #171717;
+  box-shadow: 0 0 0 3px #f0c400;
+}
+
 .scratch-home .feed-text {
   color: var(--white);
   font-size: 12px;

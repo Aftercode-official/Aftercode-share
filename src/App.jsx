@@ -1246,33 +1246,45 @@ export default function App() {
                     ? <p className="feed-empty">{dataError}</p>
                     : activities.length > 0
                       ? <div className="feed-list">
-                        {activities.map((activity) => (
-                          <button
-                            type="button"
-                            className="feed-item feed-item-button"
-                            key={activity.id}
-                            onClick={() => {
-                              if (activity.actor_id) openUserProfile(activity.actor_id);
-                            }}
-                          >
-                            {activity.actor_avatar
-                              ? <img className="avatar avatar-img" src={activity.actor_avatar} alt="" loading="lazy" decoding="async" />
-                              : <div className="avatar">{activity.actor_name.slice(0, 1).toUpperCase()}</div>}
-                            <div>
-                              <p className="feed-text">
-                                <strong>{activity.actor_name}</strong>{" "}
-                                {activity.activity_type === "follow"
-                                  ? "started following someone"
-                                  : activity.activity_type === "project_created"
-                                    ? <>shared <em>{activity.project_title}</em></>
-                                    : activity.activity_type === "project_liked"
-                                      ? <>liked <em>{activity.project_title}</em></>
-                                      : <>commented on <em>{activity.project_title}</em></>}
-                              </p>
-                              <span className="feed-time">{new Date(activity.created_at).toLocaleString()}</span>
-                            </div>
-                          </button>
-                        ))}
+                        {activities.map((activity) => {
+                          const frameId = activity.actor_avatar_frame || "none";
+                          const frameImage = frameId === "bear"
+                            ? BearAvatarFrame
+                            : shopData.decorations.find((item) => item.id === frameId)?.imageUrl;
+                          const frameClass = frameId === "bear"
+                            ? " is-bear-avatar-frame"
+                            : isShopAvatarFrame(frameId) ? " is-shop-avatar-frame" : "";
+                          return (
+                            <button
+                              type="button"
+                              className="feed-item feed-item-button"
+                              key={activity.id}
+                              onClick={() => {
+                                if (activity.actor_id) openUserProfile(activity.actor_id);
+                              }}
+                            >
+                              <span className="feed-avatar-frame-wrap" data-avatar-frame={frameId}>
+                                {activity.actor_avatar
+                                  ? <img className="avatar avatar-img" src={activity.actor_avatar} alt="" loading="lazy" decoding="async" />
+                                  : <span className="avatar">{activity.actor_name.slice(0, 1).toUpperCase()}</span>}
+                                {frameImage && <img className={`feed-avatar-frame-overlay${frameClass}`} src={frameImage} alt="" aria-hidden="true" />}
+                              </span>
+                              <div>
+                                <p className="feed-text">
+                                  <strong>{activity.actor_name}</strong>{" "}
+                                  {activity.activity_type === "follow"
+                                    ? "started following someone"
+                                    : activity.activity_type === "project_created"
+                                      ? <>shared <em>{activity.project_title}</em></>
+                                      : activity.activity_type === "project_liked"
+                                        ? <>liked <em>{activity.project_title}</em></>
+                                        : <>commented on <em>{activity.project_title}</em></>}
+                                </p>
+                                <span className="feed-time">{new Date(activity.created_at).toLocaleString()}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                       : (
                         <div className="feed-list">
