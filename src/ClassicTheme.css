@@ -957,6 +957,23 @@ input[type="file"]::file-selector-button {
   color: #172b3b !important;
 }
 
+/* Keep Aero's glass look on large panels without blurring every repeated card. */
+:root[data-site-style="classic"] .scratch-home .featured-card,
+:root[data-site-style="classic"] .scratch-home .feed-item-button,
+:root[data-site-style="classic"] .scratch-home .home-announcement-card,
+:root[data-site-style="classic"] .profile-project-card,
+:root[data-site-style="classic"] .explore-project-card,
+:root[data-site-style="classic"] .notification-card,
+:root[data-site-style="classic"] .chat-message,
+:root[data-site-style="classic"] .project-comment,
+:root[data-site-style="classic"] .people-modal-item,
+:root[data-site-style="classic"] .admin-ban-row,
+:root[data-site-style="classic"] .admin-project-row,
+:root[data-site-style="classic"] .admin-event-row {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 .chat-message,
 .chat-reply-reference,
 .chat-project-preview {
@@ -1197,11 +1214,6 @@ input[type="file"]::file-selector-button {
   opacity: 1;
 }
 
-@keyframes aero-card-arrive {
-  from { opacity: 0; filter: blur(3px); }
-  to { opacity: 1; filter: blur(0); }
-}
-
 @keyframes aero-panel-arrive {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -1217,7 +1229,7 @@ input[type="file"]::file-selector-button {
 :root[data-site-style="classic"] .explore-project-card,
 :root[data-site-style="classic"] .profile-project-card,
 :root[data-site-style="classic"] .notification-card {
-  animation: aero-card-arrive 360ms ease-out both;
+  animation: none !important;
 }
 
 :root[data-site-style="classic"] .scratch-home .welcome-card,
