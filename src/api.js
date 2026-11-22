@@ -13,9 +13,9 @@ function inflightKey(path, method) {
   return `${method} ${path}`;
 }
 
-export async function apiRequest(path, { method = "GET", body, authenticated = false } = {}) {
+export async function apiRequest(path, { method = "GET", body, authenticated = false, dedupe = true } = {}) {
   // Chỉ dedupe GET (không dedupe POST/PUT/DELETE)
-  if (method === "GET") {
+  if (method === "GET" && dedupe) {
     const key = inflightKey(path, method);
     const existing = inflightRequests.get(key);
     if (existing && Date.now() - existing.startedAt < INFLIGHT_WINDOW_MS) {
@@ -82,7 +82,7 @@ export async function apiRequest(path, { method = "GET", body, authenticated = f
     return payload;
   })();
 
-  if (method === "GET") {
+  if (method === "GET" && dedupe) {
     const key = inflightKey(path, method);
     inflightRequests.set(key, { promise, startedAt: Date.now() });
     promise.finally(() => {

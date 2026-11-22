@@ -267,7 +267,7 @@ export default function App() {
   }, [user?.id]);
 
   const refreshShopData = async () => {
-    const result = await apiRequest("/api/shop", { authenticated: Boolean(user) });
+    const result = await apiRequest("/api/shop", { authenticated: Boolean(user), dedupe: false });
     setShopData({ ...result, error: "", loading: false });
     return result;
   };
