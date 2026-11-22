@@ -212,11 +212,17 @@ export default async function handler(req, res) {
 
       if (error) {
         if (error.message.includes("MISSION_ALREADY_CLAIMED") || error.message.includes("DAILY_CREDITS_ALREADY_CLAIMED")) {
-          sendJson(res, 409, { error: "Nhiệm vụ này đã được nhận thưởng hôm nay. Vui lòng quay lại sau." });
+          sendJson(res, 409, {
+            error: "Nhiệm vụ này đã được nhận thưởng hôm nay. Vui lòng quay lại sau.",
+            code: "MISSION_ALREADY_CLAIMED"
+          });
           return;
         }
         if (error.message.includes("MISSION_NOT_COMPLETED")) {
-          sendJson(res, 409, { error: "Bạn chưa hoàn thành mục tiêu của nhiệm vụ này." });
+          sendJson(res, 409, {
+            error: "Bạn chưa hoàn thành mục tiêu của nhiệm vụ này.",
+            code: "MISSION_NOT_COMPLETED"
+          });
           return;
         }
         if (error.message.includes("INVALID_MISSION_KEY")) {

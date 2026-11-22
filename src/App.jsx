@@ -606,6 +606,9 @@ export default function App() {
           }
         }));
       }
+      if (action === "like" || action === "favorite") {
+        refreshShopData().catch(() => {});
+      }
       Promise.all([loadActivities(), loadNotifications()]).catch(() => {});
       setDataError("");
       return true;
@@ -626,6 +629,7 @@ export default function App() {
       await persistCustomization(nextCustomization);
       setCustomization(nextCustomization);
       setIsCustomizeOpen(false);
+      refreshShopData().catch(() => {});
       return true;
     } catch (error) {
       setCustomizationError(`Unable to save settings: ${error.message}`);
@@ -1252,6 +1256,13 @@ export default function App() {
               user={user}
               shopData={shopData}
               onRefreshShop={refreshShopData}
+              onMissionClaimSuccess={(missionKey, balance) => setShopData((current) => ({
+                ...current,
+                balance: Number.isFinite(balance) ? balance : current.balance,
+                missions: (current.missions ?? []).map((mission) => mission.key === missionKey
+                  ? { ...mission, claimed: true }
+                  : mission)
+              }))}
               onPurchaseSuccess={(item, balance) => setShopData((current) => ({
                 ...current,
                 balance: Number.isFinite(balance) ? balance : current.balance,
@@ -1342,6 +1353,7 @@ export default function App() {
               setPage("explore");
               setSelectedProject(null);
               Promise.all([loadProjects(), loadActivities()]).catch((error) => setDataError(error.message));
+              refreshShopData().catch(() => {});
             }}
           />
         </Suspense>

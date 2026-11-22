@@ -11,7 +11,7 @@ const MISSION_ICONS = {
   milestone_profile: "👤"
 };
 
-export default function ProfileShop({ user, shopData, equippedFrame, onRefreshShop, onPurchaseSuccess, onEquipFrame, onSignIn }) {
+export default function ProfileShop({ user, shopData, equippedFrame, onRefreshShop, onMissionClaimSuccess, onPurchaseSuccess, onEquipFrame, onSignIn }) {
   const [activeTab, setActiveTab] = useState("frames"); // 'frames' | 'missions'
   const [busyAction, setBusyAction] = useState("");
   const [error, setError] = useState("");
@@ -38,9 +38,21 @@ export default function ProfileShop({ user, shopData, equippedFrame, onRefreshSh
         authenticated: true,
         body: { action: "claim_mission", missionKey: mission.key }
       });
-      await onRefreshShop();
+      onMissionClaimSuccess?.(mission.key, response?.balance);
+      try {
+        await onRefreshShop();
+      } catch {
+        // The claim response already confirms the new balance and claimed status.
+      }
       setMessage(`🎉 Chúc mừng! Bạn đã nhận thành công +${response?.reward ?? mission.reward} Kat Coin!`);
     } catch (actionError) {
+      if (actionError.code === "MISSION_ALREADY_CLAIMED") {
+        try {
+          await onRefreshShop();
+        } catch {
+          // Keep the current mission display if refreshing fails.
+        }
+      }
       setError(actionError.message);
     } finally {
       setBusyAction("");

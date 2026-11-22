@@ -390,8 +390,8 @@ a {
   z-index: 2;
   top: 50%;
   left: 50%;
-  width: 154%;
-  height: 126%;
+  width: 143%;
+  height: 125%;
   transform: translate(-50%, -50%);
   border-radius: 0;
   object-fit: fill;
