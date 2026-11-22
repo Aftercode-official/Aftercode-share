@@ -9,14 +9,14 @@ const apiBaseUrl = configuredApiBaseUrl || (import.meta.env.PROD && import.meta.
 const inflightRequests = new Map();
 const INFLIGHT_WINDOW_MS = 300;
 
-function inflightKey(path, method) {
-  return `${method} ${path}`;
+function inflightKey(path, method, authenticated) {
+  return `${method} ${authenticated ? "authenticated" : "public"} ${path}`;
 }
 
 export async function apiRequest(path, { method = "GET", body, authenticated = false, dedupe = true } = {}) {
   // Chỉ dedupe GET (không dedupe POST/PUT/DELETE)
   if (method === "GET" && dedupe) {
-    const key = inflightKey(path, method);
+    const key = inflightKey(path, method, authenticated);
     const existing = inflightRequests.get(key);
     if (existing && Date.now() - existing.startedAt < INFLIGHT_WINDOW_MS) {
       return existing.promise;
@@ -86,7 +86,7 @@ export async function apiRequest(path, { method = "GET", body, authenticated = f
   })();
 
   if (method === "GET" && dedupe) {
-    const key = inflightKey(path, method);
+    const key = inflightKey(path, method, authenticated);
     inflightRequests.set(key, { promise, startedAt: Date.now() });
     promise.finally(() => {
       setTimeout(() => {
