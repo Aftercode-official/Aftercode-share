@@ -9,6 +9,26 @@
   animation: default-gold-3d 2.8s ease-in-out infinite !important;
 }
 
+:root[data-site-style] .profile-avatar[data-avatar-frame="gold"]::before,
+:root[data-site-style] .header-profile[data-avatar-frame="gold"]::before,
+:root[data-site-style] .chat-avatar-link[data-avatar-frame="gold"]::before,
+:root[data-site-style] .project-comment-avatar-btn[data-avatar-frame="gold"]::before,
+:root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="gold"]::before {
+  position: absolute;
+  z-index: 3;
+  inset: -6px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #704600, #fff2a6, #bd7910, #fff9d6, #9a5c00, #ffe06a, #704600);
+  content: "";
+  pointer-events: none;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  padding: 3px;
+  animation: default-gold-shader 4s linear infinite;
+}
+
 :root[data-site-style] .profile-avatar[data-avatar-frame="neon"],
 :root[data-site-style] .header-profile[data-avatar-frame="neon"],
 :root[data-site-style] .chat-avatar-link[data-avatar-frame="neon"],
@@ -34,6 +54,21 @@
   animation: default-pixel-step 1.2s steps(4, end) infinite !important;
 }
 
+:root[data-site-style] .profile-avatar[data-avatar-frame="pixel"] > img:not(.avatar-frame-overlay),
+:root[data-site-style] .header-profile[data-avatar-frame="pixel"] > img:not(.header-avatar-frame),
+:root[data-site-style] .chat-avatar-link[data-avatar-frame="pixel"] > img:not(.chat-avatar-frame-overlay),
+:root[data-site-style] .project-comment-avatar-btn[data-avatar-frame="pixel"] > img:not(.project-comment-avatar-frame-overlay),
+:root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="pixel"] > .avatar {
+  position: absolute;
+  top: 37.5%;
+  left: 37.5%;
+  width: 25%;
+  height: 25%;
+  transform: scale(4);
+  image-rendering: pixelated;
+  object-fit: cover;
+}
+
 @keyframes default-gold-3d {
   0%, 100% {
     border-color: #d99a22;
@@ -43,6 +78,10 @@
     border-color: #fff2ba;
     box-shadow: 0 2px 1px #fff8df inset, 0 -2px 0 #8e5700 inset, 0 0 0 2px #9a650b, 0 0 0 5px #ffd65c, 0 4px 11px rgb(255 190 50 / 45%);
   }
+}
+
+@keyframes default-gold-shader {
+  to { transform: rotate(360deg); }
 }
 
 @keyframes default-neon-pulse {
@@ -78,6 +117,11 @@
   :root[data-site-style] .header-profile[data-avatar-frame="gold"],
   :root[data-site-style] .chat-avatar-link[data-avatar-frame="gold"],
   :root[data-site-style] .project-comment-avatar-btn[data-avatar-frame="gold"],
+  :root[data-site-style] .profile-avatar[data-avatar-frame="gold"]::before,
+  :root[data-site-style] .header-profile[data-avatar-frame="gold"]::before,
+  :root[data-site-style] .chat-avatar-link[data-avatar-frame="gold"]::before,
+  :root[data-site-style] .project-comment-avatar-btn[data-avatar-frame="gold"]::before,
+  :root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="gold"]::before,
   :root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="gold"],
   :root[data-site-style] .profile-avatar[data-avatar-frame="neon"],
   :root[data-site-style] .header-profile[data-avatar-frame="neon"],
