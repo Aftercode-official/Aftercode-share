@@ -1277,7 +1277,9 @@ export default function App() {
                                       ? <>shared <em>{activity.project_title}</em></>
                                       : activity.activity_type === "project_liked"
                                         ? <>liked <em>{activity.project_title}</em></>
-                                        : <>commented on <em>{activity.project_title}</em></>}
+                                        : activity.activity_type === "project_favorited"
+                                          ? <>added <em>{activity.project_title}</em> to favorites</>
+                                          : <>commented on <em>{activity.project_title}</em></>}
                                 </p>
                                 <span className="feed-time">{new Date(activity.created_at).toLocaleString()}</span>
                               </div>
