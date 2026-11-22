@@ -11,7 +11,7 @@ const MISSION_ICONS = {
   milestone_profile: "👤"
 };
 
-export default function ProfileShop({ user, shopData, equippedFrame, onRefreshShop, onEquipFrame, onSignIn }) {
+export default function ProfileShop({ user, shopData, equippedFrame, onRefreshShop, onPurchaseSuccess, onEquipFrame, onSignIn }) {
   const [activeTab, setActiveTab] = useState("frames"); // 'frames' | 'missions'
   const [busyAction, setBusyAction] = useState("");
   const [error, setError] = useState("");
@@ -52,14 +52,29 @@ export default function ProfileShop({ user, shopData, equippedFrame, onRefreshSh
     setError("");
     setMessage("");
     try {
-      await apiRequest("/api/shop", {
+      const result = await apiRequest("/api/shop", {
         method: "POST",
         authenticated: true,
         body: { action: "purchase", decorationId: item.id }
       });
-      await onRefreshShop();
+      onPurchaseSuccess?.(item, result?.balance);
+      try {
+        await onRefreshShop();
+      } catch {
+        // The purchase response already confirms the new balance and ownership.
+      }
       setMessage(`Đã mua thành công khung ${item.name}! Hãy trang bị ngay cho hồ sơ.`);
     } catch (actionError) {
+      if (actionError.code === "DECORATION_ALREADY_OWNED") {
+        onPurchaseSuccess?.(item, actionError.payload?.balance);
+        try {
+          await onRefreshShop();
+        } catch {
+          // The conflict response already confirms this frame belongs to the user.
+        }
+        setMessage("Bạn đã sở hữu khung này rồi. Danh sách khung đã được cập nhật.");
+        return;
+      }
       try {
         await onRefreshShop();
       } catch {

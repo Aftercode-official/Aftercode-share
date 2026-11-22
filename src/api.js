@@ -74,7 +74,10 @@ export async function apiRequest(path, { method = "GET", body, authenticated = f
         await supabase?.auth.signOut({ scope: "local" }).catch(() => {});
         window.dispatchEvent(new CustomEvent("aftercode:account-banned", { detail: { message: payload.error } }));
       }
-      throw new Error(payload?.error ?? `Request failed with status ${response.status}.`);
+      const requestError = new Error(payload?.error ?? `Request failed with status ${response.status}.`);
+      requestError.code = payload?.code;
+      requestError.payload = payload;
+      throw requestError;
     }
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
       throw new Error(`The API endpoint ${path} returned an invalid response.`);

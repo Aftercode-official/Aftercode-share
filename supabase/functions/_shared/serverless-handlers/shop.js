@@ -158,11 +158,22 @@ export default async function handler(req, res) {
         p_decoration_id: decorationId
       });
       if (error) {
+        if (error.message.includes("ALREADY_OWNED")) {
+          const { data: wallet, error: walletError } = await client.from("profile_decoration_wallets")
+            .select("balance")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          if (walletError) throw walletError;
+          sendJson(res, 409, {
+            error: "Bạn đã sở hữu khung trang trí này rồi.",
+            code: "DECORATION_ALREADY_OWNED",
+            balance: wallet?.balance ?? null
+          });
+          return;
+        }
         const message = error.message.includes("INSUFFICIENT_CREDITS")
           ? "Bạn không đủ Kat Coin để mua vật phẩm này."
-          : error.message.includes("ALREADY_OWNED")
-            ? "Bạn đã sở hữu khung trang trí này rồi."
-            : error.message.includes("NOT_AVAILABLE")
+          : error.message.includes("NOT_AVAILABLE")
               ? "Vật phẩm này hiện không còn mở bán."
               : null;
         if (message) {

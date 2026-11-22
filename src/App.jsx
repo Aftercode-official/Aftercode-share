@@ -1252,6 +1252,11 @@ export default function App() {
               user={user}
               shopData={shopData}
               onRefreshShop={refreshShopData}
+              onPurchaseSuccess={(item, balance) => setShopData((current) => ({
+                ...current,
+                balance: Number.isFinite(balance) ? balance : current.balance,
+                ownedIds: [...new Set([...(current.ownedIds ?? []), item.id])]
+              }))}
               equippedFrame={customization.avatarFrame}
               onEquipFrame={(frame) => handleSaveCustomization({ ...customization, avatarFrame: frame })}
               onSignIn={openAuthModal}
