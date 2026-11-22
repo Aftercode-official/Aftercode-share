@@ -53,3 +53,14 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages
+        continue-on-error: true
+      - name: Retry deploy after artifact indexing
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 10
+      - name: Deploy retry
+        if: steps.deployment.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages
