@@ -1416,6 +1416,12 @@ export default function App() {
               onToggleFeatured={toggleProjectFeatured}
               onOpenProject={openProject}
               onDecorationAdded={() => refreshShopData()}
+              onKatCoinGrant={(balance) => setShopData((current) => ({
+                ...current,
+                balance: Number.isFinite(balance) ? balance : current.balance,
+                error: "",
+                loading: false
+              }))}
               onCreateAnnouncement={async (payload) => {
                 const result = await apiRequest("/api/announcements", { method: "POST", authenticated: true, body: payload });
                 if (result.announcement) {

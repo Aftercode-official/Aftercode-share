@@ -4,7 +4,7 @@ import ProjectThumbnail from "./ProjectThumbnail.jsx";
 import { supabase } from "./supabase.js";
 import "./AdminPanel.css";
 
-export default function AdminPanel({ projects, events, user, onToggleFeatured, onOpenProject, onCreateAnnouncement, onCreateEvent, onDeleteEvent, onDecorationAdded, error }) {
+export default function AdminPanel({ projects, events, user, onToggleFeatured, onOpenProject, onCreateAnnouncement, onCreateEvent, onDeleteEvent, onDecorationAdded, onKatCoinGrant, error }) {
   const featuredCount = projects.filter((project) => project.isFeatured).length;
   const [announcement, setAnnouncement] = useState({ title: "", message: "" });
   const [eventDraft, setEventDraft] = useState({ title: "", description: "", location: "", startsAt: "", customCss: "" });
@@ -284,6 +284,7 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
         authenticated: true,
         body: { amount: Number(katCoinAmount) }
       });
+      onKatCoinGrant?.(result.balance);
       setSuccessMessage(`Added ${Number(katCoinAmount).toLocaleString()} KC to your admin account. New balance: ${Number(result.balance).toLocaleString()} KC.`);
     } catch (grantError) {
       setFormError(grantError.message);
