@@ -94,7 +94,7 @@ function toProjectPreview(record, interaction) {
   };
 }
 
-export default function ChatCenter({ user, avatarFrame = "none", decorations = [], onSignIn, onOpenProject, onOpenUserProfile }) {
+export default function ChatCenter({ user, avatarFrame = "none", decorations = [], onSignIn, onOpenProject, onOpenUserProfile, onMessageSent }) {
   const [messages, setMessages] = useState(readCachedChatMessages);
   const [isLoadingMessages, setIsLoadingMessages] = useState(() => readCachedChatMessages().length === 0);
   const [hasOlderMessages, setHasOlderMessages] = useState(readCachedHasOlderMessages);
@@ -400,6 +400,11 @@ export default function ChatCenter({ user, avatarFrame = "none", decorations = [
       setReplyingTo((current) => current?.id === pendingMessage.reply_to_message_id ? null : current);
       setAttachment(null);
       setIsEmojiPickerOpen(false);
+      try {
+        await onMessageSent?.();
+      } catch {
+        // A shop refresh failure should not make a successfully sent chat message look failed.
+      }
     } catch (sendError) {
       setMessages((current) => current.filter((message) => message.id !== pendingId));
       setDraft((current) => current || text);

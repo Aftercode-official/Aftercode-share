@@ -1246,7 +1246,7 @@ export default function App() {
               </section>
             </>
           )}
-          {page === "chat" && <ChatCenter user={user} avatarFrame={customization.avatarFrame} decorations={shopData.decorations} onSignIn={openAuthModal} onOpenProject={openProject} onOpenUserProfile={openUserProfile} />}
+          {page === "chat" && <ChatCenter user={user} avatarFrame={customization.avatarFrame} decorations={shopData.decorations} onSignIn={openAuthModal} onOpenProject={openProject} onOpenUserProfile={openUserProfile} onMessageSent={refreshShopData} />}
           {page === "shop" && (
             <ProfileShop
               user={user}
