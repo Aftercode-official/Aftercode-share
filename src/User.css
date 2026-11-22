@@ -127,6 +127,40 @@
   font-size: 0.85rem;
 }
 
+.profile-comment-thread + .profile-comment-thread {
+  border-top: 1px solid var(--border-color);
+}
+
+.profile-comment-reply-button {
+  margin: -0.2rem 0 0 2.9rem;
+  border: 0;
+  background: transparent;
+  color: var(--accent-orange);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.profile-comment-reply-button:hover {
+  text-decoration: underline;
+}
+
+.profile-reply-form {
+  margin: 0.65rem 0 0 2.9rem;
+}
+
+.profile-comment-replies {
+  margin: 0.35rem 0 0 1.5rem;
+  padding-left: 0.7rem;
+  border-left: 2px solid var(--border-color);
+}
+
+.profile-comment.is-reply {
+  border-top: 0;
+  padding: 0.55rem 0;
+}
+
 .profile-banner {
   position: relative;
   height: clamp(100px, 14vw, 160px);

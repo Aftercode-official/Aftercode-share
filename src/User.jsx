@@ -72,6 +72,8 @@ export default function User({
   const [isFollowPending, setIsFollowPending] = useState(false);
   const [profileComments, setProfileComments] = useState([]);
   const [profileCommentDraft, setProfileCommentDraft] = useState("");
+  const [replyingToProfileCommentId, setReplyingToProfileCommentId] = useState("");
+  const [profileReplyDraft, setProfileReplyDraft] = useState("");
   const [profileCommentError, setProfileCommentError] = useState("");
   const [isPostingProfileComment, setIsPostingProfileComment] = useState(false);
   const [peopleModal, setPeopleModal] = useState(null);
@@ -243,9 +245,9 @@ export default function User({
     }
   };
 
-  const postProfileComment = async (event) => {
+  const postProfileComment = async (event, parentId = null) => {
     event.preventDefault();
-    const text = profileCommentDraft.trim();
+    const text = (parentId ? profileReplyDraft : profileCommentDraft).trim();
     if (!user) {
       onSignIn?.();
       return;
@@ -257,15 +259,50 @@ export default function User({
       const { comment } = await apiRequest("/api/profile-comments", {
         method: "POST",
         authenticated: true,
-        body: { profileId: selectedUserId, text }
+        body: { profileId: selectedUserId, parentId, text }
       });
       setProfileComments((current) => [comment, ...current]);
-      setProfileCommentDraft("");
+      if (parentId) {
+        setProfileReplyDraft("");
+        setReplyingToProfileCommentId("");
+      } else {
+        setProfileCommentDraft("");
+      }
     } catch (error) {
       setProfileCommentError(error.message);
     } finally {
       setIsPostingProfileComment(false);
     }
+  };
+
+  const renderProfileComment = (comment, isReply = false) => {
+    const frameImage = avatarFrameImage(comment.avatarFrame);
+    const frameClass = comment.avatarFrame === "bear"
+      ? " is-bear-avatar-frame"
+      : isDragonAvatarFrame(comment.avatarFrame) ? " is-dragon-avatar-frame" : getShopAvatarFrameClass(comment.avatarFrame);
+    return (
+      <article className={`profile-comment${isReply ? " is-reply" : ""}`}>
+        <button
+          className="project-comment-avatar-btn profile-wall-avatar"
+          type="button"
+          data-avatar-frame={comment.avatarFrame || "none"}
+          aria-label={`View ${comment.author}'s profile`}
+          onClick={() => onOpenUserProfile?.(comment.userId)}
+        >
+          {comment.avatarUrl
+            ? <img className="project-comment-avatar" src={comment.avatarUrl} alt="" loading="lazy" decoding="async" />
+            : <span className="avatar">{comment.author.slice(0, 1).toUpperCase()}</span>}
+          {frameImage && <img className={`project-comment-avatar-frame-overlay${frameClass}`} src={frameImage} alt="" aria-hidden="true" />}
+        </button>
+        <div className="profile-comment-content">
+          <button className="project-author-link" type="button" onClick={() => onOpenUserProfile?.(comment.userId)}>
+            <strong>{comment.author}</strong>
+          </button>
+          <time dateTime={comment.createdAt}>{new Date(comment.createdAt).toLocaleString()}</time>
+          <p>{comment.text}</p>
+        </div>
+      </article>
+    );
   };
 
   const updateDraft = (field, value) => {
@@ -344,6 +381,7 @@ export default function User({
       ? ownFavoriteProjects
       : myProjects;
   const publicProfileProjects = profileTab === "favorite" ? publicFavoriteProjects : publicProjects;
+  const topLevelProfileComments = profileComments.filter((comment) => !comment.parentId);
 
   return (
     <>
@@ -561,36 +599,58 @@ export default function User({
                 ))}
                 {profileCommentError && <p className="profile-comment-error" role="alert">{profileCommentError}</p>}
                 <div className="profile-comment-list" aria-live="polite">
-                  {profileComments.map((comment) => {
-                    const frameImage = avatarFrameImage(comment.avatarFrame);
-                    const frameClass = comment.avatarFrame === "bear"
-                      ? " is-bear-avatar-frame"
-                      : isDragonAvatarFrame(comment.avatarFrame) ? " is-dragon-avatar-frame" : getShopAvatarFrameClass(comment.avatarFrame);
+                  {topLevelProfileComments.map((comment) => {
+                    const replies = profileComments.filter((reply) => reply.parentId === comment.id);
                     return (
-                      <article className="profile-comment" key={comment.id}>
-                        <button
-                          className="project-comment-avatar-btn profile-wall-avatar"
-                          type="button"
-                          data-avatar-frame={comment.avatarFrame || "none"}
-                          aria-label={`View ${comment.author}'s profile`}
-                          onClick={() => onOpenUserProfile?.(comment.userId)}
-                        >
-                          {comment.avatarUrl
-                            ? <img className="project-comment-avatar" src={comment.avatarUrl} alt="" loading="lazy" decoding="async" />
-                            : <span className="avatar">{comment.author.slice(0, 1).toUpperCase()}</span>}
-                          {frameImage && <img className={`project-comment-avatar-frame-overlay${frameClass}`} src={frameImage} alt="" aria-hidden="true" />}
-                        </button>
-                        <div className="profile-comment-content">
-                          <button className="project-author-link" type="button" onClick={() => onOpenUserProfile?.(comment.userId)}>
-                            <strong>{comment.author}</strong>
+                      <div className="profile-comment-thread" key={comment.id}>
+                        {renderProfileComment(comment)}
+                        {user?.id !== selectedUserId && (
+                          <button
+                            type="button"
+                            className="profile-comment-reply-button"
+                            onClick={() => {
+                              setReplyingToProfileCommentId((current) => current === comment.id ? "" : comment.id);
+                              setProfileReplyDraft("");
+                              setProfileCommentError("");
+                            }}
+                          >
+                            {replyingToProfileCommentId === comment.id ? "Cancel reply" : "Reply"}
                           </button>
-                          <time dateTime={comment.createdAt}>{new Date(comment.createdAt).toLocaleString()}</time>
-                          <p>{comment.text}</p>
-                        </div>
-                      </article>
+                        )}
+                        {replyingToProfileCommentId === comment.id && (
+                          user ? (
+                            <form className="profile-comment-form profile-reply-form" onSubmit={(event) => postProfileComment(event, comment.id)}>
+                              <label className="visually-hidden" htmlFor={`profile-reply-${comment.id}`}>Write a reply</label>
+                              <textarea
+                                id={`profile-reply-${comment.id}`}
+                                value={profileReplyDraft}
+                                onChange={(event) => setProfileReplyDraft(event.target.value.slice(0, 500))}
+                                placeholder={`Reply to ${comment.author}…`}
+                                maxLength={500}
+                                rows={2}
+                              />
+                              <div className="profile-comment-form-footer">
+                                <span>{profileReplyDraft.length}/500</span>
+                                <button className="signin-btn" type="submit" disabled={!profileReplyDraft.trim() || isPostingProfileComment}>
+                                  {isPostingProfileComment ? "Posting…" : "Post reply"}
+                                </button>
+                              </div>
+                            </form>
+                          ) : (
+                            <button type="button" className="signin-btn profile-comment-signin" onClick={() => onSignIn?.()}>
+                              Sign in to reply
+                            </button>
+                          )
+                        )}
+                        {replies.length > 0 && (
+                          <div className="profile-comment-replies">
+                            {replies.map((reply) => <div key={reply.id}>{renderProfileComment(reply, true)}</div>)}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
-                  {!profileComments.length && !profileCommentError && <p className="profile-comment-empty">No comments yet. Start the conversation.</p>}
+                  {!topLevelProfileComments.length && !profileCommentError && <p className="profile-comment-empty">No comments yet. Start the conversation.</p>}
                 </div>
               </section>
             </>

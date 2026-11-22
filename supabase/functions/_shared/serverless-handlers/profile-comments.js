@@ -6,7 +6,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 
 async function loadProfileComments(client, profileId) {
   const { data, error } = await client.from("profile_comments")
-    .select("id, profile_user_id, user_id, author, avatar_url, text, created_at")
+    .select("id, profile_user_id, parent_id, user_id, author, avatar_url, text, created_at")
     .eq("profile_user_id", profileId)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -22,6 +22,7 @@ async function loadProfileComments(client, profileId) {
   return (data ?? []).map((comment) => ({
     id: comment.id,
     profileId: comment.profile_user_id,
+    parentId: comment.parent_id,
     userId: comment.user_id,
     author: comment.author,
     avatarUrl: comment.avatar_url,
@@ -69,9 +70,28 @@ export default async function handler(req, res) {
 
     const body = readJsonBody(req);
     const text = typeof body?.text === "string" ? body.text.trim() : "";
+    const parentId = body?.parentId == null ? null : body.parentId;
     if (!text || text.length > 500) {
       sendJson(res, 400, { error: "Comment must contain 1 to 500 characters." });
       return;
+    }
+    if (parentId !== null && (typeof parentId !== "string" || !UUID_RE.test(parentId))) {
+      sendJson(res, 400, { error: "A valid parent comment is required for a reply." });
+      return;
+    }
+
+    if (parentId) {
+      const { data: parentComment, error: parentError } = await client.from("profile_comments")
+        .select("id")
+        .eq("id", parentId)
+        .eq("profile_user_id", profileId)
+        .is("parent_id", null)
+        .maybeSingle();
+      if (parentError) throw parentError;
+      if (!parentComment) {
+        sendJson(res, 404, { error: "That profile comment cannot be replied to." });
+        return;
+      }
     }
 
     const rateLimit = await checkRateLimit(client, `profile-comment:${user.id}`, 10, 60_000);
@@ -93,17 +113,19 @@ export default async function handler(req, res) {
 
     const { data: comment, error } = await client.from("profile_comments").insert({
       profile_user_id: profileId,
+      parent_id: parentId,
       user_id: user.id,
       author,
       avatar_url: actorProfile?.avatar_url || "",
       text
-    }).select("id, profile_user_id, user_id, author, avatar_url, text, created_at").single();
+    }).select("id, profile_user_id, parent_id, user_id, author, avatar_url, text, created_at").single();
     if (error) throw error;
 
     sendJson(res, 201, {
       comment: {
         id: comment.id,
         profileId: comment.profile_user_id,
+        parentId: comment.parent_id,
         userId: comment.user_id,
         author: comment.author,
         avatarUrl: comment.avatar_url,
