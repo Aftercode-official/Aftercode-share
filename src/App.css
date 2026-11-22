@@ -105,6 +105,12 @@ a {
   gap: 12px;
 }
 
+.header {
+  position: sticky !important;
+  top: 0;
+  z-index: 100;
+}
+
 .header-left {
   grid-column: 1;
   grid-row: 1;
