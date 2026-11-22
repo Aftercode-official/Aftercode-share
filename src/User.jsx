@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { getCachedProfileStats, getCachedPublicProfile, loadPublicProfile, apiFollow, cacheProfileStats, loadFollowList } from "./userStorage.js";
 import { supabase } from "./supabase.js";
-import { isShopAvatarFrame } from "./avatarFrames.js";
+import { isDragonAvatarFrame, isShopAvatarFrame } from "./avatarFrames.js";
 import BearAvatarFrame from "./assets/bear-avatar-frame.png";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
 import "./User.css";
@@ -311,7 +311,7 @@ export default function User({
                   ? <img src={customization.avatarUrl} alt={`${customization.displayName} avatar`} decoding="async" fetchPriority="high" />
                   : customization.displayName.slice(0, 1)}
                 {avatarFrameImage(customization.avatarFrame) && (
-                  <img className={`avatar-frame-overlay${customization.avatarFrame === "bear" ? " is-bear-avatar-frame" : isShopAvatarFrame(customization.avatarFrame) ? " is-shop-avatar-frame" : ""}`} src={avatarFrameImage(customization.avatarFrame)} alt="" aria-hidden="true" />
+                  <img className={`avatar-frame-overlay${customization.avatarFrame === "bear" ? " is-bear-avatar-frame" : isDragonAvatarFrame(customization.avatarFrame) ? " is-dragon-avatar-frame" : isShopAvatarFrame(customization.avatarFrame) ? " is-shop-avatar-frame" : ""}`} src={avatarFrameImage(customization.avatarFrame)} alt="" aria-hidden="true" />
                 )}
               </div>
               <div className="profile-identity-main">
@@ -404,7 +404,7 @@ export default function User({
                       ? <img src={publicProfile.avatar_url} alt="" decoding="async" fetchPriority="high" />
                       : (publicProfile.display_name || "?").slice(0, 1)}
                     {avatarFrameImage(publicProfile.avatar_frame) && (
-                      <img className={`avatar-frame-overlay${publicProfile.avatar_frame === "bear" ? " is-bear-avatar-frame" : isShopAvatarFrame(publicProfile.avatar_frame) ? " is-shop-avatar-frame" : ""}`} src={avatarFrameImage(publicProfile.avatar_frame)} alt="" aria-hidden="true" />
+                      <img className={`avatar-frame-overlay${publicProfile.avatar_frame === "bear" ? " is-bear-avatar-frame" : isDragonAvatarFrame(publicProfile.avatar_frame) ? " is-dragon-avatar-frame" : isShopAvatarFrame(publicProfile.avatar_frame) ? " is-shop-avatar-frame" : ""}`} src={avatarFrameImage(publicProfile.avatar_frame)} alt="" aria-hidden="true" />
                     )}
                   </div>
                   <div className="profile-identity-main">
@@ -550,7 +550,7 @@ export default function User({
                     ? <img src={draft.avatarUrl} alt="" />
                     : draft.displayName.slice(0, 1).toUpperCase()}
                   {avatarFrameImage(draft.avatarFrame) && (
-                    <img className={`avatar-frame-overlay${draft.avatarFrame === "bear" ? " is-bear-avatar-frame" : isShopAvatarFrame(draft.avatarFrame) ? " is-shop-avatar-frame" : ""}`} src={avatarFrameImage(draft.avatarFrame)} alt="" aria-hidden="true" />
+                    <img className={`avatar-frame-overlay${draft.avatarFrame === "bear" ? " is-bear-avatar-frame" : isDragonAvatarFrame(draft.avatarFrame) ? " is-dragon-avatar-frame" : isShopAvatarFrame(draft.avatarFrame) ? " is-shop-avatar-frame" : ""}`} src={avatarFrameImage(draft.avatarFrame)} alt="" aria-hidden="true" />
                   )}
                 </div>
               </label>
