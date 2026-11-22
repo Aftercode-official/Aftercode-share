@@ -13,7 +13,7 @@ function inflightKey(path, method, authenticated) {
   return `${method} ${authenticated ? "authenticated" : "public"} ${path}`;
 }
 
-export async function apiRequest(path, { method = "GET", body, authenticated = false, dedupe = true } = {}) {
+export async function apiRequest(path, { method = "GET", body, authenticated = false, dedupe = true, cache } = {}) {
   // Chỉ dedupe GET (không dedupe POST/PUT/DELETE)
   if (method === "GET" && dedupe) {
     const key = inflightKey(path, method, authenticated);
@@ -48,7 +48,7 @@ export async function apiRequest(path, { method = "GET", body, authenticated = f
     const response = await fetch(apiUrl, {
       method,
       headers,
-      cache: authenticated ? "no-store" : "default",
+      cache: cache ?? (authenticated ? "no-store" : "default"),
       body: body === undefined ? undefined : JSON.stringify(body)
     });
     if (response.status === 204) return null;

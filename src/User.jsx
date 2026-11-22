@@ -129,23 +129,45 @@ export default function User({
   }, [page, selectedUserId, user?.id, initialCachedStats]);
 
   useEffect(() => {
-    if (page !== "user" || !selectedUserId) {
+    if (!viewedProfileId) {
       setProfileComments([]);
       setProfileCommentDraft("");
       setProfileCommentError("");
       return undefined;
     }
     let isActive = true;
+    let isLoading = false;
     setProfileComments([]);
     setProfileCommentError("");
-    apiRequest(`/api/profile-comments?profileId=${encodeURIComponent(viewedProfileId)}`)
-      .then(({ comments: records }) => {
-        if (isActive) setProfileComments(records ?? []);
-      })
-      .catch((error) => {
+    const loadComments = async () => {
+      if (!isActive || isLoading || document.visibilityState === "hidden") return;
+      isLoading = true;
+      try {
+        const { comments: records } = await apiRequest(
+          `/api/profile-comments?profileId=${encodeURIComponent(viewedProfileId)}`,
+          { dedupe: false, cache: "no-store" }
+        );
+        if (isActive) {
+          setProfileComments(records ?? []);
+          setProfileCommentError("");
+        }
+      } catch (error) {
         if (isActive) setProfileCommentError(error.message);
-      });
-    return () => { isActive = false; };
+      } finally {
+        isLoading = false;
+      }
+    };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") loadComments();
+    };
+    loadComments();
+    const timer = window.setInterval(loadComments, 5000);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      isActive = false;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, [viewedProfileId]);
 
   useEffect(() => {
