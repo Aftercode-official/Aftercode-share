@@ -63,11 +63,6 @@ export default async function handler(req, res) {
       sendJson(res, 401, { error: "Sign in to comment on profiles." });
       return;
     }
-    if (user.id === profileId) {
-      sendJson(res, 400, { error: "You can only comment on another user's profile." });
-      return;
-    }
-
     const body = readJsonBody(req);
     const text = typeof body?.text === "string" ? body.text.trim() : "";
     const parentId = body?.parentId == null ? null : body.parentId;

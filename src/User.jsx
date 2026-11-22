@@ -58,6 +58,7 @@ export default function User({
   const [uploadError, setUploadError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const profileCacheUserId = page === "user" ? selectedUserId : page === "profile" ? user?.id : null;
+  const viewedProfileId = page === "user" ? selectedUserId : page === "profile" ? user?.id : null;
   const [initialCachedProfile] = useState(() => profileCacheUserId ? getCachedPublicProfile(profileCacheUserId) : null);
   const [initialCachedStats] = useState(() => getCachedProfileStats(profileCacheUserId));
   const [publicProfile, setPublicProfile] = useState(() => initialCachedProfile?.profile ?? null);
@@ -91,7 +92,7 @@ export default function User({
 
   // Load profile khi xem trang người khác
   useEffect(() => {
-    if (page !== "user" || !selectedUserId) {
+    if (!viewedProfileId) {
       setPublicProfile(null);
       setPublicProjects([]);
       setPublicFavoriteProjects([]);
@@ -137,7 +138,7 @@ export default function User({
     let isActive = true;
     setProfileComments([]);
     setProfileCommentError("");
-    apiRequest(`/api/profile-comments?profileId=${encodeURIComponent(selectedUserId)}`)
+    apiRequest(`/api/profile-comments?profileId=${encodeURIComponent(viewedProfileId)}`)
       .then(({ comments: records }) => {
         if (isActive) setProfileComments(records ?? []);
       })
@@ -145,7 +146,7 @@ export default function User({
         if (isActive) setProfileCommentError(error.message);
       });
     return () => { isActive = false; };
-  }, [page, selectedUserId]);
+  }, [viewedProfileId]);
 
   useEffect(() => {
     if (page !== "profile" || !user?.id) {
@@ -252,14 +253,14 @@ export default function User({
       onSignIn?.();
       return;
     }
-    if (!selectedUserId || !text || isPostingProfileComment) return;
+    if (!viewedProfileId || !text || isPostingProfileComment) return;
     setIsPostingProfileComment(true);
     setProfileCommentError("");
     try {
       const { comment } = await apiRequest("/api/profile-comments", {
         method: "POST",
         authenticated: true,
-        body: { profileId: selectedUserId, parentId, text }
+        body: { profileId: viewedProfileId, parentId, text }
       });
       setProfileComments((current) => [comment, ...current]);
       if (parentId) {
@@ -382,6 +383,82 @@ export default function User({
       : myProjects;
   const publicProfileProjects = profileTab === "favorite" ? publicFavoriteProjects : publicProjects;
   const topLevelProfileComments = profileComments.filter((comment) => !comment.parentId);
+  const renderProfileCommentsSection = (displayName) => (
+    <section className="profile-comments" aria-labelledby="profile-comments-title">
+      <h2 className="section-title" id="profile-comments-title">Comments ({profileComments.length})</h2>
+      {user ? (
+        <form className="profile-comment-form" onSubmit={postProfileComment}>
+          <label className="visually-hidden" htmlFor="profile-comment-input">Write a comment on this profile</label>
+          <textarea
+            id="profile-comment-input"
+            value={profileCommentDraft}
+            onChange={(event) => setProfileCommentDraft(event.target.value.slice(0, 500))}
+            placeholder={`Write a comment for ${displayName || "this user"}…`}
+            maxLength={500}
+            rows={3}
+          />
+          <div className="profile-comment-form-footer">
+            <span>{profileCommentDraft.length}/500</span>
+            <button className="signin-btn" type="submit" disabled={!profileCommentDraft.trim() || isPostingProfileComment}>
+              {isPostingProfileComment ? "Posting…" : "Post comment"}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <button className="signin-btn profile-comment-signin" type="button" onClick={() => onSignIn?.()}>
+          Sign in to comment
+        </button>
+      )}
+      {profileCommentError && <p className="profile-comment-error" role="alert">{profileCommentError}</p>}
+      <div className="profile-comment-list" aria-live="polite">
+        {topLevelProfileComments.map((comment) => {
+          const replies = profileComments.filter((reply) => reply.parentId === comment.id);
+          return (
+            <div className="profile-comment-thread" key={comment.id}>
+              {renderProfileComment(comment)}
+              <button
+                type="button"
+                className="profile-comment-reply-button"
+                onClick={() => {
+                  setReplyingToProfileCommentId((current) => current === comment.id ? "" : comment.id);
+                  setProfileReplyDraft("");
+                  setProfileCommentError("");
+                  if (!user) onSignIn?.();
+                }}
+              >
+                {replyingToProfileCommentId === comment.id ? "Cancel reply" : "Reply"}
+              </button>
+              {replyingToProfileCommentId === comment.id && user && (
+                <form className="profile-comment-form profile-reply-form" onSubmit={(event) => postProfileComment(event, comment.id)}>
+                  <label className="visually-hidden" htmlFor={`profile-reply-${comment.id}`}>Write a reply</label>
+                  <textarea
+                    id={`profile-reply-${comment.id}`}
+                    value={profileReplyDraft}
+                    onChange={(event) => setProfileReplyDraft(event.target.value.slice(0, 500))}
+                    placeholder={`Reply to ${comment.author}…`}
+                    maxLength={500}
+                    rows={2}
+                  />
+                  <div className="profile-comment-form-footer">
+                    <span>{profileReplyDraft.length}/500</span>
+                    <button className="signin-btn" type="submit" disabled={!profileReplyDraft.trim() || isPostingProfileComment}>
+                      {isPostingProfileComment ? "Posting…" : "Post reply"}
+                    </button>
+                  </div>
+                </form>
+              )}
+              {replies.length > 0 && (
+                <div className="profile-comment-replies">
+                  {replies.map((reply) => <div key={reply.id}>{renderProfileComment(reply, true)}</div>)}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {!topLevelProfileComments.length && !profileCommentError && <p className="profile-comment-empty">No comments yet. Start the conversation.</p>}
+      </div>
+    </section>
+  );
 
   return (
     <>
@@ -471,6 +548,7 @@ export default function User({
               </div>
             </section>
           )}
+          {renderProfileCommentsSection(customization.displayName)}
         </>
       )}
 
@@ -572,87 +650,7 @@ export default function User({
                 </div>
               </section>
 
-              <section className="profile-comments" aria-labelledby="profile-comments-title">
-                <h2 className="section-title" id="profile-comments-title">Comments ({profileComments.length})</h2>
-                {user?.id !== selectedUserId && (user ? (
-                  <form className="profile-comment-form" onSubmit={postProfileComment}>
-                    <label className="visually-hidden" htmlFor="profile-comment-input">Write a comment on this profile</label>
-                    <textarea
-                      id="profile-comment-input"
-                      value={profileCommentDraft}
-                      onChange={(event) => setProfileCommentDraft(event.target.value.slice(0, 500))}
-                      placeholder={`Write a comment for ${publicProfile.display_name || "this user"}…`}
-                      maxLength={500}
-                      rows={3}
-                    />
-                    <div className="profile-comment-form-footer">
-                      <span>{profileCommentDraft.length}/500</span>
-                      <button className="signin-btn" type="submit" disabled={!profileCommentDraft.trim() || isPostingProfileComment}>
-                        {isPostingProfileComment ? "Posting…" : "Post comment"}
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <button className="signin-btn profile-comment-signin" type="button" onClick={() => onSignIn?.()}>
-                    Sign in to comment
-                  </button>
-                ))}
-                {profileCommentError && <p className="profile-comment-error" role="alert">{profileCommentError}</p>}
-                <div className="profile-comment-list" aria-live="polite">
-                  {topLevelProfileComments.map((comment) => {
-                    const replies = profileComments.filter((reply) => reply.parentId === comment.id);
-                    return (
-                      <div className="profile-comment-thread" key={comment.id}>
-                        {renderProfileComment(comment)}
-                        {user?.id !== selectedUserId && (
-                          <button
-                            type="button"
-                            className="profile-comment-reply-button"
-                            onClick={() => {
-                              setReplyingToProfileCommentId((current) => current === comment.id ? "" : comment.id);
-                              setProfileReplyDraft("");
-                              setProfileCommentError("");
-                            }}
-                          >
-                            {replyingToProfileCommentId === comment.id ? "Cancel reply" : "Reply"}
-                          </button>
-                        )}
-                        {replyingToProfileCommentId === comment.id && (
-                          user ? (
-                            <form className="profile-comment-form profile-reply-form" onSubmit={(event) => postProfileComment(event, comment.id)}>
-                              <label className="visually-hidden" htmlFor={`profile-reply-${comment.id}`}>Write a reply</label>
-                              <textarea
-                                id={`profile-reply-${comment.id}`}
-                                value={profileReplyDraft}
-                                onChange={(event) => setProfileReplyDraft(event.target.value.slice(0, 500))}
-                                placeholder={`Reply to ${comment.author}…`}
-                                maxLength={500}
-                                rows={2}
-                              />
-                              <div className="profile-comment-form-footer">
-                                <span>{profileReplyDraft.length}/500</span>
-                                <button className="signin-btn" type="submit" disabled={!profileReplyDraft.trim() || isPostingProfileComment}>
-                                  {isPostingProfileComment ? "Posting…" : "Post reply"}
-                                </button>
-                              </div>
-                            </form>
-                          ) : (
-                            <button type="button" className="signin-btn profile-comment-signin" onClick={() => onSignIn?.()}>
-                              Sign in to reply
-                            </button>
-                          )
-                        )}
-                        {replies.length > 0 && (
-                          <div className="profile-comment-replies">
-                            {replies.map((reply) => <div key={reply.id}>{renderProfileComment(reply, true)}</div>)}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {!topLevelProfileComments.length && !profileCommentError && <p className="profile-comment-empty">No comments yet. Start the conversation.</p>}
-                </div>
-              </section>
+              {renderProfileCommentsSection(publicProfile.display_name)}
             </>
           )}
         </>
