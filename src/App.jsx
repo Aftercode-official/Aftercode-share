@@ -1120,6 +1120,7 @@ export default function App() {
           onProjectOpen={openProject}
           selectedUserId={selectedUserId}
           onOpenUserProfile={openUserProfile}
+          onSignIn={openAuthModal}
           peopleListRoute={peopleListRoute}
           onPeopleListNavigate={navigateToPeopleList}
           onPublicProfileLoaded={handlePublicProfileLoaded}

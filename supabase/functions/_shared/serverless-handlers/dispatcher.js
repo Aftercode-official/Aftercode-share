@@ -11,6 +11,7 @@ import chat from "./chat.js";
 import events from "./events.js";
 import follows from "./follows.js";
 import notifications from "./notifications.js";
+import profileComments from "./profile-comments.js";
 import projectInteractions from "./project-interactions.js";
 import profileById from "./profiles/[id].js";
 import profileLookup from "./profiles/lookup.js";
@@ -61,6 +62,7 @@ export default async function handler(req, res) {
   }
   else if (!identifier && resource === "follows") endpoint = follows;
   else if (!identifier && resource === "notifications") endpoint = notifications;
+  else if (!identifier && resource === "profile-comments") endpoint = profileComments;
   else if (!identifier && resource === "project-interactions") endpoint = projectInteractions;
   else if (resource === "projects" && identifier && extra.length === 1 && extra[0] === "view") {
     req.query.id = identifier;

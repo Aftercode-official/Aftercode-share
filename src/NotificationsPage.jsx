@@ -8,6 +8,7 @@ const FILTERS = [
   { id: "project_liked", label: "Likes" },
   { id: "project_favorited", label: "Favorites" },
   { id: "project_commented", label: "Comments" },
+  { id: "profile_commented", label: "Profile comments" },
   { id: "follow", label: "Follows" },
   { id: "event", label: "Event notifications" }
 ];
@@ -16,6 +17,7 @@ function notificationAction(type) {
   if (type === "project_liked") return "loved your project";
   if (type === "project_favorited") return "added your project to favorites";
   if (type === "project_commented") return "commented on your project";
+  if (type === "profile_commented") return "commented on your profile";
   if (type === "follow") return "started following you";
   if (type === "event") return "sent an event notification";
   return "interacted with your project";
@@ -110,7 +112,7 @@ export default function NotificationsPage({ notifications, isLoading, onMarkAllR
                       Project: <strong>{item.project_title}</strong>
                     </button>
                   )}
-                  {item.notification_type === "project_commented" && item.message && (
+                  {["project_commented", "profile_commented"].includes(item.notification_type) && item.message && (
                     <span className="notification-message">“{item.message}”</span>
                   )}
                   <time dateTime={item.created_at}>{new Date(item.created_at).toLocaleString()}</time>

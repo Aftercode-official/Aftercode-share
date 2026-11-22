@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { getCachedProfileStats, getCachedPublicProfile, loadPublicProfile, apiFollow, cacheProfileStats, loadFollowList } from "./userStorage.js";
 import { supabase } from "./supabase.js";
+import { apiRequest } from "./api.js";
 import { getShopAvatarFrameClass, isDragonAvatarFrame } from "./avatarFrames.js";
 import BearAvatarFrame from "./assets/bear-avatar-frame.png";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
@@ -49,7 +50,8 @@ export default function User({
   onOpenUserProfile,
   peopleListRoute,
   onPeopleListNavigate,
-  onPublicProfileLoaded
+  onPublicProfileLoaded,
+  onSignIn
 }) {
   const [draft, setDraft] = useState(() => ({ ...customization }));
   const [profileTab, setProfileTab] = useState("all");
@@ -68,6 +70,10 @@ export default function User({
   const [favoritesCount, setFavoritesCount] = useState(initialCachedProfile?.favoritesCount ?? initialCachedStats?.favoritesCount ?? initialCachedProfile?.favoriteProjects?.length ?? 0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowPending, setIsFollowPending] = useState(false);
+  const [profileComments, setProfileComments] = useState([]);
+  const [profileCommentDraft, setProfileCommentDraft] = useState("");
+  const [profileCommentError, setProfileCommentError] = useState("");
+  const [isPostingProfileComment, setIsPostingProfileComment] = useState(false);
   const [peopleModal, setPeopleModal] = useState(null);
   const [peopleList, setPeopleList] = useState([]);
   const [peopleError, setPeopleError] = useState("");
@@ -118,6 +124,26 @@ export default function User({
       });
     return () => { isActive = false; };
   }, [page, selectedUserId, user?.id, initialCachedStats]);
+
+  useEffect(() => {
+    if (page !== "user" || !selectedUserId) {
+      setProfileComments([]);
+      setProfileCommentDraft("");
+      setProfileCommentError("");
+      return undefined;
+    }
+    let isActive = true;
+    setProfileComments([]);
+    setProfileCommentError("");
+    apiRequest(`/api/profile-comments?profileId=${encodeURIComponent(selectedUserId)}`)
+      .then(({ comments: records }) => {
+        if (isActive) setProfileComments(records ?? []);
+      })
+      .catch((error) => {
+        if (isActive) setProfileCommentError(error.message);
+      });
+    return () => { isActive = false; };
+  }, [page, selectedUserId]);
 
   useEffect(() => {
     if (page !== "profile" || !user?.id) {
@@ -214,6 +240,31 @@ export default function User({
       setPublicProfileError(error.message);
     } finally {
       setIsFollowPending(false);
+    }
+  };
+
+  const postProfileComment = async (event) => {
+    event.preventDefault();
+    const text = profileCommentDraft.trim();
+    if (!user) {
+      onSignIn?.();
+      return;
+    }
+    if (!selectedUserId || !text || isPostingProfileComment) return;
+    setIsPostingProfileComment(true);
+    setProfileCommentError("");
+    try {
+      const { comment } = await apiRequest("/api/profile-comments", {
+        method: "POST",
+        authenticated: true,
+        body: { profileId: selectedUserId, text }
+      });
+      setProfileComments((current) => [comment, ...current]);
+      setProfileCommentDraft("");
+    } catch (error) {
+      setProfileCommentError(error.message);
+    } finally {
+      setIsPostingProfileComment(false);
     }
   };
 
@@ -480,6 +531,66 @@ export default function User({
                   {publicProfileProjects.length === 0 && (
                     <p className="featured-empty">{profileTab === "favorite" ? "This user has no public favorite projects yet." : "This user has no public projects yet."}</p>
                   )}
+                </div>
+              </section>
+
+              <section className="profile-comments" aria-labelledby="profile-comments-title">
+                <h2 className="section-title" id="profile-comments-title">Comments ({profileComments.length})</h2>
+                {user?.id !== selectedUserId && (user ? (
+                  <form className="profile-comment-form" onSubmit={postProfileComment}>
+                    <label className="visually-hidden" htmlFor="profile-comment-input">Write a comment on this profile</label>
+                    <textarea
+                      id="profile-comment-input"
+                      value={profileCommentDraft}
+                      onChange={(event) => setProfileCommentDraft(event.target.value.slice(0, 500))}
+                      placeholder={`Write a comment for ${publicProfile.display_name || "this user"}…`}
+                      maxLength={500}
+                      rows={3}
+                    />
+                    <div className="profile-comment-form-footer">
+                      <span>{profileCommentDraft.length}/500</span>
+                      <button className="signin-btn" type="submit" disabled={!profileCommentDraft.trim() || isPostingProfileComment}>
+                        {isPostingProfileComment ? "Posting…" : "Post comment"}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <button className="signin-btn profile-comment-signin" type="button" onClick={() => onSignIn?.()}>
+                    Sign in to comment
+                  </button>
+                ))}
+                {profileCommentError && <p className="profile-comment-error" role="alert">{profileCommentError}</p>}
+                <div className="profile-comment-list" aria-live="polite">
+                  {profileComments.map((comment) => {
+                    const frameImage = avatarFrameImage(comment.avatarFrame);
+                    const frameClass = comment.avatarFrame === "bear"
+                      ? " is-bear-avatar-frame"
+                      : isDragonAvatarFrame(comment.avatarFrame) ? " is-dragon-avatar-frame" : getShopAvatarFrameClass(comment.avatarFrame);
+                    return (
+                      <article className="profile-comment" key={comment.id}>
+                        <button
+                          className="project-comment-avatar-btn profile-wall-avatar"
+                          type="button"
+                          data-avatar-frame={comment.avatarFrame || "none"}
+                          aria-label={`View ${comment.author}'s profile`}
+                          onClick={() => onOpenUserProfile?.(comment.userId)}
+                        >
+                          {comment.avatarUrl
+                            ? <img className="project-comment-avatar" src={comment.avatarUrl} alt="" loading="lazy" decoding="async" />
+                            : <span className="avatar">{comment.author.slice(0, 1).toUpperCase()}</span>}
+                          {frameImage && <img className={`project-comment-avatar-frame-overlay${frameClass}`} src={frameImage} alt="" aria-hidden="true" />}
+                        </button>
+                        <div className="profile-comment-content">
+                          <button className="project-author-link" type="button" onClick={() => onOpenUserProfile?.(comment.userId)}>
+                            <strong>{comment.author}</strong>
+                          </button>
+                          <time dateTime={comment.createdAt}>{new Date(comment.createdAt).toLocaleString()}</time>
+                          <p>{comment.text}</p>
+                        </div>
+                      </article>
+                    );
+                  })}
+                  {!profileComments.length && !profileCommentError && <p className="profile-comment-empty">No comments yet. Start the conversation.</p>}
                 </div>
               </section>
             </>
