@@ -248,6 +248,7 @@ export default function App() {
   const [customization, setCustomization] = useState(DEFAULT_CUSTOMIZATION);
   const [customizationError, setCustomizationError] = useState("");
   const [shopData, setShopData] = useState({ decorations: [], balance: null, missions: [], dailyClaimedAt: null, ownedIds: [], error: "", loading: true });
+  const shopRefreshSequenceRef = useRef(0);
   const isProjectAdmin = isAdminUserId(user?.id);
   const featuredProjects = projects.filter((project) => project.isFeatured);
   const visibleAnnouncements = announcements.filter((item) => !dismissedAnnouncementIds.includes(String(item.id)));
@@ -255,20 +256,28 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
+    const requestSequence = ++shopRefreshSequenceRef.current;
     setShopData((current) => ({ ...current, loading: true, error: "", balance: null, dailyClaimedAt: null, ownedIds: [] }));
     apiRequest("/api/shop", { authenticated: Boolean(user) })
       .then((result) => {
-        if (active) setShopData({ ...result, error: "", loading: false });
+        if (active && requestSequence === shopRefreshSequenceRef.current) {
+          setShopData({ ...result, error: "", loading: false });
+        }
       })
       .catch((error) => {
-        if (active) setShopData((current) => ({ ...current, error: error.message, loading: false }));
+        if (active && requestSequence === shopRefreshSequenceRef.current) {
+          setShopData((current) => ({ ...current, error: error.message, loading: false }));
+        }
       });
     return () => { active = false; };
   }, [user?.id]);
 
   const refreshShopData = async () => {
+    const requestSequence = ++shopRefreshSequenceRef.current;
     const result = await apiRequest("/api/shop", { authenticated: Boolean(user), dedupe: false });
-    setShopData({ ...result, error: "", loading: false });
+    if (requestSequence === shopRefreshSequenceRef.current) {
+      setShopData({ ...result, error: "", loading: false });
+    }
     return result;
   };
 
