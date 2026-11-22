@@ -77,6 +77,9 @@
 }
 
 .profile-wall-avatar {
+  position: relative;
+  display: flex;
+  overflow: visible;
   width: 36px;
   height: 36px;
   flex-basis: 36px;
