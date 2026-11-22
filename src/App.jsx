@@ -1457,7 +1457,7 @@ export default function App() {
         <footer className="site-footer">
           <span>© {new Date().getFullYear()} Aftercode</span>
           <span className="footer-divider" aria-hidden="true" />
-          <a href="https://discord.gg/vK2cAfdsP" target="_blank" rel="noreferrer">
+          <a href="https://discord.gg/tnvj4YU2ZS" target="_blank" rel="noreferrer">
             <svg aria-hidden="true" viewBox="0 0 20 19"><use href={`${import.meta.env.BASE_URL}icons.svg#discord-icon`} /></svg>
             <span>Join our Discord</span>
           </a>
