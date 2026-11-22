@@ -27,6 +27,7 @@ const CUSTOMIZATION_STORAGE_KEY = "aftercode-share-customization";
 const PUBLIC_DATA_CACHE_KEY = "aftercode-share-public-data-v1";
 const SHOP_CACHE_PREFIX = "aftercode-share-shop-v1:";
 const APP_BASE_PATH = new URL(import.meta.env.BASE_URL, window.location.origin).pathname.replace(/\/$/, "");
+const USE_HASH_ROUTING = Boolean(APP_BASE_PATH);
 const DEFAULT_CUSTOMIZATION = {
   displayName: "Name",
   username: "@IDName",
@@ -47,11 +48,23 @@ const DEFAULT_CUSTOMIZATION = {
 
 function appRoutePath(pathname) {
   const route = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  if (USE_HASH_ROUTING) return `${APP_BASE_PATH}/#${route}`;
   if (!APP_BASE_PATH) return route;
   return route === "/" ? `${APP_BASE_PATH}/` : `${APP_BASE_PATH}${route}`;
 }
 
-function routePathFromLocation(pathname) {
+function setRouteOnUrl(url, routePath) {
+  if (USE_HASH_ROUTING) {
+    const routeUrl = new URL(routePath, window.location.origin);
+    url.pathname = `${APP_BASE_PATH}/`;
+    url.hash = routeUrl.hash || "#/";
+    return;
+  }
+  url.pathname = routePath;
+}
+
+function routePathFromLocation(pathname, hash = window.location.hash) {
+  if (USE_HASH_ROUTING && hash.startsWith("#/")) return hash.slice(1);
   if (!APP_BASE_PATH) return pathname;
   if (pathname === APP_BASE_PATH || pathname === `${APP_BASE_PATH}/`) return "/";
   return pathname.startsWith(`${APP_BASE_PATH}/`) ? pathname.slice(APP_BASE_PATH.length) : pathname;
@@ -482,7 +495,8 @@ export default function App() {
       setProfileRouteUsername("");
       setPeopleListRoute(null);
       const url = new URL(window.location.href);
-      url.pathname = appRoutePath("/");
+      setRouteOnUrl(url, appRoutePath("/"));
+      url.hash = USE_HASH_ROUTING ? "#/" : url.hash;
       url.searchParams.delete("projectId");
       url.searchParams.delete("project");
       window.history.replaceState({}, "", url);
@@ -517,7 +531,7 @@ export default function App() {
     else if (nextPage === "user" || nextPage === "profile") pathname = userPagePath(routeUsername || options.userId);
     setProfileRouteUsername(routeUsername || "");
     const url = new URL(window.location.href);
-    url.pathname = pathname;
+    setRouteOnUrl(url, pathname);
     url.searchParams.delete("projectId");
     url.searchParams.delete("project");
     window.history.pushState({}, "", url);
@@ -528,7 +542,7 @@ export default function App() {
     const username = profileRouteUsername || String(customization.username || "").trim().replace(/^@/, "");
     setPeopleListRoute(list);
     const url = new URL(window.location.href);
-    url.pathname = userPagePath(username, list);
+    setRouteOnUrl(url, userPagePath(username, list));
     window.history.pushState({}, "", url);
   };
 
@@ -593,7 +607,7 @@ export default function App() {
     if (!normalized || (page !== "user" && page !== "profile") || normalized === profileRouteUsername) return;
     setProfileRouteUsername(normalized);
     const url = new URL(window.location.href);
-    url.pathname = userPagePath(normalized, peopleListRoute);
+    setRouteOnUrl(url, userPagePath(normalized, peopleListRoute));
     window.history.replaceState({}, "", url);
   };
 
@@ -613,6 +627,15 @@ export default function App() {
       setDataError(error.message);
     }
   };
+
+  useEffect(() => {
+    if (!USE_HASH_ROUTING || window.location.hash.startsWith("#/") || getProjectIdFromUrl(window.location.href)) return;
+    const route = routePathFromLocation(window.location.pathname, "");
+    if (route === "/") return;
+    const url = new URL(window.location.href);
+    setRouteOnUrl(url, appRoutePath(route));
+    window.history.replaceState({}, "", url);
+  }, []);
 
   useEffect(() => {
     const restoreRoute = () => {
