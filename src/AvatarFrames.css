@@ -1,0 +1,31 @@
+:root[data-site-style] .profile-avatar[data-avatar-frame="gold"],
+:root[data-site-style] .header-profile[data-avatar-frame="gold"],
+:root[data-site-style] .chat-avatar-link[data-avatar-frame="gold"],
+:root[data-site-style] .project-comment-avatar-btn[data-avatar-frame="gold"],
+:root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="gold"] {
+  border: 2px solid #ffe39a !important;
+  border-radius: 50% !important;
+  box-shadow: 0 0 0 2px #704900, 0 0 0 4px #e4a91d, 0 2px 7px rgb(0 0 0 / 48%) !important;
+}
+
+:root[data-site-style] .profile-avatar[data-avatar-frame="neon"],
+:root[data-site-style] .header-profile[data-avatar-frame="neon"],
+:root[data-site-style] .chat-avatar-link[data-avatar-frame="neon"],
+:root[data-site-style] .project-comment-avatar-btn[data-avatar-frame="neon"],
+:root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="neon"] {
+  border: 2px solid #d7ffff !important;
+  border-radius: 50% !important;
+  box-shadow: 0 0 0 2px #07384f, 0 0 8px 2px rgb(86 250 255 / 88%), 0 0 15px 4px rgb(0 214 255 / 42%), inset 0 0 0 1px rgb(255 255 255 / 42%) !important;
+}
+
+:root[data-site-style] .profile-avatar[data-avatar-frame="pixel"],
+:root[data-site-style] .header-profile[data-avatar-frame="pixel"],
+:root[data-site-style] .chat-avatar-link[data-avatar-frame="pixel"],
+:root[data-site-style] .project-comment-avatar-btn[data-avatar-frame="pixel"],
+:root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="pixel"] {
+  border: 3px solid #181820 !important;
+  border-radius: 50% !important;
+  outline: 2px solid #f6c843 !important;
+  outline-offset: 1px;
+  box-shadow: 0 0 0 3px #70500f, 0 2px 6px rgb(0 0 0 / 48%) !important;
+}

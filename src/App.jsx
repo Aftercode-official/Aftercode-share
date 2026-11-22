@@ -20,6 +20,7 @@ import { isAdminUserId } from "../shared/adminUsers.js";
 import LoadingScreen from "./LoadingScreen.jsx";
 import "./BrutalistTheme.css";
 import "./ClassicTheme.css";
+import "./AvatarFrames.css";
 
 const THEME_STORAGE_KEY = "aftercode-share-theme";
 const SITE_STYLE_STORAGE_KEY = "aftercode-share-site-style";
