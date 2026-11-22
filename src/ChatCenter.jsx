@@ -498,7 +498,7 @@ export default function ChatCenter({ user, avatarFrame = "none", decorations = [
                 ? <img className="chat-avatar" src={message.avatar_url} alt="" loading="lazy" decoding="async" />
                 : <span className="chat-avatar chat-avatar-fallback" aria-hidden="true">{message.author.slice(0, 1).toUpperCase()}</span>}
               {frameImage
-                ? <img className="chat-avatar-frame-overlay" src={frameImage} alt="" aria-hidden="true" />
+                ? <img className={`chat-avatar-frame-overlay${frameId === "bear" ? " is-bear-avatar-frame" : ""}`} src={frameImage} alt="" aria-hidden="true" />
                 : null}
             </button>
             <div className="chat-message-body">

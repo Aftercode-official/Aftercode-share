@@ -398,6 +398,11 @@ a {
   pointer-events: none;
 }
 
+.header-profile .header-avatar-frame.is-bear-avatar-frame {
+  width: 147%;
+  transform: translate(calc(-50% + 2%), -50%);
+}
+
 .notification-count-badge {
   position: absolute;
   top: -4px;

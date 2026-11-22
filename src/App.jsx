@@ -1061,7 +1061,7 @@ export default function App() {
                 {customization.avatarUrl
                   ? <img src={customization.avatarUrl} alt="" />
                   : <span>{customization.displayName.slice(0, 1).toUpperCase()}</span>}
-                {customization.avatarFrame === "bear" && <img className="header-avatar-frame" src={BearAvatarFrame} alt="" aria-hidden="true" />}
+                {customization.avatarFrame === "bear" && <img className="header-avatar-frame is-bear-avatar-frame" src={BearAvatarFrame} alt="" aria-hidden="true" />}
                 {equippedDecoration && <img className="header-avatar-frame" src={equippedDecoration.imageUrl} alt="" aria-hidden="true" />}
               </button>
               {isProfileMenuOpen && (

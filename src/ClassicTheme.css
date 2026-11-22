@@ -305,6 +305,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   object-fit: fill;
   pointer-events: none;
 }
+
+.chat-avatar-frame-overlay.is-bear-avatar-frame,
+.project-comment-avatar-frame-overlay.is-bear-avatar-frame {
+  width: 147%;
+  transform: translate(calc(-50% + 2%), -50%);
+}
 .chat-avatar-link[data-avatar-frame="gold"],
 .project-comment-avatar-btn[data-avatar-frame="gold"] {
   box-shadow: 0 0 0 2px #765400, 0 0 0 4px #ffd166 !important;

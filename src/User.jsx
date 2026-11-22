@@ -310,7 +310,7 @@ export default function User({
                   ? <img src={customization.avatarUrl} alt={`${customization.displayName} avatar`} decoding="async" fetchPriority="high" />
                   : customization.displayName.slice(0, 1)}
                 {avatarFrameImage(customization.avatarFrame) && (
-                  <img className="avatar-frame-overlay" src={avatarFrameImage(customization.avatarFrame)} alt="" aria-hidden="true" />
+                  <img className={`avatar-frame-overlay${customization.avatarFrame === "bear" ? " is-bear-avatar-frame" : ""}`} src={avatarFrameImage(customization.avatarFrame)} alt="" aria-hidden="true" />
                 )}
               </div>
               <div className="profile-identity-main">
@@ -403,7 +403,7 @@ export default function User({
                       ? <img src={publicProfile.avatar_url} alt="" decoding="async" fetchPriority="high" />
                       : (publicProfile.display_name || "?").slice(0, 1)}
                     {avatarFrameImage(publicProfile.avatar_frame) && (
-                      <img className="avatar-frame-overlay" src={avatarFrameImage(publicProfile.avatar_frame)} alt="" aria-hidden="true" />
+                      <img className={`avatar-frame-overlay${publicProfile.avatar_frame === "bear" ? " is-bear-avatar-frame" : ""}`} src={avatarFrameImage(publicProfile.avatar_frame)} alt="" aria-hidden="true" />
                     )}
                   </div>
                   <div className="profile-identity-main">
@@ -549,7 +549,7 @@ export default function User({
                     ? <img src={draft.avatarUrl} alt="" />
                     : draft.displayName.slice(0, 1).toUpperCase()}
                   {avatarFrameImage(draft.avatarFrame) && (
-                    <img className="avatar-frame-overlay" src={avatarFrameImage(draft.avatarFrame)} alt="" aria-hidden="true" />
+                    <img className={`avatar-frame-overlay${draft.avatarFrame === "bear" ? " is-bear-avatar-frame" : ""}`} src={avatarFrameImage(draft.avatarFrame)} alt="" aria-hidden="true" />
                   )}
                 </div>
               </label>

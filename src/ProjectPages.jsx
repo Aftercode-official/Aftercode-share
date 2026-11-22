@@ -439,7 +439,7 @@ export default function ProjectPages({
                         ? <img className="project-comment-avatar" src={comment.avatarUrl} alt="" loading="lazy" decoding="async" />
                         : <div className="avatar">{comment.author.slice(0, 1)}</div>}
                       {frameImage
-                        ? <img className="project-comment-avatar-frame-overlay" src={frameImage} alt="" aria-hidden="true" />
+                        ? <img className={`project-comment-avatar-frame-overlay${comment.avatarFrame === "bear" ? " is-bear-avatar-frame" : ""}`} src={frameImage} alt="" aria-hidden="true" />
                         : null}
                     </button>
                     <div>
