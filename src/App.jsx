@@ -272,6 +272,26 @@ export default function App() {
     return result;
   };
 
+  const adjustMissionProgress = (missionKey, change) => {
+    setShopData((current) => ({
+      ...current,
+      missions: (current.missions ?? []).map((mission) => {
+        if (mission.key !== missionKey) return mission;
+        const progress = Math.min(mission.target, Math.max(0, mission.progress + change));
+        return { ...mission, progress, completed: progress >= mission.target };
+      })
+    }));
+  };
+
+  const setMissionProgress = (missionKey, progress) => {
+    setShopData((current) => ({
+      ...current,
+      missions: (current.missions ?? []).map((mission) => mission.key === missionKey
+        ? { ...mission, progress: Math.min(mission.target, Math.max(0, progress)), completed: progress >= mission.target }
+        : mission)
+    }));
+  };
+
   const loadProjects = async () => {
     const { projects: records } = await apiRequest("/api/projects");
     writePublicDataCache({ projects: records });
@@ -607,6 +627,7 @@ export default function App() {
         }));
       }
       if (action === "like" || action === "favorite") {
+        adjustMissionProgress(action === "like" ? "daily_like" : "daily_fav", details.enabled ? 1 : -1);
         refreshShopData().catch(() => {});
       }
       Promise.all([loadActivities(), loadNotifications()]).catch(() => {});
@@ -629,6 +650,7 @@ export default function App() {
       await persistCustomization(nextCustomization);
       setCustomization(nextCustomization);
       setIsCustomizeOpen(false);
+      setMissionProgress("milestone_profile", nextCustomization.bio?.trim() && nextCustomization.avatarUrl?.trim() ? 1 : 0);
       refreshShopData().catch(() => {});
       return true;
     } catch (error) {
@@ -1250,7 +1272,10 @@ export default function App() {
               </section>
             </>
           )}
-          {page === "chat" && <ChatCenter user={user} avatarFrame={customization.avatarFrame} decorations={shopData.decorations} onSignIn={openAuthModal} onOpenProject={openProject} onOpenUserProfile={openUserProfile} onMessageSent={refreshShopData} />}
+          {page === "chat" && <ChatCenter user={user} avatarFrame={customization.avatarFrame} decorations={shopData.decorations} onSignIn={openAuthModal} onOpenProject={openProject} onOpenUserProfile={openUserProfile} onMessageSent={() => {
+            adjustMissionProgress("daily_chat", 1);
+            refreshShopData().catch(() => {});
+          }} />}
           {page === "shop" && (
             <ProfileShop
               user={user}
@@ -1349,6 +1374,7 @@ export default function App() {
               if (record) {
                 const project = toProject(record);
                 setProjects((current) => [project, ...current.filter((item) => item.databaseId !== project.databaseId)]);
+                setMissionProgress("daily_publish", 1);
               }
               setPage("explore");
               setSelectedProject(null);
