@@ -85,6 +85,24 @@
   transform: translate(calc(-50% + 7.5%), calc(-50% - 2.5%)) !important;
 }
 
+:root[data-site-style] .profile-avatar .avatar-frame-overlay.is-white-cat-avatar-frame,
+:root[data-site-style] .header-profile .header-avatar-frame.is-white-cat-avatar-frame,
+:root[data-site-style] .chat-avatar-link .chat-avatar-frame-overlay.is-white-cat-avatar-frame,
+:root[data-site-style] .project-comment-avatar-btn .project-comment-avatar-frame-overlay.is-white-cat-avatar-frame,
+:root[data-site-style] .feed-avatar-frame-overlay.is-white-cat-avatar-frame {
+  width: 150% !important;
+  height: 145% !important;
+}
+
+:root[data-site-style] .profile-avatar .avatar-frame-overlay.is-buggy-avatar-frame,
+:root[data-site-style] .header-profile .header-avatar-frame.is-buggy-avatar-frame,
+:root[data-site-style] .chat-avatar-link .chat-avatar-frame-overlay.is-buggy-avatar-frame,
+:root[data-site-style] .project-comment-avatar-btn .project-comment-avatar-frame-overlay.is-buggy-avatar-frame,
+:root[data-site-style] .feed-avatar-frame-overlay.is-buggy-avatar-frame {
+  width: 130% !important;
+  height: 130% !important;
+}
+
 :root[data-site-style] .profile-avatar .avatar-frame-overlay.is-dragon-avatar-frame,
 :root[data-site-style] .header-profile .header-avatar-frame.is-dragon-avatar-frame,
 :root[data-site-style] .chat-avatar-link .chat-avatar-frame-overlay.is-dragon-avatar-frame,
