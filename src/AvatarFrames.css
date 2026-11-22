@@ -173,7 +173,6 @@
     border-color: #ffe17a;
     box-shadow: 0 0 0 2px #9b6811, 0 0 20px rgb(255 197 56 / 55%), inset 0 1px 0 rgb(255 250 218 / 65%);
   }
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
