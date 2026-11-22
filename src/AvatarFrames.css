@@ -67,6 +67,24 @@
   animation: default-avatar-glitch 2.4s steps(1, end) infinite;
 }
 
+:root[data-site-style] .profile-avatar .avatar-frame-overlay.is-shop-avatar-frame,
+:root[data-site-style] .header-profile .header-avatar-frame.is-shop-avatar-frame,
+:root[data-site-style] .chat-avatar-link .chat-avatar-frame-overlay.is-shop-avatar-frame,
+:root[data-site-style] .project-comment-avatar-btn .project-comment-avatar-frame-overlay.is-shop-avatar-frame,
+:root[data-site-style] .feed-avatar-frame-overlay.is-shop-avatar-frame {
+  width: 160% !important;
+  height: 160% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+:root[data-site-style] .profile-avatar .avatar-frame-overlay.is-chix-avatar-frame,
+:root[data-site-style] .header-profile .header-avatar-frame.is-chix-avatar-frame,
+:root[data-site-style] .chat-avatar-link .chat-avatar-frame-overlay.is-chix-avatar-frame,
+:root[data-site-style] .project-comment-avatar-btn .project-comment-avatar-frame-overlay.is-chix-avatar-frame,
+:root[data-site-style] .feed-avatar-frame-overlay.is-chix-avatar-frame {
+  transform: translate(calc(-50% + 7.5%), calc(-50% - 2.5%)) !important;
+}
+
 :root[data-site-style] .profile-avatar .avatar-frame-overlay.is-dragon-avatar-frame,
 :root[data-site-style] .header-profile .header-avatar-frame.is-dragon-avatar-frame,
 :root[data-site-style] .chat-avatar-link .chat-avatar-frame-overlay.is-dragon-avatar-frame,
