@@ -1258,7 +1258,7 @@ export default function App() {
                           return (
                             <button
                               type="button"
-                              className="feed-item feed-item-button"
+                              className={`feed-item feed-item-button${frameId === "gold" ? " gold-frame-card" : ""}`}
                               key={activity.id}
                               onClick={() => {
                                 if (activity.actor_id) openUserProfile(activity.actor_id);

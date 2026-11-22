@@ -3,9 +3,9 @@
 :root[data-site-style] .chat-avatar-link[data-avatar-frame="gold"],
 :root[data-site-style] .project-comment-avatar-btn[data-avatar-frame="gold"],
 :root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="gold"] {
-  border: 2px solid #ffe9a8 !important;
+  border: 2px solid #ffe9a8;
   border-radius: 50% !important;
-  box-shadow: 0 1px 0 #fff2c7 inset, 0 -2px 0 #8e5700 inset, 0 0 0 2px #714600, 0 0 0 4px #e4a91d, 0 3px 7px rgb(0 0 0 / 48%) !important;
+  box-shadow: 0 1px 0 #fff2c7 inset, 0 -2px 0 #8e5700 inset, 0 0 0 2px #714600, 0 0 0 4px #e4a91d, 0 3px 7px rgb(0 0 0 / 48%);
   animation: default-gold-3d 2.8s ease-in-out infinite !important;
 }
 
@@ -36,7 +36,7 @@
 :root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="neon"] {
   border: 2px solid #d7ffff !important;
   border-radius: 50% !important;
-  box-shadow: 0 0 0 2px #07384f, 0 0 8px 2px rgb(86 250 255 / 88%), 0 0 15px 4px rgb(0 214 255 / 42%), inset 0 0 0 1px rgb(255 255 255 / 42%) !important;
+  box-shadow: 0 0 0 2px #07384f, 0 0 8px 2px rgb(86 250 255 / 88%), 0 0 15px 4px rgb(0 214 255 / 42%), inset 0 0 0 1px rgb(255 255 255 / 42%);
   animation: default-neon-pulse 1.8s ease-in-out infinite !important;
 }
 
@@ -47,11 +47,10 @@
 :root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="pixel"] {
   border: 3px solid #181820 !important;
   border-radius: 50% !important;
-  outline: 2px solid #f6c843 !important;
+  outline: 2px solid #f6c843;
   outline-offset: 1px;
-  box-shadow: 0 0 0 3px #70500f, 0 2px 6px rgb(0 0 0 / 48%) !important;
-  image-rendering: pixelated;
-  animation: default-pixel-step 1.2s steps(4, end) infinite !important;
+  box-shadow: 0 0 0 3px #70500f, 0 2px 6px rgb(0 0 0 / 48%);
+  animation: default-pixel-glitch 2.4s steps(1, end) infinite !important;
 }
 
 :root[data-site-style] .profile-avatar[data-avatar-frame="pixel"] > img:not(.avatar-frame-overlay),
@@ -60,13 +59,12 @@
 :root[data-site-style] .project-comment-avatar-btn[data-avatar-frame="pixel"] > img:not(.project-comment-avatar-frame-overlay),
 :root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="pixel"] > .avatar {
   position: absolute;
-  top: 37.5%;
-  left: 37.5%;
-  width: 25%;
-  height: 25%;
-  transform: scale(4);
-  image-rendering: pixelated;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: none;
   object-fit: cover;
+  animation: default-avatar-glitch 2.4s steps(1, end) infinite;
 }
 
 @keyframes default-gold-3d {
@@ -93,22 +91,42 @@
   }
 }
 
-@keyframes default-pixel-step {
-  0%, 100% {
+@keyframes default-pixel-glitch {
+  0%, 78%, 82%, 100% {
     outline-color: #f6c843;
     box-shadow: 0 0 0 3px #70500f, 0 2px 6px rgb(0 0 0 / 48%);
   }
-  25% {
-    outline-color: #fff078;
-    box-shadow: 0 0 0 3px #70500f, 0 0 0 5px #e0a927, 0 2px 6px rgb(0 0 0 / 48%);
+  79% {
+    outline-color: #ff3bca;
+    box-shadow: -3px 0 #ff3bca, 3px 0 #29f6ff, 0 0 0 3px #70500f;
+  }
+  81% {
+    outline-color: #29f6ff;
+    box-shadow: 3px 0 #ff3bca, -3px 0 #29f6ff, 0 0 0 3px #70500f;
+  }
+}
+
+@keyframes default-avatar-glitch {
+  0%, 78%, 82%, 100% { filter: none; transform: translate(0); clip-path: inset(0); }
+  79% { filter: drop-shadow(-2px 0 #ff3bca) drop-shadow(2px 0 #29f6ff); transform: translate(2px, -1px); clip-path: inset(8% 0 62%); }
+  81% { filter: drop-shadow(2px 0 #ff3bca) drop-shadow(-2px 0 #29f6ff); transform: translate(-2px, 1px); clip-path: inset(58% 0 12%); }
+}
+
+:root[data-site-style] .gold-frame-card {
+  border-color: #d99a22;
+  box-shadow: 0 0 0 1px #6d480c, 0 0 14px rgb(247 190 54 / 35%), inset 0 1px 0 rgb(255 237 162 / 45%);
+  animation: default-gold-card-shader 3.4s ease-in-out infinite !important;
+}
+
+@keyframes default-gold-card-shader {
+  0%, 100% {
+    border-color: #a86a0c;
+    box-shadow: 0 0 0 1px #6d480c, 0 0 9px rgb(247 190 54 / 22%), inset 0 1px 0 rgb(255 237 162 / 25%);
   }
   50% {
-    outline-color: #f6c843;
-    box-shadow: 0 0 0 3px #70500f, 0 0 0 4px #ffd85c, 0 2px 6px rgb(0 0 0 / 48%);
+    border-color: #ffe17a;
+    box-shadow: 0 0 0 2px #9b6811, 0 0 20px rgb(255 197 56 / 55%), inset 0 1px 0 rgb(255 250 218 / 65%);
   }
-  75% {
-    outline-color: #fff078;
-    box-shadow: 0 0 0 3px #70500f, 0 0 0 5px #c98d16, 0 2px 6px rgb(0 0 0 / 48%);
   }
 }
 
@@ -122,6 +140,7 @@
   :root[data-site-style] .chat-avatar-link[data-avatar-frame="gold"]::before,
   :root[data-site-style] .project-comment-avatar-btn[data-avatar-frame="gold"]::before,
   :root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="gold"]::before,
+  :root[data-site-style] .gold-frame-card,
   :root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="gold"],
   :root[data-site-style] .profile-avatar[data-avatar-frame="neon"],
   :root[data-site-style] .header-profile[data-avatar-frame="neon"],

@@ -298,7 +298,7 @@ export default function User({
     <>
       {page === "profile" && (
         <>
-          <section className="profile-hero">
+          <section className={`profile-hero${customization.avatarFrame === "gold" ? " gold-frame-card" : ""}`}>
             <div
               className="profile-banner"
               style={{ backgroundColor: customization.profileBackground }}
@@ -360,7 +360,7 @@ export default function User({
               <div className="featured-grid">
                 {profileProjects.map((project, index) => (
                   <button
-                    className="featured-card profile-project-card"
+                    className={`featured-card profile-project-card${customization.avatarFrame === "gold" ? " gold-frame-card" : ""}`}
                     type="button"
                     key={project.id}
                     style={{ "--delay": index + 1 }}
@@ -391,7 +391,7 @@ export default function User({
           {!publicProfile && !publicProfileError && <p className="feed-empty">Loading profile...</p>}
           {publicProfile && (
             <>
-              <section className="profile-hero">
+              <section className={`profile-hero${publicProfile.avatar_frame === "gold" ? " gold-frame-card" : ""}`}>
                 <div
                   className="profile-banner"
                   style={{ backgroundColor: publicProfile.profile_background || "#171513" }}
@@ -461,7 +461,7 @@ export default function User({
                 <div className="featured-grid">
                   {publicProfileProjects.map((project, index) => (
                     <button
-                      className="featured-card profile-project-card"
+                      className={`featured-card profile-project-card${publicProfile.avatar_frame === "gold" ? " gold-frame-card" : ""}`}
                       type="button"
                       key={project.id}
                       style={{ "--delay": index + 1 }}

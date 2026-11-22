@@ -486,7 +486,7 @@ export default function ChatCenter({ user, avatarFrame = "none", decorations = [
             ? BearAvatarFrame
             : decorations.find((item) => item.id === frameId)?.imageUrl;
           return (
-          <article id={`chat-message-${message.id}`} className={`chat-message${message.user_id === user?.id ? " is-own-message" : ""}${message.pending ? " is-pending" : ""}`} key={message.id}>
+          <article id={`chat-message-${message.id}`} className={`chat-message${message.user_id === user?.id ? " is-own-message" : ""}${message.pending ? " is-pending" : ""}${frameId === "gold" ? " gold-frame-card" : ""}`} key={message.id}>
             <button
               className="chat-avatar-link"
               data-avatar-frame={frameId}
