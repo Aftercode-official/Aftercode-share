@@ -48,6 +48,7 @@ export async function apiRequest(path, { method = "GET", body, authenticated = f
     const response = await fetch(apiUrl, {
       method,
       headers,
+      cache: authenticated ? "no-store" : "default",
       body: body === undefined ? undefined : JSON.stringify(body)
     });
     if (response.status === 204) return null;

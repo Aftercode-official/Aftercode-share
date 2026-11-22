@@ -125,6 +125,7 @@ export default async function handler(req, res) {
         ownedIds = (ownedResult.data ?? []).map((item) => item.decoration_id);
       }
 
+      res.setHeader("Vary", "Origin, Authorization");
       res.setHeader("Cache-Control", user ? "private, no-store" : "public, max-age=60, stale-while-revalidate=300");
       sendJson(res, 200, {
         decorations: (items ?? []).map((item) => toDecoration(client, item)),
