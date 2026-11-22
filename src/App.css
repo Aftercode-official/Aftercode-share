@@ -398,10 +398,15 @@ a {
   pointer-events: none;
 }
 
-.header-profile .header-avatar-frame.is-bear-avatar-frame,
-.header-profile .header-avatar-frame.is-shop-avatar-frame {
+.header-profile .header-avatar-frame.is-bear-avatar-frame {
   width: 147%;
   transform: translate(calc(-50% + 2%), -50%);
+}
+
+.header-profile .header-avatar-frame.is-shop-avatar-frame {
+  width: 160%;
+  height: 160%;
+  transform: translate(calc(-50% + 7.5%), calc(-50% - 2.5%));
 }
 
 .notification-count-badge {
