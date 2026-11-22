@@ -60,6 +60,11 @@ export default function ProfileShop({ user, shopData, equippedFrame, onRefreshSh
       await onRefreshShop();
       setMessage(`Đã mua thành công khung ${item.name}! Hãy trang bị ngay cho hồ sơ.`);
     } catch (actionError) {
+      try {
+        await onRefreshShop();
+      } catch {
+        // Keep the purchase error visible if refreshing the inventory also fails.
+      }
       setError(actionError.message);
     } finally {
       setBusyAction("");
