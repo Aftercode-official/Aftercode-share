@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { apiRequest } from "./api.js";
 import { supabase } from "./supabase.js";
 import { getProjectIdsFromText } from "./projectLinks.js";
+import { isShopAvatarFrame } from "./avatarFrames.js";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
 import BearAvatarFrame from "./assets/bear-avatar-frame.png";
 
@@ -498,7 +499,7 @@ export default function ChatCenter({ user, avatarFrame = "none", decorations = [
                 ? <img className="chat-avatar" src={message.avatar_url} alt="" loading="lazy" decoding="async" />
                 : <span className="chat-avatar chat-avatar-fallback" aria-hidden="true">{message.author.slice(0, 1).toUpperCase()}</span>}
               {frameImage
-                ? <img className={`chat-avatar-frame-overlay${frameId === "bear" ? " is-bear-avatar-frame" : ""}`} src={frameImage} alt="" aria-hidden="true" />
+                ? <img className={`chat-avatar-frame-overlay${frameId === "bear" ? " is-bear-avatar-frame" : isShopAvatarFrame(frameId) ? " is-shop-avatar-frame" : ""}`} src={frameImage} alt="" aria-hidden="true" />
                 : null}
             </button>
             <div className="chat-message-body">

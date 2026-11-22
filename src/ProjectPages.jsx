@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./ProjectPages.css";
 import { apiRequest } from "./api.js";
+import { isShopAvatarFrame } from "./avatarFrames.js";
 import { supabase } from "./supabase.js";
 import { validateScratchProjectFile } from "./scratchProjectFile.js";
 import { projectShareUrl } from "./projectLinks.js";
@@ -439,7 +440,7 @@ export default function ProjectPages({
                         ? <img className="project-comment-avatar" src={comment.avatarUrl} alt="" loading="lazy" decoding="async" />
                         : <div className="avatar">{comment.author.slice(0, 1)}</div>}
                       {frameImage
-                        ? <img className={`project-comment-avatar-frame-overlay${comment.avatarFrame === "bear" ? " is-bear-avatar-frame" : ""}`} src={frameImage} alt="" aria-hidden="true" />
+                        ? <img className={`project-comment-avatar-frame-overlay${comment.avatarFrame === "bear" ? " is-bear-avatar-frame" : isShopAvatarFrame(comment.avatarFrame) ? " is-shop-avatar-frame" : ""}`} src={frameImage} alt="" aria-hidden="true" />
                         : null}
                     </button>
                     <div>

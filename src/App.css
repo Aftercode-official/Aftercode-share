@@ -398,7 +398,8 @@ a {
   pointer-events: none;
 }
 
-.header-profile .header-avatar-frame.is-bear-avatar-frame {
+.header-profile .header-avatar-frame.is-bear-avatar-frame,
+.header-profile .header-avatar-frame.is-shop-avatar-frame {
   width: 147%;
   transform: translate(calc(-50% + 2%), -50%);
 }

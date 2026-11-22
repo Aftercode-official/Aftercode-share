@@ -102,7 +102,8 @@
   pointer-events: none;
 }
 
-.profile-avatar .avatar-frame-overlay.is-bear-avatar-frame {
+.profile-avatar .avatar-frame-overlay.is-bear-avatar-frame,
+.profile-avatar .avatar-frame-overlay.is-shop-avatar-frame {
   width: 147%;
   transform: translate(calc(-50% + 2%), -50%);
 }

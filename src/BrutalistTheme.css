@@ -285,7 +285,9 @@ body {
 }
 
 .chat-avatar-frame-overlay.is-bear-avatar-frame,
-.project-comment-avatar-frame-overlay.is-bear-avatar-frame {
+.project-comment-avatar-frame-overlay.is-bear-avatar-frame,
+.chat-avatar-frame-overlay.is-shop-avatar-frame,
+.project-comment-avatar-frame-overlay.is-shop-avatar-frame {
   width: 147%;
   transform: translate(calc(-50% + 2%), -50%);
 }

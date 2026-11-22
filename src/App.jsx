@@ -4,6 +4,7 @@ const ProjectPages = lazy(() => import("./ProjectPages.jsx"));
 import { getCachedPublicProfileByUsername, loadCustomization, saveCustomization as persistCustomization } from "./userStorage.js";
 import { supabase } from "./supabase.js";
 import { apiRequest } from "./api.js";
+import { isShopAvatarFrame } from "./avatarFrames.js";
 const AuthModal = lazy(() => import("./AuthModal.jsx"));
 const UploadProjectModal = lazy(() => import("./UploadProjectModal.jsx"));
 import LogoIcon from "./assets/Logo.png";
@@ -1062,7 +1063,7 @@ export default function App() {
                   ? <img src={customization.avatarUrl} alt="" />
                   : <span>{customization.displayName.slice(0, 1).toUpperCase()}</span>}
                 {customization.avatarFrame === "bear" && <img className="header-avatar-frame is-bear-avatar-frame" src={BearAvatarFrame} alt="" aria-hidden="true" />}
-                {equippedDecoration && <img className="header-avatar-frame" src={equippedDecoration.imageUrl} alt="" aria-hidden="true" />}
+                {equippedDecoration && <img className={`header-avatar-frame${isShopAvatarFrame(customization.avatarFrame) ? " is-shop-avatar-frame" : ""}`} src={equippedDecoration.imageUrl} alt="" aria-hidden="true" />}
               </button>
               {isProfileMenuOpen && (
                 <div className="profile-dropdown" role="menu">
