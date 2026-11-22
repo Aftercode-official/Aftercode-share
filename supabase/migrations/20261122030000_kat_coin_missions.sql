@@ -109,7 +109,7 @@ begin
 
   select exists(
     select 1 from public.profiles
-    where id = p_user_id
+    where user_id = p_user_id
       and bio is not null and char_length(trim(bio)) > 0
       and avatar_url is not null and char_length(trim(avatar_url)) > 0
   ) into v_has_profile;
@@ -264,7 +264,7 @@ begin
   elsif p_mission_key = 'milestone_profile' then
     select exists(
       select 1 from public.profiles
-      where id = p_user_id
+      where user_id = p_user_id
         and bio is not null and char_length(trim(bio)) > 0
         and avatar_url is not null and char_length(trim(avatar_url)) > 0
     ) into v_eligible;
