@@ -325,11 +325,11 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
 
         <form className="admin-tool-card admin-decoration-tool" onSubmit={submitDecoration}>
           <h2>Profile decoration frame</h2>
-          <p>Upload an avatar frame for the shop and set its virtual credit price.</p>
+          <p>Upload an avatar frame for the shop and set its virtual Kat Coin price.</p>
           <label>Frame name<input required maxLength={60} value={decorationDraft.name} onChange={(event) => setDecorationDraft((current) => ({ ...current, name: event.target.value }))} /></label>
           <label>Author name<input required maxLength={60} value={decorationDraft.author} onChange={(event) => setDecorationDraft((current) => ({ ...current, author: event.target.value }))} /></label>
           <label>Description<textarea maxLength={300} rows={3} value={decorationDraft.description} onChange={(event) => setDecorationDraft((current) => ({ ...current, description: event.target.value }))} /></label>
-          <label>Price in credits<input required type="number" min="1" max="100000" step="1" value={decorationDraft.price} onChange={(event) => setDecorationDraft((current) => ({ ...current, price: event.target.value }))} /></label>
+          <label>Price in Kat Coins<input required type="number" min="1" max="100000" step="1" value={decorationDraft.price} onChange={(event) => setDecorationDraft((current) => ({ ...current, price: event.target.value }))} /></label>
           <label>Frame image<input required type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => {
             const file = event.currentTarget.files?.[0] ?? null;
             setDecorationImage(file);
@@ -352,7 +352,7 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
                 <strong>{item.name}</strong>
                 <small>by {item.author} · {item.description || "Profile avatar frame"}</small>
               </span>
-              <strong>{item.price.toLocaleString()} credits</strong>
+              <strong>{item.price.toLocaleString()} Kat Coins</strong>
               {item.is_active
                 ? <button className="admin-delete-event-button" type="button" disabled={Boolean(decorationRemoveId)} onClick={() => removeDecoration(item)}>
                   {decorationRemoveId === item.id ? "Removing..." : "Remove"}

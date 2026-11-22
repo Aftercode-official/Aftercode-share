@@ -37,7 +37,7 @@
   display: grid;
   flex: 0 0 auto;
   gap: 0.35rem;
-  min-width: 190px;
+  min-width: 220px;
   padding: 0.9rem;
   border: 1px solid var(--border-color);
   background: var(--bg-card);
@@ -52,11 +52,13 @@
 
 .profile-shop-wallet > strong {
   font-size: 1.45rem;
+  color: #f7a01d;
 }
 
 .profile-shop-wallet button,
 .profile-shop-signin,
-.profile-shop-item-footer button {
+.profile-shop-item-footer button,
+.profile-shop-mission-btn {
   min-height: 36px;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--border-color);
@@ -66,14 +68,76 @@
   font-size: 0.78rem;
   font-weight: 800;
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.profile-shop-wallet-missions-btn {
+  background: var(--accent-orange) !important;
+  color: #fff !important;
+  border: none !important;
+  margin-top: 0.25rem;
+}
+
+.profile-shop-wallet-missions-btn:hover {
+  opacity: 0.9;
 }
 
 .profile-shop-wallet button:disabled,
-.profile-shop-item-footer button:disabled {
+.profile-shop-item-footer button:disabled,
+.profile-shop-mission-btn:disabled {
   cursor: default;
   opacity: 0.58;
 }
 
+/* Tabs */
+.profile-shop-tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 0.25rem;
+}
+
+.profile-shop-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  margin-bottom: -0.35rem;
+  transition: all 0.15s ease;
+}
+
+.profile-shop-tab:hover {
+  color: var(--text-primary);
+}
+
+.profile-shop-tab.is-active {
+  color: var(--accent-orange);
+  border-bottom-color: var(--accent-orange);
+}
+
+.profile-shop-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #ff5722;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+/* Shop items grid */
 .profile-shop-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
@@ -130,7 +194,219 @@
 }
 
 .profile-shop-item-footer > strong {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
+  color: #f7a01d;
+}
+
+/* Missions */
+.profile-shop-missions-container {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.profile-shop-missions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.profile-shop-missions-header h2 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+}
+
+.profile-shop-missions-header p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.profile-shop-missions-ready-pill {
+  padding: 0.4rem 0.8rem;
+  background: #2e7d32;
+  color: #fff;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+.profile-shop-missions-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.profile-shop-mission-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  transition: all 0.2s ease;
+}
+
+.profile-shop-mission-card.is-ready {
+  border-color: #4caf50;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.2);
+}
+
+.profile-shop-mission-card.is-claimed {
+  opacity: 0.65;
+}
+
+.profile-shop-mission-icon {
+  font-size: 1.8rem;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.profile-shop-mission-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.profile-shop-mission-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-shop-mission-title-row h3 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.profile-shop-mission-tag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.tag-daily {
+  background: rgba(33, 150, 243, 0.15);
+  color: #2196f3;
+}
+
+.tag-milestone {
+  background: rgba(156, 39, 176, 0.15);
+  color: #9c27b0;
+}
+
+.profile-shop-mission-info p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.profile-shop-mission-progress-bar-wrap {
+  width: 100%;
+  max-width: 320px;
+  height: 6px;
+  background: var(--bg-main);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 0.35rem;
+  border: 1px solid var(--border-color);
+}
+
+.profile-shop-mission-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #ff9800, #4caf50);
+  transition: width 0.3s ease;
+}
+
+.profile-shop-mission-progress-text {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.profile-shop-mission-progress-text strong {
+  color: var(--text-primary);
+}
+
+.profile-shop-mission-reward-side {
+  display: grid;
+  place-items: center;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+  min-width: 110px;
+}
+
+.profile-shop-mission-reward-badge {
+  font-weight: 900;
+  color: #f7a01d;
+  font-size: 0.95rem;
+}
+
+.profile-shop-mission-btn.is-claim-ready {
+  background: #2e7d32 !important;
+  color: #fff !important;
+  border-color: #2e7d32 !important;
+  box-shadow: 0 2px 8px rgba(46, 125, 50, 0.4);
+}
+
+.profile-shop-mission-btn.is-claim-ready:hover {
+  background: #1b5e20 !important;
+}
+
+.profile-shop-mission-btn.is-claimed {
+  background: transparent !important;
+  border: 1px dashed var(--border-color) !important;
+  color: var(--text-muted) !important;
+}
+
+/* Security notice */
+.profile-shop-security-box {
+  margin-top: 1rem;
+  padding: 1.1rem;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  background: rgba(76, 175, 80, 0.05);
+  border-radius: 6px;
+}
+
+.profile-shop-security-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #4caf50;
+  margin-bottom: 0.4rem;
+}
+
+.profile-shop-security-box h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.profile-shop-security-box ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.profile-shop-security-box li strong {
+  color: var(--text-primary);
 }
 
 .profile-shop-error { color: #ff7777; }
@@ -138,7 +414,8 @@
 .profile-shop-empty { padding: 2rem 1rem; text-align: center; color: var(--text-muted); }
 
 :root[data-site-style="classic"] .profile-shop-item,
-:root[data-site-style="classic"] .profile-shop-wallet {
+:root[data-site-style="classic"] .profile-shop-wallet,
+:root[data-site-style="classic"] .profile-shop-mission-card {
   border-radius: 4px;
   box-shadow: 0 2px 6px rgb(34 69 91 / 12%);
 }
@@ -146,4 +423,14 @@
 @media (max-width: 620px) {
   .profile-shop-heading { flex-direction: column; }
   .profile-shop-wallet { width: 100%; }
+  .profile-shop-mission-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .profile-shop-mission-reward-side {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
 }

@@ -247,7 +247,7 @@ export default function App() {
   }, [isProfileMenuOpen, isAppearanceMenuOpen]);
   const [customization, setCustomization] = useState(DEFAULT_CUSTOMIZATION);
   const [customizationError, setCustomizationError] = useState("");
-  const [shopData, setShopData] = useState({ decorations: [], balance: null, dailyClaimedAt: null, ownedIds: [], error: "", loading: true });
+  const [shopData, setShopData] = useState({ decorations: [], balance: null, missions: [], dailyClaimedAt: null, ownedIds: [], error: "", loading: true });
   const isProjectAdmin = isAdminUserId(user?.id);
   const featuredProjects = projects.filter((project) => project.isFeatured);
   const visibleAnnouncements = announcements.filter((item) => !dismissedAnnouncementIds.includes(String(item.id)));
