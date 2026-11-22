@@ -25,6 +25,7 @@ const SITE_STYLE_STORAGE_KEY = "aftercode-share-site-style";
 const COMPATIBILITY_MODE_STORAGE_KEY = "aftercode-share-compatibility-mode";
 const CUSTOMIZATION_STORAGE_KEY = "aftercode-share-customization";
 const PUBLIC_DATA_CACHE_KEY = "aftercode-share-public-data-v1";
+const SHOP_CACHE_PREFIX = "aftercode-share-shop-v1:";
 const APP_BASE_PATH = new URL(import.meta.env.BASE_URL, window.location.origin).pathname.replace(/\/$/, "");
 const DEFAULT_CUSTOMIZATION = {
   displayName: "Name",
@@ -152,6 +153,33 @@ function writePublicDataCache(updates) {
   }
 }
 
+function readShopCache(userId) {
+  if (!userId) return null;
+  try {
+    const cached = JSON.parse(window.localStorage.getItem(`${SHOP_CACHE_PREFIX}${userId}`) || "null");
+    if (!cached || !Number.isFinite(cached.balance) || !Array.isArray(cached.missions)) return null;
+    return cached;
+  } catch {
+    return null;
+  }
+}
+
+function writeShopCache(userId, shopData) {
+  if (!userId || !Number.isFinite(shopData.balance) || !Array.isArray(shopData.missions)) return;
+  try {
+    window.localStorage.setItem(`${SHOP_CACHE_PREFIX}${userId}`, JSON.stringify({
+      decorations: shopData.decorations ?? [],
+      balance: shopData.balance,
+      missions: shopData.missions,
+      dailyClaimedAt: shopData.dailyClaimedAt ?? null,
+      ownedIds: shopData.ownedIds ?? [],
+      updatedAt: Date.now()
+    }));
+  } catch {
+    // The live API remains the source of truth if browser storage is unavailable.
+  }
+}
+
 function normalizeCustomization(saved = {}) {
   const normalized = { ...DEFAULT_CUSTOMIZATION, ...saved };
   if (typeof saved.accentColor !== "string" || saved.accentColor.toLowerCase() === "#238a45") {
@@ -257,7 +285,10 @@ export default function App() {
   useEffect(() => {
     let active = true;
     const requestSequence = ++shopRefreshSequenceRef.current;
-    setShopData((current) => ({ ...current, loading: true, error: "", balance: null, dailyClaimedAt: null, ownedIds: [] }));
+    const cachedShop = readShopCache(user?.id);
+    setShopData(cachedShop
+      ? { ...cachedShop, error: "", loading: false }
+      : (current) => ({ ...current, loading: true, error: "", balance: null, dailyClaimedAt: null, ownedIds: [] }));
     apiRequest("/api/shop", { authenticated: Boolean(user) })
       .then((result) => {
         if (active && requestSequence === shopRefreshSequenceRef.current) {
@@ -271,6 +302,30 @@ export default function App() {
       });
     return () => { active = false; };
   }, [user?.id]);
+
+  useEffect(() => {
+    writeShopCache(user?.id, shopData);
+  }, [shopData, user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    const cacheKey = `${SHOP_CACHE_PREFIX}${user.id}`;
+    const syncFromOtherTab = (event) => {
+      if (event.key !== cacheKey) return;
+      const cachedShop = readShopCache(user.id);
+      const isAlreadyCurrent = cachedShop
+        && cachedShop.balance === shopData.balance
+        && JSON.stringify(cachedShop.missions) === JSON.stringify(shopData.missions)
+        && JSON.stringify(cachedShop.ownedIds) === JSON.stringify(shopData.ownedIds)
+        && JSON.stringify(cachedShop.decorations) === JSON.stringify(shopData.decorations);
+      if (cachedShop && !isAlreadyCurrent) {
+        shopRefreshSequenceRef.current += 1;
+        setShopData({ ...cachedShop, error: "", loading: false });
+      }
+    };
+    window.addEventListener("storage", syncFromOtherTab);
+    return () => window.removeEventListener("storage", syncFromOtherTab);
+  }, [shopData, user?.id]);
 
   const refreshShopData = async () => {
     const requestSequence = ++shopRefreshSequenceRef.current;
