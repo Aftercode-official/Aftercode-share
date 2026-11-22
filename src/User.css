@@ -92,10 +92,11 @@
 .profile-avatar .avatar-frame-overlay {
   position: absolute;
   z-index: 2;
-  top: -13%;
-  left: -27%;
+  top: 50%;
+  left: 50%;
   width: 154%;
   height: 126%;
+  transform: translate(-50%, -50%);
   border-radius: 0;
   object-fit: fill;
   pointer-events: none;

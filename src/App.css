@@ -388,10 +388,11 @@ a {
 .header-profile .header-avatar-frame {
   position: absolute;
   z-index: 2;
-  top: -13%;
-  left: -27%;
+  top: 50%;
+  left: 50%;
   width: 154%;
   height: 126%;
+  transform: translate(-50%, -50%);
   border-radius: 0;
   object-fit: fill;
   pointer-events: none;
@@ -1180,7 +1181,9 @@ a {
   }
 
   .header-right .header-profile {
-    width: 34px;
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 34px !important;
   }
 
   .main-feed-container {
