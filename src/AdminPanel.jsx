@@ -31,6 +31,8 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
   const [isLoadingDecorations, setIsLoadingDecorations] = useState(true);
   const [isCreatingDecoration, setIsCreatingDecoration] = useState(false);
   const [decorationRemoveId, setDecorationRemoveId] = useState("");
+  const [katCoinAmount, setKatCoinAmount] = useState("10000");
+  const [isGrantingKatCoins, setIsGrantingKatCoins] = useState(false);
 
   useEffect(() => {
     apiRequest("/api/admin/bans", { authenticated: true })
@@ -270,6 +272,26 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
     }
   };
 
+  const grantKatCoins = async (event) => {
+    event.preventDefault();
+    if (isGrantingKatCoins) return;
+    setIsGrantingKatCoins(true);
+    setFormError("");
+    setSuccessMessage("");
+    try {
+      const result = await apiRequest("/api/admin/kat-coin", {
+        method: "POST",
+        authenticated: true,
+        body: { amount: Number(katCoinAmount) }
+      });
+      setSuccessMessage(`Added ${Number(katCoinAmount).toLocaleString()} KC to your admin account. New balance: ${Number(result.balance).toLocaleString()} KC.`);
+    } catch (grantError) {
+      setFormError(grantError.message);
+    } finally {
+      setIsGrantingKatCoins(false);
+    }
+  };
+
   return (
     <section className="admin-panel">
       <header className="admin-panel-heading">
@@ -284,6 +306,13 @@ export default function AdminPanel({ projects, events, user, onToggleFeatured, o
       {successMessage && <p className="admin-panel-success" role="status">{successMessage}</p>}
 
       <div className="admin-tools-grid">
+        <form className="admin-tool-card admin-kat-coin-tool" onSubmit={grantKatCoins}>
+          <h2>Admin Kat Coins</h2>
+          <p>Add virtual Kat Coins to your own administrator wallet. Each grant is recorded in the coin ledger.</p>
+          <label>Amount to add<input required type="number" min="1" max="1000000000" step="1" value={katCoinAmount} onChange={(event) => setKatCoinAmount(event.target.value)} /></label>
+          <button className="admin-feature-button" type="submit" disabled={isGrantingKatCoins}>{isGrantingKatCoins ? "Adding..." : "Add Kat Coins to my account"}</button>
+        </form>
+
         <form className="admin-tool-card admin-event-tool" onSubmit={submitEvent}>
           <h2>Event notification</h2>
           <p>Create an event notice with its own date, location, and thumbnail.</p>
