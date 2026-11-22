@@ -717,7 +717,6 @@ export default function App() {
       }
       if (action === "like" || action === "favorite") {
         adjustMissionProgress(action === "like" ? "daily_like" : "daily_fav", details.enabled ? 1 : -1);
-        refreshShopData().catch(() => {});
       }
       Promise.all([loadActivities(), loadNotifications()]).catch(() => {});
       setDataError("");
@@ -740,7 +739,6 @@ export default function App() {
       setCustomization(nextCustomization);
       setIsCustomizeOpen(false);
       setMissionProgress("milestone_profile", nextCustomization.bio?.trim() && nextCustomization.avatarUrl?.trim() ? 1 : 0);
-      refreshShopData().catch(() => {});
       return true;
     } catch (error) {
       setCustomizationError(`Unable to save settings: ${error.message}`);
@@ -1375,7 +1373,6 @@ export default function App() {
           )}
           {page === "chat" && <ChatCenter user={user} avatarFrame={customization.avatarFrame} decorations={shopData.decorations} onSignIn={openAuthModal} onOpenProject={openProject} onOpenUserProfile={openUserProfile} onMessageSent={() => {
             adjustMissionProgress("daily_chat", 1);
-            refreshShopData().catch(() => {});
           }} />}
           {page === "shop" && (
             <ProfileShop
@@ -1480,7 +1477,6 @@ export default function App() {
               setPage("explore");
               setSelectedProject(null);
               Promise.all([loadProjects(), loadActivities()]).catch((error) => setDataError(error.message));
-              refreshShopData().catch(() => {});
             }}
           />
         </Suspense>
