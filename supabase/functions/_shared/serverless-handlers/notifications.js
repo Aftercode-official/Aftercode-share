@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    const { data, error } = await client
+    const { data: loadedNotifications, error } = await client
       .from("notifications")
       .select(NOTIFICATION_FIELDS)
       .eq("recipient_id", user.id)
@@ -39,8 +39,27 @@ export default async function handler(req, res) {
       .limit(30);
 
     if (error) throw error;
+    let data = loadedNotifications ?? [];
+    const eventNotifications = data.filter((notification) => notification.notification_type === "event");
+    const eventIds = [...new Set(eventNotifications.map((notification) => notification.event_id).filter(Boolean))];
+    const activeEventsResult = eventIds.length > 0
+      ? await client.from("events").select("id").in("id", eventIds)
+      : { data: [], error: null };
+    if (activeEventsResult.error) throw activeEventsResult.error;
+    const activeEventIds = new Set((activeEventsResult.data ?? []).map((event) => String(event.id)));
+    const staleEventNotificationIds = eventNotifications
+      .filter((notification) => !notification.event_id || !activeEventIds.has(String(notification.event_id)))
+      .map((notification) => notification.id);
+    if (staleEventNotificationIds.length > 0) {
+      const { error: cleanupError } = await client.from("notifications").delete()
+        .eq("recipient_id", user.id)
+        .in("id", staleEventNotificationIds);
+      if (cleanupError) throw cleanupError;
+      const staleIds = new Set(staleEventNotificationIds);
+      data = data.filter((notification) => !staleIds.has(notification.id));
+    }
     const actorIds = [...new Set(data.map((notification) => notification.actor_id).filter(Boolean))];
-    const eventIds = [...new Set(data
+    const validEventIds = [...new Set(data
       .filter((notification) => notification.notification_type === "event")
       .map((notification) => notification.event_id)
       .filter(Boolean))];
@@ -48,8 +67,8 @@ export default async function handler(req, res) {
       actorIds.length > 0
         ? client.from("profiles").select("user_id, avatar_url").in("user_id", actorIds)
         : Promise.resolve({ data: [], error: null }),
-      eventIds.length > 0
-        ? client.from("events").select("id, custom_css").in("id", eventIds)
+      validEventIds.length > 0
+        ? client.from("events").select("id, custom_css").in("id", validEventIds)
         : Promise.resolve({ data: [], error: null })
     ]);
     const { data: profiles, error: profilesError } = profilesResult;
