@@ -9,7 +9,7 @@ async function loadProfileComments(client, profileId) {
     .select("id, profile_user_id, parent_id, user_id, author, avatar_url, text, created_at")
     .eq("profile_user_id", profileId)
     .order("created_at", { ascending: false })
-    .limit(100);
+    .limit(500);
   if (error) throw error;
 
   const userIds = [...new Set((data ?? []).map((comment) => comment.user_id).filter(Boolean))];
@@ -80,11 +80,10 @@ export default async function handler(req, res) {
         .select("id")
         .eq("id", parentId)
         .eq("profile_user_id", profileId)
-        .is("parent_id", null)
         .maybeSingle();
       if (parentError) throw parentError;
       if (!parentComment) {
-        sendJson(res, 404, { error: "That profile comment cannot be replied to." });
+        sendJson(res, 404, { error: "That comment does not exist on this profile." });
         return;
       }
     }
