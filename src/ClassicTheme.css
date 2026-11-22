@@ -1371,6 +1371,35 @@ input[type="file"]::file-selector-button {
   box-shadow: none;
 }
 
+:root[data-site-style="classic"] .scratch-home .status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px !important;
+  border: 1px solid #83a9c2 !important;
+  border-radius: 999px !important;
+  background: linear-gradient(#ffffff, #deedf7) !important;
+  box-shadow: inset 0 1px #fff, 0 1px 2px rgb(31 74 101 / 18%) !important;
+  color: #245c7e !important;
+  font-size: 10px;
+  font-weight: 700;
+  text-shadow: none !important;
+  text-transform: none !important;
+}
+
+:root[data-site-style="classic"] .scratch-home .home-announcement-card .home-update-label {
+  display: inline-flex;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #2679b9 !important;
+  font-size: 9px;
+  font-weight: 700;
+  text-shadow: none !important;
+  text-transform: uppercase;
+}
+
 :root[data-site-style="classic"] .scratch-home .timeline-header h3 {
   color: #000 !important;
 }
