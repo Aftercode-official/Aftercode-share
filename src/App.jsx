@@ -1236,6 +1236,9 @@ export default function App() {
   }
 
   const activeAccentColor = siteStyle === "brutalist" ? customization.accentColor : "#2679b9";
+  const isUsername666Route = (page === "user" || page === "profile")
+    && profileRouteUsername.toLocaleLowerCase() === "username666";
+  const showSiteNotFound = page === "not-found" || (isUsername666Route && rawFleshEggStage === "not-found");
 
   return (
     <div
@@ -1465,9 +1468,9 @@ export default function App() {
           </div>
         </header>
         <main
-          className={`main-feed-container${page === "home" ? ` scratch-home${!isLoggedIn ? " guest-home" : ""}${events.length ? " has-home-events" : ""}` : ""}${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}${page === "shop" ? " shop-page-container" : ""}`}
+          className={`main-feed-container${page === "home" ? ` scratch-home${!isLoggedIn ? " guest-home" : ""}${events.length ? " has-home-events" : ""}` : ""}${!showSiteNotFound && (page === "profile" || page === "user") ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}${page === "shop" ? " shop-page-container" : ""}`}
         >
-          {page === "not-found" ? (
+          {showSiteNotFound ? (
             <NotFoundPage
               searchQuery={projectSearch}
               onSearchQueryChange={setProjectSearch}
@@ -1475,8 +1478,7 @@ export default function App() {
             />
           ) : (
             <>
-          {rawFleshEggStage && (page === "user" || page === "profile")
-            && profileRouteUsername.toLocaleLowerCase() === "username666"
+          {rawFleshEggStage && isUsername666Route
             && <RawFleshProfileStage stage={rawFleshEggStage} projects={projects} reloadCount={rawFleshReloadCount} />}
           <Suspense fallback={siteStyle === "classic"
             ? <LoadingScreen siteStyle={siteStyle} inline />
@@ -1884,9 +1886,6 @@ export default function App() {
 function RawFleshProfileStage({ stage, projects, reloadCount }) {
   if (stage === "guest") {
     return <section className="raw-egg-page raw-egg-not-found"><span>404</span><h1>Profile not found</h1><p>Sign in to view this profile.</p></section>;
-  }
-  if (stage === "not-found") {
-    return <section className="raw-egg-page raw-egg-not-found" style={{ "--egg-contrast": Math.min(2.2, 1 + Math.max(0, reloadCount - 10) * 0.12) }}><span>404</span><h1>This profile could not be found.</h1></section>;
   }
   if (stage === "haunted") {
     return (
