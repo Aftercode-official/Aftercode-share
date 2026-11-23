@@ -1891,6 +1891,7 @@ function RawFleshExperience({ elapsed, onCrash, onCrashComplete, reloadCount }) 
   const crashHandled = useRef(false);
 
   useEffect(() => {
+    if (crashed) return;
     document.body.classList.add("raw-flesh-active");
     const startedAt = Date.now();
     const heartbeat = new Audio(RawFleshHeartbeat);
@@ -1922,10 +1923,11 @@ function RawFleshExperience({ elapsed, onCrash, onCrashComplete, reloadCount }) 
       window.clearInterval(ramp);
       window.removeEventListener("pointerdown", resumeHeartbeatAfterInteraction);
       window.removeEventListener("keydown", resumeHeartbeatAfterInteraction);
+      heartbeat.loop = false;
       heartbeat.pause();
       heartbeat.src = "";
     };
-  }, []);
+  }, [crashed]);
 
   useEffect(() => {
     if (!crashed || crashHandled.current) return;
