@@ -22,7 +22,7 @@
   min-height: 68vh;
   padding: 2rem;
   color: var(--text-primary, #fff);
-  background: none;
+  background: var(--raw-flesh-background, url("./assets/images.png")) center/cover no-repeat;
   animation: none;
   filter: contrast(var(--egg-contrast, 1));
 }
