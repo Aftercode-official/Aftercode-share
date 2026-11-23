@@ -9,6 +9,10 @@ const AuthModal = lazy(() => import("./AuthModal.jsx"));
 const UploadProjectModal = lazy(() => import("./UploadProjectModal.jsx"));
 import LogoIcon from "./assets/Logo.png";
 import BearAvatarFrame from "./assets/bear-avatar-frame.png";
+import RawHorrorGif from "./assets/horror.gif";
+import RawRivGif from "./assets/Riv1cf.gif";
+import RawFleshBackground from "./assets/images.png";
+import RawFleshHand from "./assets/hand.png";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
 const ChatCenter = lazy(() => import("./ChatCenter.jsx"));
 const AdminPanel = lazy(() => import("./AdminPanel.jsx"));
@@ -973,7 +977,7 @@ export default function App() {
         window.localStorage.setItem(`${RAW_FLESH_REWARD_PREFIX}${user.id}`, "true");
         window.localStorage.setItem(`${RAW_FLESH_RELOAD_PREFIX}${user.id}`, "15");
       }
-    }} />;
+    }} projects={projects} />;
   }
 
   return (
@@ -1570,19 +1574,29 @@ function RawFleshProfileStage({ stage, projects, onEnterTheme }) {
   if (stage === "not-found") {
     return <section className="raw-egg-page raw-egg-not-found"><span>404</span><h1>This profile could not be found.</h1></section>;
   }
+  if (stage === "haunted") {
+    return (
+      <section className="raw-egg-page raw-egg-not-found is-haunted">
+        <img className="raw-egg-glitch-image" src={RawHorrorGif} alt="" />
+        <span>404</span><h1>This profile could not be found.</h1>
+        <p className="raw-egg-glitch-copy">666</p>
+      </section>
+    );
+  }
   const unlocked = stage === "unlocked";
   return (
     <section className={`raw-egg-page raw-egg-profile${unlocked ? " is-unlocked" : " is-haunted"}`}>
-      <div className="raw-egg-banner" style={{ backgroundImage: `url("${import.meta.env.BASE_URL}images.png")` }} />
+      <div className="raw-egg-banner" style={{ backgroundImage: `url("${RawFleshBackground}")` }} />
       <div className="raw-egg-identity">
         <div className="raw-egg-avatar">666</div>
         <div><h1>username666</h1><p>@username666</p></div>
       </div>
       <p className="raw-egg-about">666</p>
       <div className="raw-egg-projects">
-        {(projects.length ? projects.slice(0, 4) : [1, 2, 3]).map((project, index) => (
+        {(projects.length ? projects.slice(0, 8) : [1, 2, 3]).map((project, index) => (
           <div className="raw-egg-project" key={project.id ?? index}>
-            <img src={`${import.meta.env.BASE_URL}${index % 2 ? "riv1cf.gif" : "horror.gif"}`} alt="666" />
+            <img src={index % 2 ? RawRivGif : RawHorrorGif} alt="666" loading="lazy" />
+            <span className="raw-egg-avatar">666</span>
             <strong>666</strong>
           </div>
         ))}
@@ -1592,7 +1606,7 @@ function RawFleshProfileStage({ stage, projects, onEnterTheme }) {
   );
 }
 
-function RawFleshExperience({ elapsed, onCrash }) {
+function RawFleshExperience({ elapsed, onCrash, projects }) {
   const crashed = elapsed >= 120;
   const crashHandled = useRef(false);
 
@@ -1649,13 +1663,18 @@ function RawFleshExperience({ elapsed, onCrash }) {
   const imageCount = Math.max(6, Math.min(24, 8 + Math.floor(elapsed / 4)));
   return (
     <main className={`raw-flesh-screen${elapsed >= 60 ? " is-awakening" : ""}${crashed ? " is-crashed" : ""}`} style={{ "--flesh-intensity": Math.min(1, Math.max(0, (elapsed - 60) / 60)) }}>
-      <div className="raw-flesh-wallpaper" style={{ backgroundImage: `url("${import.meta.env.BASE_URL}images.png")`, opacity: 0.2 + Math.min(1, Math.max(0, (elapsed - 60) / 60)) * 0.8 }} />
+      <div className="raw-flesh-wallpaper" style={{ backgroundImage: `url("${RawFleshBackground}")`, opacity: 0.2 + Math.min(1, Math.max(0, (elapsed - 60) / 60)) * 0.8 }} />
       <div className="raw-flesh-noise" aria-hidden="true" style={{ opacity: 0.04 + Math.min(1, Math.max(0, (elapsed - 60) / 60)) * 0.5 }} />
       <div className="raw-flesh-copy" aria-hidden="true">{Array.from({ length: imageCount }, (_, index) => <span key={index}>666 666 666 666 666 666 666 666</span>)}</div>
-      {Array.from({ length: Math.max(3, Math.min(12, Math.ceil(elapsed / 8))) }, (_, index) => (
-        <img className={`raw-flesh-image raw-flesh-image-${index % 2}`} key={index} src={`${import.meta.env.BASE_URL}${index % 2 ? "riv1cf.gif" : "horror.gif"}`} alt="666" />
-      ))}
-      {elapsed >= 60 && <img className="raw-flesh-hand" src={`${import.meta.env.BASE_URL}hand.png`} alt="" />}
+      <div className="raw-flesh-project-wall" aria-hidden="true">
+        {(projects.length ? projects.slice(0, 8) : [1, 2, 3, 4]).map((project, index) => (
+          <div className="raw-flesh-project-tile" key={project.id ?? index}>
+            <img src={index % 2 ? RawRivGif : RawHorrorGif} alt="666" loading="lazy" />
+            <span className="raw-flesh-user-avatar">666</span><strong>666</strong>
+          </div>
+        ))}
+      </div>
+      {elapsed >= 60 && <img className="raw-flesh-hand" src={RawFleshHand} alt="" />}
       <div className="raw-flesh-status">{crashed ? "666" : "666  •  666"}</div>
       {crashed && <div className="raw-flesh-crash"><strong>666</strong><button type="button" onClick={() => window.location.reload()}>666</button></div>}
     </main>
