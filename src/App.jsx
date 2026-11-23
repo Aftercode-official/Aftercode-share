@@ -822,6 +822,20 @@ export default function App() {
   }, [page, selectedProject?.databaseId, user]);
 
   useEffect(() => {
+    if (page !== "project" || !selectedProject?.databaseId) return undefined;
+    const refreshProjectComments = () => {
+      if (document.visibilityState === "hidden") return;
+      loadProjectInteraction(selectedProject).catch(() => {});
+    };
+    const timer = window.setInterval(refreshProjectComments, 15000);
+    document.addEventListener("visibilitychange", refreshProjectComments);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshProjectComments);
+    };
+  }, [loadProjectInteraction, page, selectedProject?.databaseId]);
+
+  useEffect(() => {
     const projectId = getProjectIdFromUrl(window.location.href);
     if (!projectId || page !== "project" || selectedProject?.databaseId === projectId) return undefined;
     let isActive = true;
@@ -1165,21 +1179,25 @@ export default function App() {
   useEffect(() => {
     if (!user) return undefined;
     let isRefreshing = false;
-    const refreshUnreadNotifications = async () => {
+    const refreshSocialData = async () => {
       if (isRefreshing || document.visibilityState === "hidden") return;
       isRefreshing = true;
       try {
-        const { notifications: records } = await apiRequest("/api/notifications", { authenticated: true });
-        setNotifications(records);
+        const [notificationResult, activityResult] = await Promise.all([
+          apiRequest("/api/notifications", { authenticated: true }),
+          apiRequest("/api/activity", { authenticated: true })
+        ]);
+        setNotifications(notificationResult.notifications);
+        setActivities(activityResult.activities);
       } catch {
         // Keep the last known badge count if a background refresh temporarily fails.
       } finally {
         isRefreshing = false;
       }
     };
-    const timer = window.setInterval(refreshUnreadNotifications, 15000);
+    const timer = window.setInterval(refreshSocialData, 15000);
     const refreshWhenVisible = () => {
-      if (document.visibilityState === "visible") refreshUnreadNotifications();
+      if (document.visibilityState === "visible") refreshSocialData();
     };
     document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {
@@ -1224,6 +1242,20 @@ export default function App() {
           window.localStorage.setItem(`${RAW_FLESH_REWARD_PREFIX}${user.id}`, "true");
           window.localStorage.removeItem(`${RAW_FLESH_RELOAD_PREFIX}${user.id}`);
           window.localStorage.removeItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`);
+          const rewardCustomization = { ...customization, avatarFrame: RAW_FLESH_FRAME_ID };
+          setCustomization(rewardCustomization);
+          writeCustomizationCache(user.id, rewardCustomization);
+          persistCustomization(rewardCustomization).then((saved) => {
+            const normalized = normalizeCustomization(saved);
+            setCustomization(normalized);
+            writeCustomizationCache(user.id, normalized);
+            Promise.all([
+              loadActivities(),
+              selectedProject ? loadProjectInteraction(selectedProject) : Promise.resolve()
+            ]).catch(() => {});
+          }).catch(() => {
+            // Keep the frame equipped locally and retry syncing it on the next profile load.
+          });
         }
         window.localStorage.setItem(THEME_STORAGE_KEY, "dark");
         const url = new URL(window.location.href);
