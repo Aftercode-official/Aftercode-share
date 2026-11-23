@@ -14,6 +14,7 @@ import RawRivGif from "./assets/Riv1cf.gif";
 import RawFleshBackground from "./assets/images.png";
 import RawFleshHand from "./assets/hand.png";
 import RawFleshHandMoving from "./assets/alt.png";
+import RawFleshStatic from "./assets/static.gif";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
 const ChatCenter = lazy(() => import("./ChatCenter.jsx"));
 const AdminPanel = lazy(() => import("./AdminPanel.jsx"));
@@ -1837,14 +1838,16 @@ function RawFleshExperience({ elapsed, onCrash, reloadCount }) {
     link.download = "666.txt";
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    window.setTimeout(() => window.close(), 2500);
   }, [crashed, onCrash]);
 
   return (
     <div className={`raw-flesh-ambience${elapsed >= 30 ? " is-awakening" : ""}${crashed ? " is-crashed" : ""}`} style={{ "--flesh-intensity": Math.min(1, Math.max(0, (elapsed - 30) / 60)), filter: `contrast(${Math.min(2.2, 1 + Math.max(0, reloadCount - 10) * 0.12)})${crashed ? " saturate(1.8) brightness(.55)" : ""}` }}>
+      {elapsed >= 30 && <img className="raw-flesh-static" src={RawFleshStatic} alt="" style={{ opacity: Math.min(0.72, Math.max(0, (elapsed - 30) / 90 * 0.72)) }} />}
       <div className="raw-flesh-noise" aria-hidden="true" style={{ opacity: 0.04 + Math.min(1, Math.max(0, (elapsed - 30) / 60)) * 0.5 }} />
       {elapsed >= 30 && <img className="raw-flesh-hand" src={elapsed < 32 ? RawFleshHandMoving : RawFleshHand} alt="" />}
       <div className="raw-flesh-status">{crashed ? "666" : "666  •  666"}</div>
-      {crashed && <div className="raw-flesh-crash"><strong>666</strong><span>RELOAD TO RETURN</span></div>}
+      {crashed && <div className="raw-flesh-crash"><strong>666</strong><span>CLOSE THIS TAB • OPEN AFTERCODE AGAIN</span></div>}
     </div>
   );
 }
