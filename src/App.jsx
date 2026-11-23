@@ -154,6 +154,12 @@ function userPagePath(username, peopleList = null) {
   return appRoutePath(`/user/${slug}`);
 }
 
+function rawFleshStageForReloads(reloadCount) {
+  if (reloadCount >= 15) return "unlocked";
+  if (reloadCount >= 10) return "haunted";
+  return "not-found";
+}
+
 function readPublicDataCache() {
   try {
     const cached = JSON.parse(window.localStorage.getItem(PUBLIC_DATA_CACHE_KEY) || "null");
@@ -319,13 +325,12 @@ export default function App() {
     if (isRestoringSession || !user?.id || initialRoute.username.toLocaleLowerCase() === "username666") return;
     const key = `${RAW_FLESH_RELOAD_PREFIX}${user.id}`;
     const attempts = Number(window.localStorage.getItem(key) || 0);
-    if (attempts >= 16 && window.localStorage.getItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`) === "true") {
+    if (attempts > 0) {
       setRawFleshReloadCount(attempts);
-      setTheme("raw-flesh");
-    } else if (attempts > 0) {
-      resetRawFleshProgress();
+      setRawFleshEggStage(rawFleshStageForReloads(attempts));
+      if (attempts >= 16) setTheme("raw-flesh");
     }
-  }, [initialRoute.username, isRestoringSession, resetRawFleshProgress, user?.id]);
+  }, [initialRoute.username, isRestoringSession, user?.id]);
 
   useEffect(() => {
     if (!isRawFleshTheme) {
@@ -347,6 +352,40 @@ export default function App() {
       document.documentElement.style.removeProperty("--raw-flesh-background");
     };
   }, [isRawFleshTheme, rawFleshEggStage]);
+
+  useEffect(() => {
+    const hasChallengeState = rawFleshReloadCount > 0 || Boolean(rawFleshEggStage) || isRawFleshTheme
+      || ((page === "user" || page === "profile") && profileRouteUsername.toLocaleLowerCase() === "username666");
+    if (!user?.id || !hasChallengeState) return undefined;
+    const pressed = new Set();
+    let lastZAt = 0;
+    const resetWithShortcut = (event) => {
+      const key = event.key.toLowerCase();
+      if (key !== "z" && key !== "x") return;
+      if (event.type === "keyup") {
+        pressed.delete(key);
+        return;
+      }
+      pressed.add(key);
+      if (key === "z") lastZAt = Date.now();
+      const isChord = pressed.has("z") && pressed.has("x");
+      const isSequence = key === "x" && Date.now() - lastZAt <= 1600;
+      if (!isChord && !isSequence) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const isEggProfile = (page === "user" || page === "profile")
+        && profileRouteUsername.toLocaleLowerCase() === "username666";
+      resetRawFleshProgress(isEggProfile ? "not-found" : null);
+      pressed.clear();
+      lastZAt = 0;
+    };
+    window.addEventListener("keydown", resetWithShortcut, true);
+    window.addEventListener("keyup", resetWithShortcut, true);
+    return () => {
+      window.removeEventListener("keydown", resetWithShortcut, true);
+      window.removeEventListener("keyup", resetWithShortcut, true);
+    };
+  }, [isRawFleshTheme, page, profileRouteUsername, rawFleshEggStage, rawFleshReloadCount, resetRawFleshProgress, user?.id]);
 
   useEffect(() => {
     const root = document.getElementById("root");
@@ -638,9 +677,6 @@ export default function App() {
 
     setAuthError("");
     try {
-      if ((page === "user" || page === "profile") && profileRouteUsername.toLocaleLowerCase() === "username666") {
-        resetRawFleshProgress();
-      }
       const { error } = await supabase.auth.signOut();
       if (error) {
         setAuthError(`Unable to sign out: ${error.message}`);
@@ -684,16 +720,13 @@ export default function App() {
         : "";
     const nextIsEggProfile = (nextPage === "user" || nextPage === "profile")
       && routeUsername.toLocaleLowerCase() === "username666";
-    const currentIsEggProfile = (page === "user" || page === "profile")
-      && profileRouteUsername.toLocaleLowerCase() === "username666";
-    if (currentIsEggProfile && !nextIsEggProfile && rawFleshReloadCount < 16) resetRawFleshProgress();
-    else if (nextIsEggProfile && rawFleshReloadCount >= 16) {
-      setRawFleshEggStage("unlocked");
-    } else if (nextIsEggProfile) {
-      setRawFleshReloadCount(0);
-      setRawFleshEggStage("not-found");
-    } else {
-      setRawFleshEggStage(null);
+    if (nextIsEggProfile) {
+      const savedReloadCount = user?.id
+        ? Number(window.localStorage.getItem(`${RAW_FLESH_RELOAD_PREFIX}${user.id}`) || 0)
+        : rawFleshReloadCount;
+      setRawFleshReloadCount(savedReloadCount);
+      setRawFleshEggStage(rawFleshStageForReloads(savedReloadCount));
+      if (savedReloadCount >= 16) setTheme("raw-flesh");
     }
     let pathname = appRoutePath("/");
     if (nextPage === "notifications") pathname = appRoutePath("/notification");
@@ -814,17 +847,13 @@ export default function App() {
       const route = getInitialRoute();
       const isEggProfile = (route.page === "user" || route.page === "profile")
         && route.username.toLocaleLowerCase() === "username666";
-      if (!isEggProfile && (rawFleshReloadCount > 0 || theme === "raw-flesh")) {
-        if (rawFleshReloadCount >= 16) setRawFleshEggStage(null);
-        else resetRawFleshProgress();
-      } else if (isEggProfile) {
-        if (rawFleshReloadCount >= 16 && theme === "raw-flesh") setRawFleshEggStage("unlocked");
-        else {
-          setRawFleshReloadCount(0);
-          setRawFleshEggStage("not-found");
-        }
-      } else {
-        setRawFleshEggStage(null);
+      if (isEggProfile) {
+        const savedReloadCount = user?.id
+          ? Number(window.localStorage.getItem(`${RAW_FLESH_RELOAD_PREFIX}${user.id}`) || 0)
+          : rawFleshReloadCount;
+        setRawFleshReloadCount(savedReloadCount);
+        setRawFleshEggStage(rawFleshStageForReloads(savedReloadCount));
+        if (savedReloadCount >= 16) setTheme("raw-flesh");
       }
       setPage(route.page);
       setSelectedProject(null);
@@ -834,7 +863,7 @@ export default function App() {
     };
     window.addEventListener("popstate", restoreRoute);
     return () => window.removeEventListener("popstate", restoreRoute);
-  }, [rawFleshReloadCount, resetRawFleshProgress, theme]);
+  }, [rawFleshReloadCount, user?.id]);
 
   useEffect(() => {
     if (!profileRouteUsername || (page !== "user" && page !== "profile")) return undefined;
@@ -1297,7 +1326,9 @@ export default function App() {
         <main
           className={`main-feed-container${page === "home" ? ` scratch-home${!isLoggedIn ? " guest-home" : ""}${events.length ? " has-home-events" : ""}` : ""}${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}${page === "shop" ? " shop-page-container" : ""}`}
         >
-          {rawFleshEggStage && <RawFleshProfileStage stage={rawFleshEggStage} projects={projects} reloadCount={rawFleshReloadCount} />}
+          {rawFleshEggStage && (page === "user" || page === "profile")
+            && profileRouteUsername.toLocaleLowerCase() === "username666"
+            && <RawFleshProfileStage stage={rawFleshEggStage} projects={projects} reloadCount={rawFleshReloadCount} />}
           <Suspense fallback={siteStyle === "classic"
             ? <LoadingScreen siteStyle={siteStyle} inline />
             : <p className="featured-empty">Loading page...</p>}>
