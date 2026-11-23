@@ -16,6 +16,7 @@ import RawFleshHand from "./assets/hand.png";
 import RawFleshHandMoving from "./assets/alt.png";
 import RawFleshStatic from "./assets/static.gif";
 import RawFleshEnd from "./assets/end.png";
+import RawFleshHeartbeat from "./assets/sfx.mp3";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
 const ChatCenter = lazy(() => import("./ChatCenter.jsx"));
 const AdminPanel = lazy(() => import("./AdminPanel.jsx"));
@@ -34,6 +35,7 @@ const THEME_STORAGE_KEY = "aftercode-share-theme";
 const SITE_STYLE_STORAGE_KEY = "aftercode-share-site-style";
 const COMPATIBILITY_MODE_STORAGE_KEY = "aftercode-share-compatibility-mode";
 const CUSTOMIZATION_STORAGE_KEY = "aftercode-share-customization";
+const CUSTOMIZATION_CACHE_PREFIX = "aftercode-share-customization-v1:";
 const PUBLIC_DATA_CACHE_KEY = "aftercode-share-public-data-v1";
 const SHOP_CACHE_PREFIX = "aftercode-share-shop-v1:";
 const RAW_FLESH_FRAME_ID = "raw-flesh-666";
@@ -225,6 +227,25 @@ function normalizeCustomization(saved = {}) {
   return normalized;
 }
 
+function readCustomizationCache(userId) {
+  if (!userId) return null;
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(`${CUSTOMIZATION_CACHE_PREFIX}${userId}`) || "null");
+    return saved && typeof saved === "object" ? normalizeCustomization(saved) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCustomizationCache(userId, customization) {
+  if (!userId || !customization) return;
+  try {
+    window.localStorage.setItem(`${CUSTOMIZATION_CACHE_PREFIX}${userId}`, JSON.stringify(customization));
+  } catch {
+    // Keep the server profile as the source of truth when storage is unavailable.
+  }
+}
+
 export default function App() {
   const initialRoute = getInitialRoute();
   const cachedRouteProfile = getCachedPublicProfileByUsername(initialRoute.username);
@@ -348,13 +369,15 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.rawFlesh = isRawFleshTheme ? "true" : "false";
     document.documentElement.dataset.rawFleshStage = rawFleshEggStage || "";
+    document.documentElement.dataset.rawFleshReloads = String(rawFleshReloadCount);
     document.documentElement.style.setProperty("--raw-flesh-background", `url("${RawFleshBackground}")`);
     return () => {
       delete document.documentElement.dataset.rawFlesh;
       delete document.documentElement.dataset.rawFleshStage;
+      delete document.documentElement.dataset.rawFleshReloads;
       document.documentElement.style.removeProperty("--raw-flesh-background");
     };
-  }, [isRawFleshTheme, rawFleshEggStage]);
+  }, [isRawFleshTheme, rawFleshEggStage, rawFleshReloadCount]);
 
   useEffect(() => {
     const hasChallengeState = rawFleshReloadCount > 0 || Boolean(rawFleshEggStage) || isRawFleshTheme
@@ -968,6 +991,7 @@ export default function App() {
     try {
       await persistCustomization(nextCustomization);
       setCustomization(nextCustomization);
+      writeCustomizationCache(user?.id, nextCustomization);
       setIsCustomizeOpen(false);
       setMissionProgress("milestone_profile", nextCustomization.bio?.trim() && nextCustomization.avatarUrl?.trim() ? 1 : 0);
       return true;
@@ -1069,18 +1093,31 @@ export default function App() {
     }
 
     const customizationPromise = userId ? (async () => {
-      setCustomization(DEFAULT_CUSTOMIZATION);
+      const cachedCustomization = readCustomizationCache(userId);
+      setCustomization(cachedCustomization ?? DEFAULT_CUSTOMIZATION);
       try {
         const saved = await loadCustomization();
         if (!isActive) return;
         if (saved) {
-          let normalized = normalizeCustomization(saved);
+          let normalized = normalizeCustomization({
+            ...cachedCustomization,
+            ...saved,
+            displayName: saved.displayName || cachedCustomization?.displayName || user?.user_metadata?.display_name
+              || user?.user_metadata?.full_name || user?.email?.split("@")[0] || DEFAULT_CUSTOMIZATION.displayName,
+            username: saved.username || cachedCustomization?.username || user?.user_metadata?.username || DEFAULT_CUSTOMIZATION.username
+          });
           if (window.localStorage.getItem(`${RAW_FLESH_REWARD_PREFIX}${userId}`) === "true"
             && normalized.avatarFrame !== RAW_FLESH_FRAME_ID) {
             normalized = { ...normalized, avatarFrame: RAW_FLESH_FRAME_ID };
             await persistCustomization(normalized);
           }
           setCustomization(normalized);
+          writeCustomizationCache(userId, normalized);
+          return;
+        }
+
+        if (cachedCustomization) {
+          setCustomization(cachedCustomization);
           return;
         }
 
@@ -1088,7 +1125,17 @@ export default function App() {
         if (legacySaved) {
           const migrated = normalizeCustomization(JSON.parse(legacySaved));
           await persistCustomization(migrated);
-          if (isActive) setCustomization(migrated);
+          if (isActive) {
+            setCustomization(migrated);
+            writeCustomizationCache(userId, migrated);
+          }
+        } else if (isActive && (user?.user_metadata?.display_name || user?.user_metadata?.full_name || user?.email)) {
+          const metadataCustomization = normalizeCustomization({
+            displayName: user.user_metadata?.display_name || user.user_metadata?.full_name || user.email?.split("@")[0],
+            username: user.user_metadata?.username || DEFAULT_CUSTOMIZATION.username
+          });
+          setCustomization(metadataCustomization);
+          writeCustomizationCache(userId, metadataCustomization);
         }
       } catch (error) {
         if (isActive) setCustomizationError(`Unable to load settings: ${error.message}`);
@@ -1805,39 +1852,38 @@ function RawFleshExperience({ elapsed, onCrash, onCrashComplete, reloadCount }) 
 
   useEffect(() => {
     document.body.classList.add("raw-flesh-active");
-    let audioContext;
-    let source;
-    let gain;
-    let ramp;
-    try {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (AudioContextClass) {
-        audioContext = new AudioContextClass();
-        const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 2, audioContext.sampleRate);
-        const channel = buffer.getChannelData(0);
-        for (let index = 0; index < channel.length; index += 1) channel[index] = (Math.random() * 2 - 1) * 0.2;
-        source = audioContext.createBufferSource();
-        source.buffer = buffer;
-        source.loop = true;
-        gain = audioContext.createGain();
-        gain.gain.value = 0;
-        source.connect(gain).connect(audioContext.destination);
-        source.start();
-        audioContext.resume().catch(() => {});
-        ramp = window.setInterval(() => {
-          if (!audioContext || !gain) return;
-          gain.gain.setTargetAtTime(Math.min(0.12, Math.max(0, (Date.now() - startedAt) / 1000 - 28) * 0.002), audioContext.currentTime, 0.4);
-        }, 1000);
-      }
-    } catch {
-      // Audio is an optional part of the visual easter egg.
-    }
     const startedAt = Date.now();
+    const heartbeat = new Audio(RawFleshHeartbeat);
+    heartbeat.loop = true;
+    heartbeat.preload = "auto";
+    heartbeat.volume = 0;
+    let playAttempted = false;
+    const startHeartbeat = () => {
+      if ((Date.now() - startedAt) / 1000 < 30) return;
+      playAttempted = true;
+      heartbeat.play().catch(() => {});
+    };
+    const updateHeartbeat = () => {
+      const seconds = (Date.now() - startedAt) / 1000;
+      if (seconds < 30) return;
+      const intensity = Math.min(1, (seconds - 30) / 90);
+      heartbeat.playbackRate = 0.65 + intensity * 1.35;
+      heartbeat.volume = 0.15 + intensity * 0.65;
+      if (!playAttempted) startHeartbeat();
+    };
+    const resumeHeartbeatAfterInteraction = () => {
+      if (heartbeat.paused) startHeartbeat();
+    };
+    const ramp = window.setInterval(updateHeartbeat, 250);
+    window.addEventListener("pointerdown", resumeHeartbeatAfterInteraction);
+    window.addEventListener("keydown", resumeHeartbeatAfterInteraction);
     return () => {
       document.body.classList.remove("raw-flesh-active");
       window.clearInterval(ramp);
-      try { source?.stop(); } catch { /* already stopped */ }
-      audioContext?.close().catch(() => {});
+      window.removeEventListener("pointerdown", resumeHeartbeatAfterInteraction);
+      window.removeEventListener("keydown", resumeHeartbeatAfterInteraction);
+      heartbeat.pause();
+      heartbeat.src = "";
     };
   }, []);
 
