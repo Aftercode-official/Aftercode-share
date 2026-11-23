@@ -6,6 +6,7 @@ import { supabase } from "./supabase.js";
 import { validateScratchProjectFile } from "./scratchProjectFile.js";
 import { projectShareUrl } from "./projectLinks.js";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
+import NotFoundPage from "./NotFoundPage.jsx";
 import BearAvatarFrame from "./assets/bear-avatar-frame.png";
 
 const EMOJI_GROUPS = [
@@ -94,57 +95,11 @@ export default function ProjectPages({
 
   if (view === "project" && !selectedProject) {
     return (
-      <div className="explore-page">
-        <div className="explore-heading" style={{ textAlign: "center", padding: "4rem 1rem", maxWidth: "600px", margin: "0 auto" }}>
-          <div style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "2.5rem", letterSpacing: "2px", color: "var(--text-primary)" }}>
-            <span style={{ color: "var(--text-primary)" }}>AFTER</span><span style={{ color: "var(--accent-color, #ffb700)" }}>CODE</span>
-          </div>
-          <div style={{ margin: "2rem auto", width: "100%", maxWidth: "450px" }}>
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => onSearchQueryChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") onBack();
-              }}
-              style={{
-                width: "100%",
-                padding: "0.8rem 1.2rem",
-                borderRadius: "8px",
-                border: "1px solid var(--border-color)",
-                background: "var(--bg-card)",
-                color: "var(--text-primary)",
-                fontSize: "1rem",
-                boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-                textAlign: "center"
-              }}
-            />
-          </div>
-          <h1 style={{ fontSize: "1.8rem", fontWeight: "700", marginBottom: "0.5rem", color: "var(--text-primary)" }}>Page not found</h1>
-          <p style={{ color: "var(--text-muted)", fontSize: "0.95rem", lineHeight: "1.5" }}>
-            Looks like the page you are looking for doesn't exsits,<br />
-            how about search something else?
-          </p>
-          <button
-            type="button"
-            onClick={onBack}
-            style={{
-              marginTop: "1.5rem",
-              padding: "0.7rem 1.5rem",
-              borderRadius: "10px",
-              border: "none",
-              background: "var(--accent-color, #ffb700)",
-              color: "#171513",
-              fontWeight: "700",
-              cursor: "pointer",
-              fontSize: "0.95rem"
-            }}
-          >
-            Back to Explore
-          </button>
-        </div>
-      </div>
+      <NotFoundPage
+        searchQuery={searchQuery}
+        onSearchQueryChange={onSearchQueryChange}
+        onSearchSubmit={onBack}
+      />
     );
   }
 

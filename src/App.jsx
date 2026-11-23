@@ -27,6 +27,7 @@ import { getProjectIdFromUrl, projectShareUrl } from "./projectLinks.js";
 import "./App.css";
 import { isAdminUserId } from "../shared/adminUsers.js";
 import LoadingScreen from "./LoadingScreen.jsx";
+import NotFoundPage from "./NotFoundPage.jsx";
 import "./BrutalistTheme.css";
 import "./ClassicTheme.css";
 import "./AvatarFrames.css";
@@ -130,6 +131,9 @@ function getInitialRoute() {
   const parts = routePathFromLocation(window.location.pathname).split("/").filter(Boolean).map((part) => {
     try { return decodeURIComponent(part); } catch { return part; }
   });
+  if (parts.length === 0) {
+    return { page: "home", username: "", peopleList: null };
+  }
   if (parts.length === 1 && parts[0] === "notification") {
     return { page: "notifications", username: "", peopleList: null };
   }
@@ -149,7 +153,12 @@ function getInitialRoute() {
   if (parts[0] && ["follower", "following"].includes(parts[1])) {
     return { page: "user", username: parts[0], peopleList: parts[1] === "follower" ? "followers" : "following" };
   }
-  return { page: "home", username: "", peopleList: null };
+  // If it's username666, let it handle the egg route
+  if (parts.length === 1 && parts[0].toLocaleLowerCase() === "username666") {
+    return { page: "user", username: "username666", peopleList: null };
+  }
+  // Any other unknown path is a 404 page not found
+  return { page: "not-found", username: "", peopleList: null };
 }
 
 function userPagePath(username, peopleList = null) {
@@ -1458,6 +1467,14 @@ export default function App() {
         <main
           className={`main-feed-container${page === "home" ? ` scratch-home${!isLoggedIn ? " guest-home" : ""}${events.length ? " has-home-events" : ""}` : ""}${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}${page === "shop" ? " shop-page-container" : ""}`}
         >
+          {page === "not-found" ? (
+            <NotFoundPage
+              searchQuery={projectSearch}
+              onSearchQueryChange={setProjectSearch}
+              onSearchSubmit={() => navigateTo("explore")}
+            />
+          ) : (
+            <>
           {rawFleshEggStage && (page === "user" || page === "profile")
             && profileRouteUsername.toLocaleLowerCase() === "username666"
             && <RawFleshProfileStage stage={rawFleshEggStage} projects={projects} reloadCount={rawFleshReloadCount} />}
@@ -1816,6 +1833,8 @@ export default function App() {
             />
           )}
           </Suspense>
+            </>
+          )}
         </main>
         <footer className="site-footer">
           <span>© {new Date().getFullYear()} Aftercode</span>

@@ -42,7 +42,10 @@
   filter: contrast(var(--egg-contrast, 1));
 }
 
-.raw-egg-not-found.is-haunted { animation: raw-egg-flicker 1.7s steps(2, end) infinite; }
+.raw-egg-not-found.is-haunted {
+  background: var(--raw-flesh-background, url("./assets/images.png")) center/cover no-repeat;
+  animation: raw-egg-flicker 1.7s steps(2, end) infinite;
+}
 .raw-egg-glitch-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .2; mix-blend-mode: screen; }
 .raw-egg-glitch-copy { position: absolute; color: #f00; font-size: clamp(3rem, 12vw, 9rem); animation: raw-egg-glitch 1.7s steps(2, end) infinite; }
 .raw-egg-profile { min-height: 70vh; }
