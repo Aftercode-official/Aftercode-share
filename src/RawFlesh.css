@@ -205,7 +205,59 @@ body.raw-flesh-active {
 :root[data-site-style] .header-profile[data-avatar-frame="raw-flesh-666"],
 :root[data-site-style] .chat-avatar-link[data-avatar-frame="raw-flesh-666"],
 :root[data-site-style] .project-comment-avatar-btn[data-avatar-frame="raw-flesh-666"],
-:root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="raw-flesh-666"] { border: 3px solid #f12 !important; border-radius: 50% !important; }
+:root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="raw-flesh-666"] {
+  position: relative;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  isolation: isolate;
+}
+
+:root[data-site-style] .profile-avatar[data-avatar-frame="raw-flesh-666"]::before,
+:root[data-site-style] .header-profile[data-avatar-frame="raw-flesh-666"]::before,
+:root[data-site-style] .chat-avatar-link[data-avatar-frame="raw-flesh-666"]::before,
+:root[data-site-style] .project-comment-avatar-btn[data-avatar-frame="raw-flesh-666"]::before,
+:root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="raw-flesh-666"]::before {
+  position: absolute;
+  z-index: 4;
+  inset: -7px;
+  border: 4px solid transparent;
+  border-radius: 50%;
+  background: conic-gradient(from 12deg, #210006, #fa1827 12%, #5b000a 20%, #ff7775 27%, #270006 35%, #bf0016 48%, #190004 56%, #fb1829 70%, #4b0008 82%, #f34 93%, #210006) border-box,
+    url("./assets/static.gif") center / cover border-box;
+  background-blend-mode: screen;
+  content: "";
+  pointer-events: none;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: raw-frame-flicker 2.8s steps(2, end) infinite;
+}
+
+:root[data-site-style] .profile-avatar[data-avatar-frame="raw-flesh-666"]::after,
+:root[data-site-style] .header-profile[data-avatar-frame="raw-flesh-666"]::after,
+:root[data-site-style] .chat-avatar-link[data-avatar-frame="raw-flesh-666"]::after,
+:root[data-site-style] .project-comment-avatar-btn[data-avatar-frame="raw-flesh-666"]::after,
+:root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="raw-flesh-666"]::after {
+  position: absolute;
+  z-index: 5;
+  top: -12%;
+  right: -14%;
+  display: grid;
+  width: 34%;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid #ffb8bd;
+  border-radius: 50%;
+  background: #b90018;
+  color: #fff !important;
+  content: "666";
+  font-size: clamp(5px, 1.6vw, 10px);
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+}
 
 @keyframes raw-egg-flicker { 0%, 95%, 100% { opacity: 1; } 96% { opacity: .45; } 98% { opacity: .8; } }
 @keyframes raw-egg-glitch { 0%, 90%, 100% { transform: translate(0); opacity: .05; } 92% { transform: translate(15vw, -2vh); opacity: .9; } 96% { transform: translate(-10vw, 3vh); opacity: .7; } }
@@ -214,6 +266,7 @@ body.raw-flesh-active {
 @keyframes raw-tv-static { 0% { transform: translate(0, 0) scale(1); opacity: .55; } 33% { transform: translate(-2%, 1%) scale(1.04); opacity: .9; } 66% { transform: translate(1%, -2%) scale(1.02); opacity: .65; } 100% { transform: translate(2%, 1%) scale(1.06); opacity: 1; } }
 @keyframes raw-tv-scan { from { transform: translateY(-8px); } to { transform: translateY(8px); } }
 @keyframes raw-nav-pixel-jitter { 0%, 100% { background-position: 0 0; } 50% { background-position: 2px 1px; } }
+@keyframes raw-frame-flicker { 0%, 83%, 100% { filter: contrast(1); } 84% { filter: contrast(1.8) brightness(1.3); } 87% { filter: contrast(1.2); } }
 
 @media (prefers-reduced-motion: reduce) {
   .raw-egg-not-found.is-haunted, .raw-egg-glitch-copy, .raw-flesh-ambience, .raw-flesh-ambience.is-awakening, .raw-flesh-hand { animation-duration: 1ms !important; animation-iteration-count: 1 !important; }
