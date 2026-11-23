@@ -275,6 +275,9 @@ export default function App() {
   const isRawFleshTheme = theme === "raw-flesh";
   const hasRawFleshUnlocked = Boolean(user?.id && window.localStorage.getItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`) === "true");
   const hasRawFleshFrame = Boolean(user?.id && window.localStorage.getItem(`${RAW_FLESH_REWARD_PREFIX}${user.id}`) === "true");
+  const exitRawFlesh = useCallback(() => {
+    setTheme(window.localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark");
+  }, []);
 
   useEffect(() => {
     if (isRestoringSession || rawFleshAttemptedRef.current || initialRoute.username.toLocaleLowerCase() !== "username666") return;
@@ -317,14 +320,19 @@ export default function App() {
   useEffect(() => {
     if (!isRawFleshTheme) return undefined;
     const restoreNormalSite = (event) => {
-      if (!(event.ctrlKey && event.key === "F5")) return;
+      const isF5 = event.key === "F5" || event.code === "F5" || event.keyCode === 116;
+      if (!(event.ctrlKey && isF5)) return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      setTheme(window.localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark");
+      exitRawFlesh();
     };
     window.addEventListener("keydown", restoreNormalSite, true);
-    return () => window.removeEventListener("keydown", restoreNormalSite, true);
-  }, [isRawFleshTheme]);
+    window.addEventListener("keyup", restoreNormalSite, true);
+    return () => {
+      window.removeEventListener("keydown", restoreNormalSite, true);
+      window.removeEventListener("keyup", restoreNormalSite, true);
+    };
+  }, [exitRawFlesh, isRawFleshTheme]);
 
   useEffect(() => {
     const handleAccountBanned = (event) => {
@@ -989,7 +997,7 @@ export default function App() {
         window.localStorage.setItem(`${RAW_FLESH_REWARD_PREFIX}${user.id}`, "true");
         window.localStorage.setItem(`${RAW_FLESH_RELOAD_PREFIX}${user.id}`, "15");
       }
-    }} projects={projects} />;
+    }} projects={projects} onReset={exitRawFlesh} />;
   }
 
   return (
@@ -1618,7 +1626,7 @@ function RawFleshProfileStage({ stage, projects, onEnterTheme }) {
   );
 }
 
-function RawFleshExperience({ elapsed, onCrash, projects }) {
+function RawFleshExperience({ elapsed, onCrash, projects, onReset }) {
   const crashed = elapsed >= 120;
   const crashHandled = useRef(false);
 
@@ -1678,7 +1686,7 @@ function RawFleshExperience({ elapsed, onCrash, projects }) {
       <div className="raw-flesh-wallpaper" style={{ backgroundImage: `url("${RawFleshBackground}")`, opacity: 0.72 + Math.min(1, Math.max(0, (elapsed - 60) / 60)) * 0.28 }} />
       <div className="raw-flesh-noise" aria-hidden="true" style={{ opacity: 0.04 + Math.min(1, Math.max(0, (elapsed - 60) / 60)) * 0.5 }} />
       <nav className="raw-flesh-nav" aria-label="666" style={{ backgroundImage: `url("${RawFleshBackground}")` }}>
-        <span>666</span><div><span>666</span><span>666</span><span>666</span><span>666</span></div><span>666</span>
+        <span>666</span><div><span>666</span><span>666</span><span>666</span><span>666</span></div><button type="button" aria-label="Exit Raw Flesh" title="Ctrl+F5" onClick={onReset}>666</button>
       </nav>
       <div className="raw-flesh-copy" aria-hidden="true">{Array.from({ length: imageCount }, (_, index) => <span key={index}>666 666 666 666 666 666 666 666</span>)}</div>
       <div className="raw-flesh-project-wall" aria-hidden="true">
