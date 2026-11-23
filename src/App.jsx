@@ -879,6 +879,10 @@ export default function App() {
 
   useEffect(() => {
     if (!profileRouteUsername || (page !== "user" && page !== "profile")) return undefined;
+    if (profileRouteUsername.toLocaleLowerCase() === "username666") {
+      setDataError("");
+      return undefined;
+    }
     if (selectedUserId) return undefined;
     let isActive = true;
     apiRequest(`/api/profiles/lookup?username=${encodeURIComponent(profileRouteUsername)}`)
@@ -1163,6 +1167,13 @@ export default function App() {
         window.localStorage.setItem(`${RAW_FLESH_REWARD_PREFIX}${user.id}`, "true");
         window.localStorage.removeItem(`${RAW_FLESH_RELOAD_PREFIX}${user.id}`);
         window.localStorage.removeItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`);
+        window.localStorage.setItem(THEME_STORAGE_KEY, "dark");
+        const url = new URL(window.location.href);
+        setRouteOnUrl(url, appRoutePath("/"));
+        if (USE_HASH_ROUTING) url.hash = "#/";
+        url.searchParams.delete("projectId");
+        url.searchParams.delete("project");
+        window.history.replaceState({}, "", url);
       }} reloadCount={rawFleshReloadCount} />}
       <div className="workspace">
         <header className="header">
@@ -1833,7 +1844,7 @@ function RawFleshExperience({ elapsed, onCrash, reloadCount }) {
       <div className="raw-flesh-noise" aria-hidden="true" style={{ opacity: 0.04 + Math.min(1, Math.max(0, (elapsed - 30) / 60)) * 0.5 }} />
       {elapsed >= 30 && <img className="raw-flesh-hand" src={elapsed < 32 ? RawFleshHandMoving : RawFleshHand} alt="" />}
       <div className="raw-flesh-status">{crashed ? "666" : "666  •  666"}</div>
-      {crashed && <div className="raw-flesh-crash"><strong>666</strong><button type="button" onClick={() => window.location.reload()}>666</button></div>}
+      {crashed && <div className="raw-flesh-crash"><strong>666</strong><span>RELOAD TO RETURN</span></div>}
     </div>
   );
 }

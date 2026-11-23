@@ -160,8 +160,18 @@ body.raw-flesh-active {
 .raw-flesh-hand { position: fixed; z-index: 55; width: min(55vw, 36rem); max-height: 70vh; object-fit: contain; right: 3vw; bottom: 2vh; animation: raw-hand-enter 2s ease-out both; }
 .raw-flesh-status { position: fixed; z-index: 55; top: 1rem; left: 1rem; color: #ff1010; font-weight: 900; letter-spacing: .3em; }
 .raw-flesh-ambience.is-crashed { z-index: 100000; pointer-events: auto; background: rgb(0 0 0 / 92%); }
-.raw-flesh-crash { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 2rem; }
-.raw-flesh-crash strong { color: #e00018; font-size: clamp(6rem, 30vw, 20rem); }
+.raw-flesh-ambience.is-crashed .raw-flesh-noise {
+  z-index: 1;
+  opacity: 1 !important;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.9'/%3E%3C/svg%3E") 0 0 / 180px 180px;
+  mix-blend-mode: screen;
+  animation: raw-tv-static .12s steps(3, end) infinite;
+}
+.raw-flesh-crash { position: absolute; inset: 0; z-index: 2; display: grid; place-content: center; justify-items: center; gap: 1rem; overflow: hidden; background: rgb(0 0 0 / 35%); }
+.raw-flesh-crash::before { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 2px, rgb(255 255 255 / 13%) 3px, transparent 4px 6px); content: ""; animation: raw-tv-scan 5s linear infinite; }
+.raw-flesh-crash strong, .raw-flesh-crash span { position: relative; color: #fff; text-align: center; text-shadow: 2px 0 #f00, -2px 0 #08f; }
+.raw-flesh-crash strong { font-size: clamp(6rem, 30vw, 20rem); }
+.raw-flesh-crash span { font: 900 clamp(.9rem, 3vw, 1.5rem) "Courier New", monospace; letter-spacing: .2em; }
 .raw-flesh-crash button { padding: .8rem 1.2rem; color: #fff; background: #a00010; border: 1px solid #ff4752; font: 700 1rem "Courier New", monospace; }
 
 :root[data-site-style] .profile-avatar[data-avatar-frame="raw-flesh-666"],
@@ -174,6 +184,8 @@ body.raw-flesh-active {
 @keyframes raw-egg-glitch { 0%, 90%, 100% { transform: translate(0); opacity: .05; } 92% { transform: translate(15vw, -2vh); opacity: .9; } 96% { transform: translate(-10vw, 3vh); opacity: .7; } }
 @keyframes raw-flesh-shake { 0%, 100% { transform: translate(0); } 25% { transform: translate(2px, -1px); } 50% { transform: translate(-2px, 1px); } 75% { transform: translate(1px, 2px); } }
 @keyframes raw-hand-enter { from { transform: translate(120%, 20%); opacity: 0; } to { transform: translate(0); opacity: 1; } }
+@keyframes raw-tv-static { 0% { transform: translate(0, 0) scale(1); opacity: .55; } 33% { transform: translate(-2%, 1%) scale(1.04); opacity: .9; } 66% { transform: translate(1%, -2%) scale(1.02); opacity: .65; } 100% { transform: translate(2%, 1%) scale(1.06); opacity: 1; } }
+@keyframes raw-tv-scan { from { transform: translateY(-8px); } to { transform: translateY(8px); } }
 
 @media (prefers-reduced-motion: reduce) {
   .raw-egg-not-found.is-haunted, .raw-egg-glitch-copy, .raw-flesh-ambience, .raw-flesh-ambience.is-awakening, .raw-flesh-hand { animation-duration: 1ms !important; animation-iteration-count: 1 !important; }
