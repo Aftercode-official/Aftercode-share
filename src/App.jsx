@@ -275,14 +275,16 @@ export default function App() {
   const rawFleshAttemptedRef = useRef(false);
   const isRawFleshTheme = theme === "raw-flesh";
   const hasRawFleshFrame = Boolean(user?.id && window.localStorage.getItem(`${RAW_FLESH_REWARD_PREFIX}${user.id}`) === "true");
-  const exitRawFlesh = useCallback(() => {
+  const resetRawFleshProgress = useCallback((nextStage = null) => {
     if (user?.id) {
       window.localStorage.removeItem(`${RAW_FLESH_RELOAD_PREFIX}${user.id}`);
       window.localStorage.removeItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`);
-      setRawFleshReloadCount(0);
-      setRawFleshEggStage("not-found");
     }
-    setTheme(window.localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark");
+    setRawFleshReloadCount(0);
+    setRawFleshEggStage(nextStage);
+    setTheme((current) => current === "raw-flesh"
+      ? (window.localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark")
+      : current);
   }, [user?.id]);
 
   useEffect(() => {
@@ -327,23 +329,6 @@ export default function App() {
     document.documentElement.dataset.rawFlesh = isRawFleshTheme ? "true" : "false";
     return () => { delete document.documentElement.dataset.rawFlesh; };
   }, [isRawFleshTheme]);
-
-  useEffect(() => {
-    if (!isRawFleshTheme) return undefined;
-    const restoreNormalSite = (event) => {
-      const isF5 = event.key === "F5" || event.code === "F5" || event.keyCode === 116;
-      if (!(event.ctrlKey && isF5)) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      exitRawFlesh();
-    };
-    window.addEventListener("keydown", restoreNormalSite, true);
-    window.addEventListener("keyup", restoreNormalSite, true);
-    return () => {
-      window.removeEventListener("keydown", restoreNormalSite, true);
-      window.removeEventListener("keyup", restoreNormalSite, true);
-    };
-  }, [exitRawFlesh, isRawFleshTheme]);
 
   useEffect(() => {
     const handleAccountBanned = (event) => {
@@ -568,6 +553,9 @@ export default function App() {
 
     setAuthError("");
     try {
+      if ((page === "user" || page === "profile") && profileRouteUsername.toLocaleLowerCase() === "username666") {
+        resetRawFleshProgress();
+      }
       const { error } = await supabase.auth.signOut();
       if (error) {
         setAuthError(`Unable to sign out: ${error.message}`);
@@ -598,7 +586,6 @@ export default function App() {
   };
 
   const navigateTo = (nextPage, options = {}) => {
-    setRawFleshEggStage(null);
     setPage(nextPage);
     setSelectedProject(options.project ?? null);
     setSelectedUserId(options.userId ?? null);
@@ -610,6 +597,17 @@ export default function App() {
       : nextPage === "user"
         ? (options.username || (options.userId ? "" : profileRouteUsername))
         : "";
+    const nextIsEggProfile = (nextPage === "user" || nextPage === "profile")
+      && routeUsername.toLocaleLowerCase() === "username666";
+    const currentIsEggProfile = (page === "user" || page === "profile")
+      && profileRouteUsername.toLocaleLowerCase() === "username666";
+    if (currentIsEggProfile && !nextIsEggProfile) resetRawFleshProgress();
+    else if (nextIsEggProfile) {
+      setRawFleshReloadCount(0);
+      setRawFleshEggStage("not-found");
+    } else {
+      setRawFleshEggStage(null);
+    }
     let pathname = appRoutePath("/");
     if (nextPage === "notifications") pathname = appRoutePath("/notification");
     else if (nextPage === "chat") pathname = appRoutePath("/chat");
@@ -727,7 +725,16 @@ export default function App() {
   useEffect(() => {
     const restoreRoute = () => {
       const route = getInitialRoute();
-      setRawFleshEggStage(null);
+      const isEggProfile = (route.page === "user" || route.page === "profile")
+        && route.username.toLocaleLowerCase() === "username666";
+      if (!isEggProfile && (rawFleshReloadCount > 0 || theme === "raw-flesh")) {
+        resetRawFleshProgress();
+      } else if (isEggProfile) {
+        setRawFleshReloadCount(0);
+        setRawFleshEggStage("not-found");
+      } else {
+        setRawFleshEggStage(null);
+      }
       setPage(route.page);
       setSelectedProject(null);
       setSelectedUserId(null);
@@ -736,7 +743,7 @@ export default function App() {
     };
     window.addEventListener("popstate", restoreRoute);
     return () => window.removeEventListener("popstate", restoreRoute);
-  }, []);
+  }, [rawFleshReloadCount, resetRawFleshProgress, theme]);
 
   useEffect(() => {
     if (!profileRouteUsername || (page !== "user" && page !== "profile")) return undefined;
