@@ -9,6 +9,7 @@ const AuthModal = lazy(() => import("./AuthModal.jsx"));
 const UploadProjectModal = lazy(() => import("./UploadProjectModal.jsx"));
 const AgeVerificationModal = lazy(() => import("./AgeVerificationModal.jsx"));
 import LogoIcon from "./assets/Logo.png";
+import ErrLogo from "./assets/err.png";
 import BearAvatarFrame from "./assets/bear-avatar-frame.png";
 import RawHorrorGif from "./assets/horror.gif";
 import RawRivGif from "./assets/Riv1cf.gif";
@@ -171,6 +172,7 @@ function userPagePath(username, peopleList = null) {
 
 function rawFleshStageForReloads(reloadCount) {
   if (reloadCount >= 15) return "unlocked";
+  if (reloadCount >= 11) return "glitch";
   if (reloadCount >= 10) return "haunted";
   return "not-found";
 }
@@ -355,6 +357,8 @@ export default function App() {
     } else if (attempts >= 15) {
       window.localStorage.setItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`, "true");
       setRawFleshEggStage("unlocked");
+    } else if (attempts >= 11) {
+      setRawFleshEggStage("glitch");
     } else if (attempts >= 10) {
       setRawFleshEggStage("haunted");
     } else {
@@ -440,7 +444,7 @@ export default function App() {
   }, [isRawFleshTheme, page, profileRouteUsername, rawFleshEggStage, rawFleshReloadCount, resetRawFleshProgress, user?.id]);
 
   useEffect(() => {
-    const isCorruptionActive = isRawFleshTheme || rawFleshEggStage === "haunted" || rawFleshEggStage === "unlocked";
+    const isCorruptionActive = isRawFleshTheme || rawFleshEggStage === "haunted" || rawFleshEggStage === "glitch" || rawFleshEggStage === "unlocked";
     if (!isCorruptionActive) return undefined;
     const root = document.getElementById("root");
     if (!root) return undefined;
@@ -1238,9 +1242,10 @@ export default function App() {
   const activeAccentColor = siteStyle === "brutalist" ? customization.accentColor : "#2679b9";
   const isUsername666Route = (page === "user" || page === "profile")
     && profileRouteUsername.toLocaleLowerCase() === "username666";
-  const isHauntedNotFound = isUsername666Route && rawFleshEggStage === "haunted";
+  const isFleshNotFound = isUsername666Route && (rawFleshEggStage === "haunted" || rawFleshEggStage === "glitch");
+  const isGlitchNotFound = isUsername666Route && rawFleshEggStage === "glitch";
   const showSiteNotFound = page === "not-found"
-    || (isUsername666Route && (rawFleshEggStage === "not-found" || rawFleshEggStage === "haunted"));
+    || (isUsername666Route && (rawFleshEggStage === "not-found" || isFleshNotFound));
 
   return (
     <div
@@ -1304,7 +1309,7 @@ export default function App() {
             <button className="topbar-brand" type="button" onClick={() => navigateTo("home")}>
               <img
                 className="logo"
-                src={LogoIcon}
+                src={isFleshNotFound ? ErrLogo : LogoIcon}
                 alt="Aftercode"
                 width="180"
                 height="59"
@@ -1477,7 +1482,8 @@ export default function App() {
               searchQuery={projectSearch}
               onSearchQueryChange={setProjectSearch}
               onSearchSubmit={() => navigateTo("explore")}
-              fleshBackground={isHauntedNotFound ? RawFleshBackground : null}
+              fleshBackground={isFleshNotFound ? RawFleshBackground : null}
+              glitch666={isGlitchNotFound}
             />
           ) : (
             <>

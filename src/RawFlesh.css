@@ -63,6 +63,8 @@
 /* Reload 10-15 distorts the site navigation and footer first. */
 :root[data-raw-flesh-stage="haunted"] .header,
 :root[data-raw-flesh-stage="haunted"] .site-footer,
+:root[data-raw-flesh-stage="glitch"] .header,
+:root[data-raw-flesh-stage="glitch"] .site-footer,
 :root[data-raw-flesh-stage="unlocked"] .header,
 :root[data-raw-flesh-stage="unlocked"] .site-footer {
   color: #ff0808 !important;
@@ -72,6 +74,8 @@
 
 :root[data-raw-flesh-stage="haunted"] .header *,
 :root[data-raw-flesh-stage="haunted"] .site-footer *,
+:root[data-raw-flesh-stage="glitch"] .header *,
+:root[data-raw-flesh-stage="glitch"] .site-footer *,
 :root[data-raw-flesh-stage="unlocked"] .header *,
 :root[data-raw-flesh-stage="unlocked"] .site-footer * { color: #ff0808 !important; }
 
