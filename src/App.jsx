@@ -1164,10 +1164,12 @@ export default function App() {
       }
     })() : Promise.resolve();
 
-    if (isActive && isFirstDataLoad) {
-  hasCompletedInitialDataLoad.current = true;
-  setIsInitialDataLoading(false);
-            };
+    Promise.allSettled([publicUpdatesPromise, projectsPromise, accountDataPromise, customizationPromise])
+      .then(() => {
+        if (!isActive || !isFirstDataLoad) return;
+        hasCompletedInitialDataLoad.current = true;
+        setIsInitialDataLoading(false);
+      });
 
     return () => {
       isActive = false;
