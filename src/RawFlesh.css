@@ -19,11 +19,24 @@
   gap: 1rem;
   text-align: center;
 }
+.raw-egg-not-found:not(.is-haunted) {
+  min-height: 68vh;
+  padding: 2rem;
+  color: var(--text-primary, #fff);
+  font-family: Arial, Helvetica, sans-serif;
+  background: none;
+  animation: none;
+}
 
 .raw-egg-not-found > span {
   color: #e00016;
   font-size: clamp(5rem, 20vw, 12rem);
   text-shadow: 0 0 24px #f00;
+}
+.raw-egg-not-found:not(.is-haunted) > span {
+  color: inherit;
+  font-size: clamp(2rem, 8vw, 4rem);
+  text-shadow: none;
 }
 
 .raw-egg-profile.is-haunted, .raw-egg-not-found.is-haunted { animation: raw-egg-flicker 1.7s steps(2, end) infinite; }
@@ -54,6 +67,11 @@
 .raw-flesh-wallpaper, .raw-flesh-noise { position: absolute; inset: 0; pointer-events: none; }
 .raw-flesh-wallpaper { z-index: -2; background-position: center; background-size: cover; filter: saturate(1.6) contrast(1.2); }
 .raw-flesh-noise { z-index: -1; background-image: repeating-radial-gradient(circle at 40% 50%, transparent 0 2px, #ff0017 3px 4px, transparent 5px 7px); mix-blend-mode: screen; }
+.raw-flesh-nav { position: absolute; z-index: 3; inset: 0 0 auto; min-height: 3.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .6rem 1.2rem; color: #fff; background-position: center 18%; background-size: cover; border-bottom: 2px solid #e00018; box-shadow: 0 2px 18px #bf0017; text-shadow: 0 0 8px red; }
+.raw-flesh-nav > span:first-child { font-weight: 900; font-size: 1.5rem; }
+.raw-flesh-nav > div { display: flex; gap: clamp(.5rem, 3vw, 2rem); }
+.raw-flesh-nav > div span { padding: .35rem .7rem; border: 1px solid rgb(255 20 35 / 75%); background: rgb(35 0 0 / 55%); }
+.raw-flesh-nav > span:last-child { width: 2rem; height: 2rem; display: grid; place-items: center; border-radius: 50%; background: #a00010; }
 .raw-flesh-screen.is-awakening { animation: raw-flesh-shake .17s infinite, raw-flesh-red 60s linear forwards; }
 .raw-flesh-screen.is-crashed { animation: none; filter: saturate(1.8) brightness(.55); }
 .raw-flesh-copy { position: absolute; inset: -10%; display: flex; flex-direction: column; justify-content: space-around; transform: rotate(-9deg); color: rgb(255 0 18 / 22%); font-size: clamp(1rem, 4vw, 4rem); text-shadow: 0 0 12px #f00; }

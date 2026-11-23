@@ -315,6 +315,18 @@ export default function App() {
   }, [isRawFleshTheme]);
 
   useEffect(() => {
+    if (!isRawFleshTheme) return undefined;
+    const restoreNormalSite = (event) => {
+      if (!(event.ctrlKey && event.key === "F5")) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setTheme(window.localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark");
+    };
+    window.addEventListener("keydown", restoreNormalSite, true);
+    return () => window.removeEventListener("keydown", restoreNormalSite, true);
+  }, [isRawFleshTheme]);
+
+  useEffect(() => {
     const handleAccountBanned = (event) => {
       setAccountBanNotice(event.detail?.message || "This account is permanently banned.");
     };
@@ -1663,8 +1675,11 @@ function RawFleshExperience({ elapsed, onCrash, projects }) {
   const imageCount = Math.max(6, Math.min(24, 8 + Math.floor(elapsed / 4)));
   return (
     <main className={`raw-flesh-screen${elapsed >= 60 ? " is-awakening" : ""}${crashed ? " is-crashed" : ""}`} style={{ "--flesh-intensity": Math.min(1, Math.max(0, (elapsed - 60) / 60)) }}>
-      <div className="raw-flesh-wallpaper" style={{ backgroundImage: `url("${RawFleshBackground}")`, opacity: 0.2 + Math.min(1, Math.max(0, (elapsed - 60) / 60)) * 0.8 }} />
+      <div className="raw-flesh-wallpaper" style={{ backgroundImage: `url("${RawFleshBackground}")`, opacity: 0.72 + Math.min(1, Math.max(0, (elapsed - 60) / 60)) * 0.28 }} />
       <div className="raw-flesh-noise" aria-hidden="true" style={{ opacity: 0.04 + Math.min(1, Math.max(0, (elapsed - 60) / 60)) * 0.5 }} />
+      <nav className="raw-flesh-nav" aria-label="666" style={{ backgroundImage: `url("${RawFleshBackground}")` }}>
+        <span>666</span><div><span>666</span><span>666</span><span>666</span><span>666</span></div><span>666</span>
+      </nav>
       <div className="raw-flesh-copy" aria-hidden="true">{Array.from({ length: imageCount }, (_, index) => <span key={index}>666 666 666 666 666 666 666 666</span>)}</div>
       <div className="raw-flesh-project-wall" aria-hidden="true">
         {(projects.length ? projects.slice(0, 8) : [1, 2, 3, 4]).map((project, index) => (
