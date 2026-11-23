@@ -1238,7 +1238,10 @@ export default function App() {
   const activeAccentColor = siteStyle === "brutalist" ? customization.accentColor : "#2679b9";
   const isUsername666Route = (page === "user" || page === "profile")
     && profileRouteUsername.toLocaleLowerCase() === "username666";
-  const showSiteNotFound = page === "not-found" || (isUsername666Route && rawFleshEggStage === "not-found");
+  const isHauntedNotFound = isUsername666Route && rawFleshEggStage === "haunted";
+  const showSiteNotFound = page === "not-found"
+    || (isUsername666Route && (rawFleshEggStage === "not-found" || rawFleshEggStage === "haunted"));
+  const fleshWarpScale = 22 + Math.max(0, rawFleshReloadCount - 10) * 12;
 
   return (
     <div
@@ -1475,6 +1478,8 @@ export default function App() {
               searchQuery={projectSearch}
               onSearchQueryChange={setProjectSearch}
               onSearchSubmit={() => navigateTo("explore")}
+              fleshBackground={isHauntedNotFound ? RawFleshBackground : null}
+              warpScale={isHauntedNotFound ? fleshWarpScale : 0}
             />
           ) : (
             <>
@@ -1886,15 +1891,6 @@ export default function App() {
 function RawFleshProfileStage({ stage, projects, reloadCount }) {
   if (stage === "guest") {
     return <section className="raw-egg-page raw-egg-not-found"><span>404</span><h1>Profile not found</h1><p>Sign in to view this profile.</p></section>;
-  }
-  if (stage === "haunted") {
-    return (
-      <section className="raw-egg-page raw-egg-not-found is-haunted" style={{ "--egg-contrast": Math.min(2.2, 1 + Math.max(0, reloadCount - 10) * 0.12) }}>
-        <img className="raw-egg-glitch-image" src={RawHorrorGif} alt="" />
-        <span>404</span><h1>This profile could not be found.</h1>
-        <p className="raw-egg-glitch-copy">666</p>
-      </section>
-    );
   }
   return (
     <section className="raw-egg-page raw-egg-profile" style={{ "--egg-contrast": Math.min(2.2, 1 + Math.max(0, reloadCount - 10) * 0.12) }}>
