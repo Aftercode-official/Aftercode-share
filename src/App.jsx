@@ -1106,10 +1106,18 @@ export default function App() {
               || user?.user_metadata?.full_name || user?.email?.split("@")[0] || DEFAULT_CUSTOMIZATION.displayName,
             username: saved.username || cachedCustomization?.username || user?.user_metadata?.username || DEFAULT_CUSTOMIZATION.username
           });
+          setCustomization(normalized);
+          writeCustomizationCache(userId, normalized);
           if (window.localStorage.getItem(`${RAW_FLESH_REWARD_PREFIX}${userId}`) === "true"
             && normalized.avatarFrame !== RAW_FLESH_FRAME_ID) {
             normalized = { ...normalized, avatarFrame: RAW_FLESH_FRAME_ID };
-            await persistCustomization(normalized);
+            setCustomization(normalized);
+            writeCustomizationCache(userId, normalized);
+            try {
+              await persistCustomization(normalized);
+            } catch {
+              // Keep the loaded account profile visible even if the bonus frame sync fails.
+            }
           }
           setCustomization(normalized);
           writeCustomizationCache(userId, normalized);
