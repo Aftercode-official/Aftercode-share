@@ -27,63 +27,59 @@
   background: none;
   animation: none;
 }
+.raw-egg-not-found:not(.is-haunted), .raw-egg-not-found.is-haunted, .raw-egg-profile { filter: contrast(var(--egg-contrast, 1)); }
 
 .raw-egg-not-found > span {
   color: #e00016;
   font-size: clamp(5rem, 20vw, 12rem);
-  text-shadow: 0 0 24px #f00;
 }
 .raw-egg-not-found:not(.is-haunted) > span {
   color: inherit;
   font-size: clamp(2rem, 8vw, 4rem);
-  text-shadow: none;
 }
 
 .raw-egg-profile.is-haunted, .raw-egg-not-found.is-haunted { animation: raw-egg-flicker 1.7s steps(2, end) infinite; }
 .raw-egg-glitch-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .2; mix-blend-mode: screen; }
-.raw-egg-glitch-copy { position: absolute; color: #f00; font-size: clamp(3rem, 12vw, 9rem); text-shadow: 0 0 20px red; animation: raw-egg-glitch 1.7s steps(2, end) infinite; }
+.raw-egg-glitch-copy { position: absolute; color: #f00; font-size: clamp(3rem, 12vw, 9rem); animation: raw-egg-glitch 1.7s steps(2, end) infinite; }
 .raw-egg-banner {
   height: clamp(8rem, 28vw, 17rem);
   background: #5b0000 center / cover no-repeat, repeating-radial-gradient(circle at 50%, #810000 0 2px, #170000 3px 8px);
   border: 2px solid #d90012;
-  box-shadow: 0 0 24px #c00018;
 }
 .raw-egg-identity { display: flex; align-items: center; gap: 1rem; margin: -2.5rem 1rem 1rem; position: relative; }
-.raw-egg-identity h1 { color: #ff1c2b; text-shadow: 0 0 12px #e00; }
+.raw-egg-identity h1 { color: #ff1c2b; }
 .raw-egg-identity p, .raw-egg-about { color: #d7a1a1; }
 .raw-egg-avatar {
   width: 5rem; aspect-ratio: 1; border: 3px solid #ff2525; border-radius: 50%; display: grid; place-items: center;
-  color: #fff; background: #b40012; box-shadow: 0 0 18px #f00; font: 900 1.7rem "Courier New", monospace;
+  color: #fff; background: #b40012; font: 900 1.7rem "Courier New", monospace;
 }
 .raw-egg-about { padding: 1rem; border-block: 1px solid #78000b; }
 .raw-egg-projects { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .8rem; margin-top: 1rem; }
 .raw-egg-project { min-width: 0; border: 1px solid #b00014; background: #170000; }
 .raw-egg-project img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: repeating-linear-gradient(130deg, #280000 0 5px, #b00014 6px 8px); }
 .raw-egg-project strong { display: block; padding: .7rem; color: #ff2935; }
-.raw-egg-unlocked { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding: 1rem; color: #ff262f; border: 1px solid #ff1625; box-shadow: 0 0 16px #a00; }
-.raw-egg-unlocked button, .raw-flesh-crash button { padding: .8rem 1.2rem; color: #fff; background: #a00010; border: 1px solid #ff4752; font: 700 1rem "Courier New", monospace; }
+.raw-flesh-crash button { padding: .8rem 1.2rem; color: #fff; background: #a00010; border: 1px solid #ff4752; font: 700 1rem "Courier New", monospace; }
 
 .raw-flesh-screen { position: fixed; z-index: 99999; inset: 0; overflow: hidden; isolation: isolate; background: #080000; animation: raw-flesh-red 60s linear forwards; }
 .raw-flesh-wallpaper, .raw-flesh-noise { position: absolute; inset: 0; pointer-events: none; }
 .raw-flesh-wallpaper { z-index: -2; background-position: center; background-size: cover; filter: saturate(1.6) contrast(1.2); }
 .raw-flesh-noise { z-index: -1; background-image: repeating-radial-gradient(circle at 40% 50%, transparent 0 2px, #ff0017 3px 4px, transparent 5px 7px); mix-blend-mode: screen; }
-.raw-flesh-nav { position: absolute; z-index: 3; inset: 0 0 auto; min-height: 3.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .6rem 1.2rem; color: #fff; background-position: center 18%; background-size: cover; border-bottom: 2px solid #e00018; box-shadow: 0 2px 18px #bf0017; text-shadow: 0 0 8px red; }
+.raw-flesh-nav { position: absolute; z-index: 3; inset: 0 0 auto; min-height: 3.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .6rem 1.2rem; color: #fff; background-position: center 18%; background-size: cover; border-bottom: 2px solid #e00018; }
 .raw-flesh-nav > span:first-child { font-weight: 900; font-size: 1.5rem; }
 .raw-flesh-nav > div { display: flex; gap: clamp(.5rem, 3vw, 2rem); }
 .raw-flesh-nav > div span { padding: .35rem .7rem; border: 1px solid rgb(255 20 35 / 75%); background: rgb(35 0 0 / 55%); }
-.raw-flesh-nav > button { width: 2.4rem; height: 2.4rem; display: grid; place-items: center; border: 1px solid #ff4855; border-radius: 50%; color: #fff; background: #a00010; box-shadow: 0 0 12px #e00018; cursor: pointer; }
 .raw-flesh-screen.is-awakening { animation: raw-flesh-shake .17s infinite, raw-flesh-red 60s linear forwards; }
-.raw-flesh-screen.is-crashed { animation: none; filter: saturate(1.8) brightness(.55); }
-.raw-flesh-copy { position: absolute; inset: -10%; display: flex; flex-direction: column; justify-content: space-around; transform: rotate(-9deg); color: rgb(255 0 18 / 22%); font-size: clamp(1rem, 4vw, 4rem); text-shadow: 0 0 12px #f00; }
+.raw-flesh-screen.is-crashed { animation: none; }
+.raw-flesh-copy { position: absolute; inset: -10%; display: flex; flex-direction: column; justify-content: space-around; transform: rotate(-9deg); color: rgb(255 0 18 / 22%); font-size: clamp(1rem, 4vw, 4rem); }
 .raw-flesh-project-wall { position: absolute; z-index: 1; inset: 14% 5% 8%; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(20vw, 10rem), 1fr)); gap: .6rem; overflow: hidden; opacity: .88; }
-.raw-flesh-project-tile { position: relative; min-width: 0; overflow: hidden; border: 1px solid rgb(255 0 20 / 75%); background: #270006; box-shadow: 0 0 12px rgb(220 0 20 / 55%); }
+.raw-flesh-project-tile { position: relative; min-width: 0; overflow: hidden; border: 1px solid rgb(255 0 20 / 75%); background: #270006; }
 .raw-flesh-project-tile > img { display: block; width: 100%; height: 100%; min-height: 5rem; object-fit: cover; filter: saturate(1.35) contrast(1.12); }
-.raw-flesh-project-tile > strong { position: absolute; right: .5rem; bottom: .25rem; color: #fff; font-size: clamp(1rem, 3vw, 2.5rem); text-shadow: 0 0 10px red; }
-.raw-flesh-user-avatar { position: absolute; top: .4rem; left: .4rem; display: grid; place-items: center; width: clamp(2rem, 5vw, 3.5rem); aspect-ratio: 1; border: 2px solid #ff4952; border-radius: 50%; color: #fff; background: #ad0010; font-size: clamp(.7rem, 1.5vw, 1rem); box-shadow: 0 0 12px #f00; }
-.raw-flesh-hand { position: absolute; z-index: 2; width: min(55vw, 36rem); max-height: 70vh; object-fit: contain; right: 3vw; bottom: 2vh; animation: raw-hand-enter 2s ease-out both; filter: drop-shadow(0 0 22px #f00); }
-.raw-flesh-status { position: absolute; top: 1rem; left: 1rem; color: #ff3741; font-weight: 900; letter-spacing: .3em; text-shadow: 0 0 14px red; }
+.raw-flesh-project-tile > strong { position: absolute; right: .5rem; bottom: .25rem; color: #fff; font-size: clamp(1rem, 3vw, 2.5rem); }
+.raw-flesh-user-avatar { position: absolute; top: .4rem; left: .4rem; display: grid; place-items: center; width: clamp(2rem, 5vw, 3.5rem); aspect-ratio: 1; border: 2px solid #ff4952; border-radius: 50%; color: #fff; background: #ad0010; font-size: clamp(.7rem, 1.5vw, 1rem); }
+.raw-flesh-hand { position: absolute; z-index: 2; width: min(55vw, 36rem); max-height: 70vh; object-fit: contain; right: 3vw; bottom: 2vh; animation: raw-hand-enter 2s ease-out both; }
+.raw-flesh-status { position: absolute; top: 1rem; left: 1rem; color: #ff3741; font-weight: 900; letter-spacing: .3em; }
 .raw-flesh-crash { position: absolute; z-index: 5; inset: 0; display: grid; place-content: center; justify-items: center; gap: 2rem; background: rgb(0 0 0 / 92%); }
-.raw-flesh-crash strong { color: #e00018; font-size: clamp(6rem, 30vw, 20rem); text-shadow: 0 0 30px red; }
+.raw-flesh-crash strong { color: #e00018; font-size: clamp(6rem, 30vw, 20rem); }
 body.raw-flesh-active { overflow: hidden !important; }
 :root[data-site-style] .profile-avatar[data-avatar-frame="raw-flesh-666"],
 :root[data-site-style] .header-profile[data-avatar-frame="raw-flesh-666"],
@@ -92,7 +88,6 @@ body.raw-flesh-active { overflow: hidden !important; }
 :root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="raw-flesh-666"] {
   border: 3px solid #f12 !important;
   border-radius: 50% !important;
-  box-shadow: 0 0 0 2px #320006, 0 0 14px 5px rgb(255 0 20 / 75%) !important;
 }
 
 @keyframes raw-egg-flicker { 0%, 95%, 100% { opacity: 1; } 96% { opacity: .45; } 98% { opacity: .8; } }

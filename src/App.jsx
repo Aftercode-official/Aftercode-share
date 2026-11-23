@@ -271,14 +271,15 @@ export default function App() {
   ));
   const [rawFleshEggStage, setRawFleshEggStage] = useState(null);
   const [rawFleshElapsed, setRawFleshElapsed] = useState(0);
+  const [rawFleshReloadCount, setRawFleshReloadCount] = useState(0);
   const rawFleshAttemptedRef = useRef(false);
   const isRawFleshTheme = theme === "raw-flesh";
-  const hasRawFleshUnlocked = Boolean(user?.id && window.localStorage.getItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`) === "true");
   const hasRawFleshFrame = Boolean(user?.id && window.localStorage.getItem(`${RAW_FLESH_REWARD_PREFIX}${user.id}`) === "true");
   const exitRawFlesh = useCallback(() => {
     if (user?.id) {
       window.localStorage.removeItem(`${RAW_FLESH_RELOAD_PREFIX}${user.id}`);
       window.localStorage.removeItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`);
+      setRawFleshReloadCount(0);
       setRawFleshEggStage("not-found");
     }
     setTheme(window.localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark");
@@ -297,7 +298,12 @@ export default function App() {
     const isPageReload = navigationType === "reload" || (!navigationType && window.performance.navigation?.type === 1);
     const attempts = previousAttempts + (isPageReload ? 1 : 0);
     window.localStorage.setItem(key, String(attempts));
-    if (attempts >= 15) {
+    setRawFleshReloadCount(attempts);
+    if (attempts >= 20) {
+      window.localStorage.setItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`, "true");
+      setRawFleshEggStage("unlocked");
+      setTheme("raw-flesh");
+    } else if (attempts >= 15) {
       window.localStorage.setItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`, "true");
       setRawFleshEggStage("unlocked");
     } else if (attempts >= 10) {
@@ -1002,7 +1008,7 @@ export default function App() {
         window.localStorage.setItem(`${RAW_FLESH_REWARD_PREFIX}${user.id}`, "true");
         window.localStorage.setItem(`${RAW_FLESH_RELOAD_PREFIX}${user.id}`, "15");
       }
-    }} projects={projects} onReset={exitRawFlesh} />;
+    }} projects={projects} reloadCount={rawFleshReloadCount} />;
   }
 
   return (
@@ -1092,7 +1098,6 @@ export default function App() {
                   <div>
                     <button type="button" aria-pressed={siteStyle === "brutalist"} onClick={() => setSiteStyle("brutalist")}>Brutalist</button>
                     <button type="button" aria-pressed={siteStyle === "classic"} onClick={() => setSiteStyle("classic")}>Aero</button>
-                    {hasRawFleshUnlocked && <button type="button" aria-pressed={false} onClick={() => { setTheme("raw-flesh"); setIsAppearanceMenuOpen(false); }}>Raw Flesh</button>}
                   </div>
                 </fieldset>
               </div>
@@ -1195,7 +1200,7 @@ export default function App() {
         <main
           className={`main-feed-container${page === "home" ? ` scratch-home${!isLoggedIn ? " guest-home" : ""}${events.length ? " has-home-events" : ""}` : ""}${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}${page === "shop" ? " shop-page-container" : ""}`}
         >
-          {rawFleshEggStage && <RawFleshProfileStage stage={rawFleshEggStage} projects={projects} onEnterTheme={() => setTheme("raw-flesh")} />}
+          {rawFleshEggStage && <RawFleshProfileStage stage={rawFleshEggStage} projects={projects} reloadCount={rawFleshReloadCount} />}
           <Suspense fallback={siteStyle === "classic"
             ? <LoadingScreen siteStyle={siteStyle} inline />
             : <p className="featured-empty">Loading page...</p>}>
@@ -1592,25 +1597,24 @@ export default function App() {
   );
 }
 
-function RawFleshProfileStage({ stage, projects, onEnterTheme }) {
+function RawFleshProfileStage({ stage, projects, reloadCount }) {
   if (stage === "guest") {
     return <section className="raw-egg-page raw-egg-not-found"><span>404</span><h1>Profile not found</h1><p>Sign in to view this profile.</p></section>;
   }
   if (stage === "not-found") {
-    return <section className="raw-egg-page raw-egg-not-found"><span>404</span><h1>This profile could not be found.</h1></section>;
+    return <section className="raw-egg-page raw-egg-not-found" style={{ "--egg-contrast": Math.min(2.2, 1 + Math.max(0, reloadCount - 10) * 0.12) }}><span>404</span><h1>This profile could not be found.</h1></section>;
   }
   if (stage === "haunted") {
     return (
-      <section className="raw-egg-page raw-egg-not-found is-haunted">
+      <section className="raw-egg-page raw-egg-not-found is-haunted" style={{ "--egg-contrast": Math.min(2.2, 1 + Math.max(0, reloadCount - 10) * 0.12) }}>
         <img className="raw-egg-glitch-image" src={RawHorrorGif} alt="" />
         <span>404</span><h1>This profile could not be found.</h1>
         <p className="raw-egg-glitch-copy">666</p>
       </section>
     );
   }
-  const unlocked = stage === "unlocked";
   return (
-    <section className={`raw-egg-page raw-egg-profile${unlocked ? " is-unlocked" : " is-haunted"}`}>
+    <section className="raw-egg-page raw-egg-profile" style={{ "--egg-contrast": Math.min(2.2, 1 + Math.max(0, reloadCount - 10) * 0.12) }}>
       <div className="raw-egg-banner" style={{ backgroundImage: `url("${RawFleshBackground}")` }} />
       <div className="raw-egg-identity">
         <div className="raw-egg-avatar">666</div>
@@ -1626,12 +1630,11 @@ function RawFleshProfileStage({ stage, projects, onEnterTheme }) {
           </div>
         ))}
       </div>
-      {unlocked && <div className="raw-egg-unlocked"><strong>RAW FLESH — 666</strong><button type="button" onClick={onEnterTheme}>666</button></div>}
     </section>
   );
 }
 
-function RawFleshExperience({ elapsed, onCrash, projects, onReset }) {
+function RawFleshExperience({ elapsed, onCrash, projects, reloadCount }) {
   const crashed = elapsed >= 120;
   const crashHandled = useRef(false);
 
@@ -1687,11 +1690,11 @@ function RawFleshExperience({ elapsed, onCrash, projects, onReset }) {
 
   const imageCount = Math.max(6, Math.min(24, 8 + Math.floor(elapsed / 4)));
   return (
-    <main className={`raw-flesh-screen${elapsed >= 60 ? " is-awakening" : ""}${crashed ? " is-crashed" : ""}`} style={{ "--flesh-intensity": Math.min(1, Math.max(0, (elapsed - 60) / 60)) }}>
+    <main className={`raw-flesh-screen${elapsed >= 60 ? " is-awakening" : ""}${crashed ? " is-crashed" : ""}`} style={{ "--flesh-intensity": Math.min(1, Math.max(0, (elapsed - 60) / 60)), filter: `contrast(${Math.min(2.2, 1 + Math.max(0, reloadCount - 10) * 0.12)})${crashed ? " saturate(1.8) brightness(.55)" : ""}` }}>
       <div className="raw-flesh-wallpaper" style={{ backgroundImage: `url("${RawFleshBackground}")`, opacity: 0.72 + Math.min(1, Math.max(0, (elapsed - 60) / 60)) * 0.28 }} />
       <div className="raw-flesh-noise" aria-hidden="true" style={{ opacity: 0.04 + Math.min(1, Math.max(0, (elapsed - 60) / 60)) * 0.5 }} />
       <nav className="raw-flesh-nav" aria-label="666" style={{ backgroundImage: `url("${RawFleshBackground}")` }}>
-        <span>666</span><div><span>666</span><span>666</span><span>666</span><span>666</span></div><button type="button" aria-label="Exit Raw Flesh" title="Ctrl+F5" onClick={onReset}>666</button>
+        <span>666</span><div><span>666</span><span>666</span><span>666</span><span>666</span></div>
       </nav>
       <div className="raw-flesh-copy" aria-hidden="true">{Array.from({ length: imageCount }, (_, index) => <span key={index}>666 666 666 666 666 666 666 666</span>)}</div>
       <div className="raw-flesh-project-wall" aria-hidden="true">
