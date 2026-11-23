@@ -1,0 +1,203 @@
+.age-verification-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(10, 8, 6, 0.85);
+  backdrop-filter: blur(10px);
+  animation: ageFadeIn 0.3s ease;
+}
+
+@keyframes ageFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.age-verification-panel {
+  position: relative;
+  width: min(100%, 420px);
+  padding: 2.2rem 2rem;
+  background: var(--bg-main, #171513);
+  border: 1px solid var(--border-color, #332d26);
+  border-radius: 24px;
+  color: var(--text-primary, #fbf7f4);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  animation: ageScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ageScaleUp {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.age-verify-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.age-verification-panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.age-verify-subtitle {
+  margin: 0 0 1.5rem;
+  color: var(--text-muted, #9e9589);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.age-verify-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  background: var(--bg-card, #23201c);
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.age-verify-tabs button {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #9e9589);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.6rem;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.age-verify-tabs button[aria-selected="true"] {
+  background: var(--bg-main, #171513);
+  color: var(--text-primary, #fbf7f4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.age-verify-error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  padding: 0.75rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 1.2rem;
+  text-align: left;
+}
+
+.age-verify-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.age-verify-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.dob-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.3fr;
+  gap: 0.6rem;
+  text-align: left;
+}
+
+.dob-inputs label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted, #9e9589);
+}
+
+.dob-inputs input {
+  width: 100%;
+  padding: 0.7rem;
+  background: var(--bg-card, #23201c);
+  border: 1px solid var(--border-color, #332d26);
+  border-radius: 10px;
+  color: var(--text-primary, #fbf7f4);
+  font: inherit;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.dob-inputs input:focus {
+  outline: none;
+  border-color: var(--accent-color, #ffb700);
+}
+
+.age-verify-checkbox-wrapper {
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--text-muted, #9e9589);
+}
+
+.age-verify-checkbox-wrapper label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.age-verify-checkbox-wrapper input[type="checkbox"] {
+  accent-color: var(--accent-color, #ffb700);
+  width: 1.1rem;
+  height: 1.1rem;
+  cursor: pointer;
+}
+
+.age-verify-btn-primary {
+  width: 100%;
+  padding: 0.85rem;
+  background: var(--accent-color, #ffb700);
+  color: #171513;
+  border: none;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+}
+
+.age-verify-btn-primary:hover {
+  opacity: 0.9;
+}
+
+.age-verify-btn-primary:active {
+  transform: scale(0.98);
+}
+
+.age-verify-btn-secondary {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  background: transparent;
+  color: var(--text-muted, #9e9589);
+  border: 1px solid var(--border-color, #332d26);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.age-verify-btn-secondary:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.05));
+  color: var(--text-primary, #fbf7f4);
+}

@@ -7,6 +7,7 @@ import { apiRequest } from "./api.js";
 import { getShopAvatarFrameClass, isDragonAvatarFrame } from "./avatarFrames.js";
 const AuthModal = lazy(() => import("./AuthModal.jsx"));
 const UploadProjectModal = lazy(() => import("./UploadProjectModal.jsx"));
+const AgeVerificationModal = lazy(() => import("./AgeVerificationModal.jsx"));
 import LogoIcon from "./assets/Logo.png";
 import BearAvatarFrame from "./assets/bear-avatar-frame.png";
 import RawHorrorGif from "./assets/horror.gif";
@@ -259,6 +260,13 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState("sign-in");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isAgeVerified, setIsAgeVerified] = useState(() => {
+    try {
+      return Boolean(localStorage.getItem("aftercode-age-verified-v1") || sessionStorage.getItem("aftercode-age-verified-v1"));
+    } catch {
+      return false;
+    }
+  });
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isAppearanceMenuOpen, setIsAppearanceMenuOpen] = useState(false);
   const [authError, setAuthError] = useState("");
@@ -1844,6 +1852,11 @@ export default function App() {
             }}
           />
         </Suspense>
+      )}
+      {!isAgeVerified && (
+        <AgeVerificationModal
+          onVerified={() => setIsAgeVerified(true)}
+        />
       )}
     </div>
   );
