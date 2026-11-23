@@ -1241,7 +1241,6 @@ export default function App() {
   const isHauntedNotFound = isUsername666Route && rawFleshEggStage === "haunted";
   const showSiteNotFound = page === "not-found"
     || (isUsername666Route && (rawFleshEggStage === "not-found" || rawFleshEggStage === "haunted"));
-  const fleshWarpScale = 22 + Math.max(0, rawFleshReloadCount - 10) * 12;
 
   return (
     <div
@@ -1479,7 +1478,6 @@ export default function App() {
               onSearchQueryChange={setProjectSearch}
               onSearchSubmit={() => navigateTo("explore")}
               fleshBackground={isHauntedNotFound ? RawFleshBackground : null}
-              warpScale={isHauntedNotFound ? fleshWarpScale : 0}
             />
           ) : (
             <>
