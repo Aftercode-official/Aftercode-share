@@ -276,8 +276,13 @@ export default function App() {
   const hasRawFleshUnlocked = Boolean(user?.id && window.localStorage.getItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`) === "true");
   const hasRawFleshFrame = Boolean(user?.id && window.localStorage.getItem(`${RAW_FLESH_REWARD_PREFIX}${user.id}`) === "true");
   const exitRawFlesh = useCallback(() => {
+    if (user?.id) {
+      window.localStorage.removeItem(`${RAW_FLESH_RELOAD_PREFIX}${user.id}`);
+      window.localStorage.removeItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`);
+      setRawFleshEggStage("not-found");
+    }
     setTheme(window.localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark");
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     if (isRestoringSession || rawFleshAttemptedRef.current || initialRoute.username.toLocaleLowerCase() !== "username666") return;
