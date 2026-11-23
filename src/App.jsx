@@ -21,6 +21,7 @@ import LoadingScreen from "./LoadingScreen.jsx";
 import "./BrutalistTheme.css";
 import "./ClassicTheme.css";
 import "./AvatarFrames.css";
+import "./RawFlesh.css";
 
 const THEME_STORAGE_KEY = "aftercode-share-theme";
 const SITE_STYLE_STORAGE_KEY = "aftercode-share-site-style";
@@ -28,6 +29,10 @@ const COMPATIBILITY_MODE_STORAGE_KEY = "aftercode-share-compatibility-mode";
 const CUSTOMIZATION_STORAGE_KEY = "aftercode-share-customization";
 const PUBLIC_DATA_CACHE_KEY = "aftercode-share-public-data-v1";
 const SHOP_CACHE_PREFIX = "aftercode-share-shop-v1:";
+const RAW_FLESH_FRAME_ID = "raw-flesh-666";
+const RAW_FLESH_UNLOCK_PREFIX = "aftercode-raw-flesh-unlocked:";
+const RAW_FLESH_REWARD_PREFIX = "aftercode-raw-flesh-frame:";
+const RAW_FLESH_RELOAD_PREFIX = "aftercode-raw-flesh-reloads:";
 const APP_BASE_PATH = new URL(import.meta.env.BASE_URL, window.location.origin).pathname.replace(/\/$/, "");
 const USE_HASH_ROUTING = Boolean(APP_BASE_PATH);
 const DEFAULT_CUSTOMIZATION = {
@@ -200,7 +205,7 @@ function normalizeCustomization(saved = {}) {
   if (typeof saved.accentColor !== "string" || saved.accentColor.toLowerCase() === "#238a45") {
     normalized.accentColor = DEFAULT_CUSTOMIZATION.accentColor;
   }
-  if (!["none", "gold", "neon", "pixel", "bear"].includes(normalized.avatarFrame)
+  if (!["none", "gold", "neon", "pixel", "bear", RAW_FLESH_FRAME_ID].includes(normalized.avatarFrame)
     && !(typeof normalized.avatarFrame === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalized.avatarFrame))) {
     normalized.avatarFrame = DEFAULT_CUSTOMIZATION.avatarFrame;
   }
@@ -260,6 +265,50 @@ export default function App() {
   const [compatibilityMode, setCompatibilityMode] = useState(() => (
     window.localStorage.getItem(COMPATIBILITY_MODE_STORAGE_KEY) === "true"
   ));
+  const [rawFleshEggStage, setRawFleshEggStage] = useState(null);
+  const [rawFleshElapsed, setRawFleshElapsed] = useState(0);
+  const rawFleshAttemptedRef = useRef(false);
+  const isRawFleshTheme = theme === "raw-flesh";
+  const hasRawFleshUnlocked = Boolean(user?.id && window.localStorage.getItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`) === "true");
+  const hasRawFleshFrame = Boolean(user?.id && window.localStorage.getItem(`${RAW_FLESH_REWARD_PREFIX}${user.id}`) === "true");
+
+  useEffect(() => {
+    if (isRestoringSession || rawFleshAttemptedRef.current || initialRoute.username.toLocaleLowerCase() !== "username666") return;
+    if (!user?.id) {
+      setRawFleshEggStage("guest");
+      return;
+    }
+    rawFleshAttemptedRef.current = true;
+    const key = `${RAW_FLESH_RELOAD_PREFIX}${user.id}`;
+    const previousAttempts = Number(window.localStorage.getItem(key) || 0);
+    const navigationType = window.performance.getEntriesByType?.("navigation")?.[0]?.type;
+    const isPageReload = navigationType === "reload" || (!navigationType && window.performance.navigation?.type === 1);
+    const attempts = previousAttempts + (isPageReload ? 1 : 0);
+    window.localStorage.setItem(key, String(attempts));
+    if (attempts >= 15) {
+      window.localStorage.setItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`, "true");
+      setRawFleshEggStage("unlocked");
+    } else if (attempts >= 10) {
+      setRawFleshEggStage("haunted");
+    } else {
+      setRawFleshEggStage("not-found");
+    }
+  }, [isRestoringSession, user?.id]);
+
+  useEffect(() => {
+    if (!isRawFleshTheme) {
+      setRawFleshElapsed(0);
+      return undefined;
+    }
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => setRawFleshElapsed(Math.floor((Date.now() - startedAt) / 1000)), 1000);
+    return () => window.clearInterval(timer);
+  }, [isRawFleshTheme]);
+
+  useEffect(() => {
+    document.documentElement.dataset.rawFlesh = isRawFleshTheme ? "true" : "false";
+    return () => { delete document.documentElement.dataset.rawFlesh; };
+  }, [isRawFleshTheme]);
 
   useEffect(() => {
     const handleAccountBanned = (event) => {
@@ -514,6 +563,7 @@ export default function App() {
   };
 
   const navigateTo = (nextPage, options = {}) => {
+    setRawFleshEggStage(null);
     setPage(nextPage);
     setSelectedProject(options.project ?? null);
     setSelectedUserId(options.userId ?? null);
@@ -642,6 +692,7 @@ export default function App() {
   useEffect(() => {
     const restoreRoute = () => {
       const route = getInitialRoute();
+      setRawFleshEggStage(null);
       setPage(route.page);
       setSelectedProject(null);
       setSelectedUserId(null);
@@ -843,7 +894,13 @@ export default function App() {
         const saved = await loadCustomization();
         if (!isActive) return;
         if (saved) {
-          setCustomization(normalizeCustomization(saved));
+          let normalized = normalizeCustomization(saved);
+          if (window.localStorage.getItem(`${RAW_FLESH_REWARD_PREFIX}${userId}`) === "true"
+            && normalized.avatarFrame !== RAW_FLESH_FRAME_ID) {
+            normalized = { ...normalized, avatarFrame: RAW_FLESH_FRAME_ID };
+            await persistCustomization(normalized);
+          }
+          setCustomization(normalized);
           return;
         }
 
@@ -909,6 +966,15 @@ export default function App() {
   }
 
   const activeAccentColor = siteStyle === "brutalist" ? customization.accentColor : "#2679b9";
+
+  if (isRawFleshTheme) {
+    return <RawFleshExperience elapsed={rawFleshElapsed} onCrash={() => {
+      if (user?.id) {
+        window.localStorage.setItem(`${RAW_FLESH_REWARD_PREFIX}${user.id}`, "true");
+        window.localStorage.setItem(`${RAW_FLESH_RELOAD_PREFIX}${user.id}`, "15");
+      }
+    }} />;
+  }
 
   return (
     <div
@@ -997,6 +1063,7 @@ export default function App() {
                   <div>
                     <button type="button" aria-pressed={siteStyle === "brutalist"} onClick={() => setSiteStyle("brutalist")}>Brutalist</button>
                     <button type="button" aria-pressed={siteStyle === "classic"} onClick={() => setSiteStyle("classic")}>Aero</button>
+                    {hasRawFleshUnlocked && <button type="button" aria-pressed={false} onClick={() => { setTheme("raw-flesh"); setIsAppearanceMenuOpen(false); }}>Raw Flesh</button>}
                   </div>
                 </fieldset>
               </div>
@@ -1099,16 +1166,18 @@ export default function App() {
         <main
           className={`main-feed-container${page === "home" ? ` scratch-home${!isLoggedIn ? " guest-home" : ""}${events.length ? " has-home-events" : ""}` : ""}${page === "profile" || page === "user" ? " profile-page" : ""}${page === "project" ? " project-page-container" : ""}${page === "chat" ? " chat-page-container" : ""}${page === "shop" ? " shop-page-container" : ""}`}
         >
+          {rawFleshEggStage && <RawFleshProfileStage stage={rawFleshEggStage} projects={projects} onEnterTheme={() => setTheme("raw-flesh")} />}
           <Suspense fallback={siteStyle === "classic"
             ? <LoadingScreen siteStyle={siteStyle} inline />
             : <p className="featured-empty">Loading page...</p>}>
-          <User
+          {rawFleshEggStage ? null : <User
           key={`${page}-${isCustomizeOpen}-${selectedUserId ?? ""}`}
           page={page}
           user={user}
           customization={customization}
           decorations={shopData.decorations}
           ownedDecorationIds={shopData.ownedIds}
+          hasRawFleshFrame={hasRawFleshFrame}
           customizationError={customizationError}
           isCustomizeOpen={isCustomizeOpen}
           onOpenCustomizer={openCustomizer}
@@ -1124,7 +1193,7 @@ export default function App() {
           peopleListRoute={peopleListRoute}
           onPeopleListNavigate={navigateToPeopleList}
           onPublicProfileLoaded={handlePublicProfileLoaded}
-        />
+        />}
 
           {(page === "explore" || page === "project") && (
             <ProjectPages
@@ -1491,6 +1560,105 @@ export default function App() {
         </Suspense>
       )}
     </div>
+  );
+}
+
+function RawFleshProfileStage({ stage, projects, onEnterTheme }) {
+  if (stage === "guest") {
+    return <section className="raw-egg-page raw-egg-not-found"><span>404</span><h1>Profile not found</h1><p>Sign in to view this profile.</p></section>;
+  }
+  if (stage === "not-found") {
+    return <section className="raw-egg-page raw-egg-not-found"><span>404</span><h1>This profile could not be found.</h1></section>;
+  }
+  const unlocked = stage === "unlocked";
+  return (
+    <section className={`raw-egg-page raw-egg-profile${unlocked ? " is-unlocked" : " is-haunted"}`}>
+      <div className="raw-egg-banner" style={{ backgroundImage: `url("${import.meta.env.BASE_URL}images.png")` }} />
+      <div className="raw-egg-identity">
+        <div className="raw-egg-avatar">666</div>
+        <div><h1>username666</h1><p>@username666</p></div>
+      </div>
+      <p className="raw-egg-about">666</p>
+      <div className="raw-egg-projects">
+        {(projects.length ? projects.slice(0, 4) : [1, 2, 3]).map((project, index) => (
+          <div className="raw-egg-project" key={project.id ?? index}>
+            <img src={`${import.meta.env.BASE_URL}${index % 2 ? "riv1cf.gif" : "horror.gif"}`} alt="666" />
+            <strong>666</strong>
+          </div>
+        ))}
+      </div>
+      {unlocked && <div className="raw-egg-unlocked"><strong>RAW FLESH — 666</strong><button type="button" onClick={onEnterTheme}>666</button></div>}
+    </section>
+  );
+}
+
+function RawFleshExperience({ elapsed, onCrash }) {
+  const crashed = elapsed >= 120;
+  const crashHandled = useRef(false);
+
+  useEffect(() => {
+    document.body.classList.add("raw-flesh-active");
+    let audioContext;
+    let source;
+    let gain;
+    let ramp;
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        audioContext = new AudioContextClass();
+        const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 2, audioContext.sampleRate);
+        const channel = buffer.getChannelData(0);
+        for (let index = 0; index < channel.length; index += 1) channel[index] = (Math.random() * 2 - 1) * 0.2;
+        source = audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        gain = audioContext.createGain();
+        gain.gain.value = 0;
+        source.connect(gain).connect(audioContext.destination);
+        source.start();
+        audioContext.resume().catch(() => {});
+        ramp = window.setInterval(() => {
+          if (!audioContext || !gain) return;
+          gain.gain.setTargetAtTime(Math.min(0.12, Math.max(0, (Date.now() - startedAt) / 1000 - 58) * 0.002), audioContext.currentTime, 0.4);
+        }, 1000);
+      }
+    } catch {
+      // Audio is an optional part of the visual easter egg.
+    }
+    const startedAt = Date.now();
+    return () => {
+      document.body.classList.remove("raw-flesh-active");
+      window.clearInterval(ramp);
+      try { source?.stop(); } catch { /* already stopped */ }
+      audioContext?.close().catch(() => {});
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!crashed || crashHandled.current) return;
+    crashHandled.current = true;
+    onCrash();
+    const file = new Blob(["666"], { type: "text/plain;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(file);
+    link.download = "666.txt";
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  }, [crashed, onCrash]);
+
+  const imageCount = Math.max(6, Math.min(24, 8 + Math.floor(elapsed / 4)));
+  return (
+    <main className={`raw-flesh-screen${elapsed >= 60 ? " is-awakening" : ""}${crashed ? " is-crashed" : ""}`} style={{ "--flesh-intensity": Math.min(1, Math.max(0, (elapsed - 60) / 60)) }}>
+      <div className="raw-flesh-wallpaper" style={{ backgroundImage: `url("${import.meta.env.BASE_URL}images.png")`, opacity: 0.2 + Math.min(1, Math.max(0, (elapsed - 60) / 60)) * 0.8 }} />
+      <div className="raw-flesh-noise" aria-hidden="true" style={{ opacity: 0.04 + Math.min(1, Math.max(0, (elapsed - 60) / 60)) * 0.5 }} />
+      <div className="raw-flesh-copy" aria-hidden="true">{Array.from({ length: imageCount }, (_, index) => <span key={index}>666 666 666 666 666 666 666 666</span>)}</div>
+      {Array.from({ length: Math.max(3, Math.min(12, Math.ceil(elapsed / 8))) }, (_, index) => (
+        <img className={`raw-flesh-image raw-flesh-image-${index % 2}`} key={index} src={`${import.meta.env.BASE_URL}${index % 2 ? "riv1cf.gif" : "horror.gif"}`} alt="666" />
+      ))}
+      {elapsed >= 60 && <img className="raw-flesh-hand" src={`${import.meta.env.BASE_URL}hand.png`} alt="" />}
+      <div className="raw-flesh-status">{crashed ? "666" : "666  •  666"}</div>
+      {crashed && <div className="raw-flesh-crash"><strong>666</strong><button type="button" onClick={() => window.location.reload()}>666</button></div>}
+    </main>
   );
 }
 

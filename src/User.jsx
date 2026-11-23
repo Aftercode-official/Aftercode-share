@@ -37,6 +37,7 @@ export default function User({
   customization,
   decorations = [],
   ownedDecorationIds = [],
+  hasRawFleshFrame = false,
   customizationError,
   isCustomizeOpen,
   onOpenCustomizer,
@@ -755,6 +756,7 @@ export default function User({
                   <option value="neon">Neon</option>
                   <option value="pixel">Pixel</option>
                   <option value="bear">Bear</option>
+                  {hasRawFleshFrame && <option value="raw-flesh-666">Raw Flesh 666</option>}
                   {ownedDecorations.length > 0 && (
                     <optgroup label="Purchased frames">
                       {ownedDecorations.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}

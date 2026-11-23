@@ -1,4 +1,4 @@
-const BUILT_IN_AVATAR_FRAMES = new Set(["none", "gold", "neon", "pixel", "bear"]);
+const BUILT_IN_AVATAR_FRAMES = new Set(["none", "gold", "neon", "pixel", "bear", "raw-flesh-666"]);
 export const DRAGON_AVATAR_FRAME_ID = "545f6857-05ab-4703-b2c7-ee8bf1a4f0fe";
 export const CHIX_ART_AVATAR_FRAME_ID = "de0e06c9-7fbb-4a40-a085-756d408c665c";
 export const WHITE_CAT_AVATAR_FRAME_ID = "78d8efec-96ad-449a-afc0-fe3621ee65c3";

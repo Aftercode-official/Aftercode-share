@@ -37,7 +37,7 @@ function sanitizeProfile(body) {
     }
   }
   if (Object.hasOwn(body, "avatarFrame")) {
-    if (!["none", "gold", "neon", "pixel", "bear"].includes(body.avatarFrame) && !UUID_RE.test(body.avatarFrame)) {
+    if (!["none", "gold", "neon", "pixel", "bear", "raw-flesh-666"].includes(body.avatarFrame) && !UUID_RE.test(body.avatarFrame)) {
       return { error: "Choose a valid avatar frame." };
     }
     updates.avatar_frame = body.avatarFrame;
