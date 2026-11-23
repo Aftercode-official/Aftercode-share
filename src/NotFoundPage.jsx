@@ -1,4 +1,5 @@
 import LogoIcon from "./assets/Logo.png";
+import ErrLogo from "./assets/err.png";
 import "./NotFoundPage.css";
 
 export default function NotFoundPage({
@@ -13,7 +14,7 @@ export default function NotFoundPage({
       style={fleshBackground ? { backgroundImage: `url("${fleshBackground}")` } : undefined}
     >
       <div className="not-found-content">
-        <img className="not-found-logo" src={LogoIcon} alt="Aftercode" width="180" height="59" draggable={false} />
+        <img className="not-found-logo" src={fleshBackground ? ErrLogo : LogoIcon} alt="Aftercode" width="180" height="59" draggable={false} />
         <div className="not-found-search-wrap">
           <input
             type="text"
