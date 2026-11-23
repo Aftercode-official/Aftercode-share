@@ -301,7 +301,7 @@ export default function App() {
     const attempts = previousAttempts + (isPageReload ? 1 : 0);
     window.localStorage.setItem(key, String(attempts));
     setRawFleshReloadCount(attempts);
-    if (attempts >= 20) {
+    if (attempts >= 16) {
       window.localStorage.setItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`, "true");
       setRawFleshEggStage("unlocked");
       setTheme("raw-flesh");
@@ -316,6 +316,18 @@ export default function App() {
   }, [isRestoringSession, user?.id]);
 
   useEffect(() => {
+    if (isRestoringSession || !user?.id || initialRoute.username.toLocaleLowerCase() === "username666") return;
+    const key = `${RAW_FLESH_RELOAD_PREFIX}${user.id}`;
+    const attempts = Number(window.localStorage.getItem(key) || 0);
+    if (attempts >= 16 && window.localStorage.getItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`) === "true") {
+      setRawFleshReloadCount(attempts);
+      setTheme("raw-flesh");
+    } else if (attempts > 0) {
+      resetRawFleshProgress();
+    }
+  }, [initialRoute.username, isRestoringSession, resetRawFleshProgress, user?.id]);
+
+  useEffect(() => {
     if (!isRawFleshTheme) {
       setRawFleshElapsed(0);
       return undefined;
@@ -327,8 +339,81 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.dataset.rawFlesh = isRawFleshTheme ? "true" : "false";
-    return () => { delete document.documentElement.dataset.rawFlesh; };
-  }, [isRawFleshTheme]);
+    document.documentElement.dataset.rawFleshStage = rawFleshEggStage || "";
+    document.documentElement.style.setProperty("--raw-flesh-background", `url("${RawFleshBackground}")`);
+    return () => {
+      delete document.documentElement.dataset.rawFlesh;
+      delete document.documentElement.dataset.rawFleshStage;
+      document.documentElement.style.removeProperty("--raw-flesh-background");
+    };
+  }, [isRawFleshTheme, rawFleshEggStage]);
+
+  useEffect(() => {
+    const root = document.getElementById("root");
+    if (!root) return undefined;
+    const originalText = new Map();
+    const originalSources = new Map();
+    const originalFallbacks = new Map();
+    const originalPlaceholders = new Map();
+    const isWholeSite = isRawFleshTheme;
+    const eligible = (node) => isWholeSite || Boolean(node.parentElement?.closest(".header, .site-footer"));
+    const replaceVisibleContent = () => {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      let node;
+      while ((node = walker.nextNode())) {
+        const parent = node.parentElement;
+        if (!parent || parent.closest("script, style, svg, .raw-flesh-ambience") || !eligible(node)) continue;
+        const text = node.nodeValue;
+        if (!text.trim() || text === "666") continue;
+        originalText.set(node, text);
+        node.nodeValue = "666";
+      }
+
+      if (!isWholeSite) return;
+      root.querySelectorAll("input[placeholder], textarea[placeholder]").forEach((input) => {
+        if (!originalPlaceholders.has(input)) originalPlaceholders.set(input, input.getAttribute("placeholder"));
+        input.setAttribute("placeholder", "666");
+      });
+      root.querySelectorAll("img.featured-thumb, img.chat-project-thumb").forEach((image, index) => {
+        if (!originalSources.has(image)) originalSources.set(image, image.getAttribute("src"));
+        image.src = index % 2 ? RawRivGif : RawHorrorGif;
+      });
+      root.querySelectorAll(".sb3-thumbnail, .chat-project-thumb-empty").forEach((fallback, index) => {
+        if (!originalFallbacks.has(fallback)) {
+          originalFallbacks.set(fallback, {
+            image: fallback.style.backgroundImage,
+            size: fallback.style.backgroundSize
+          });
+        }
+        fallback.style.backgroundImage = `url("${index % 2 ? RawRivGif : RawHorrorGif}")`;
+        fallback.style.backgroundSize = "cover";
+      });
+    };
+    replaceVisibleContent();
+    const observer = new MutationObserver((records) => {
+      if (records.some((record) => record.type === "childList" || record.target.nodeValue !== "666")) replaceVisibleContent();
+    });
+    observer.observe(root, { subtree: true, childList: true, characterData: true });
+    return () => {
+      observer.disconnect();
+      for (const [node, text] of originalText) {
+        if (node.isConnected && node.nodeValue === "666") node.nodeValue = text;
+      }
+      for (const [image, src] of originalSources) {
+        if (!image.isConnected) continue;
+        if (src) image.setAttribute("src", src);
+        else image.removeAttribute("src");
+      }
+      for (const [fallback, style] of originalFallbacks) {
+        if (!fallback.isConnected) continue;
+        fallback.style.backgroundImage = style.image;
+        fallback.style.backgroundSize = style.size;
+      }
+      for (const [input, placeholder] of originalPlaceholders) {
+        if (input.isConnected && placeholder !== null) input.setAttribute("placeholder", placeholder);
+      }
+    };
+  }, [isRawFleshTheme, rawFleshEggStage]);
 
   useEffect(() => {
     const handleAccountBanned = (event) => {
@@ -601,8 +686,10 @@ export default function App() {
       && routeUsername.toLocaleLowerCase() === "username666";
     const currentIsEggProfile = (page === "user" || page === "profile")
       && profileRouteUsername.toLocaleLowerCase() === "username666";
-    if (currentIsEggProfile && !nextIsEggProfile) resetRawFleshProgress();
-    else if (nextIsEggProfile) {
+    if (currentIsEggProfile && !nextIsEggProfile && rawFleshReloadCount < 16) resetRawFleshProgress();
+    else if (nextIsEggProfile && rawFleshReloadCount >= 16) {
+      setRawFleshEggStage("unlocked");
+    } else if (nextIsEggProfile) {
       setRawFleshReloadCount(0);
       setRawFleshEggStage("not-found");
     } else {
@@ -728,10 +815,14 @@ export default function App() {
       const isEggProfile = (route.page === "user" || route.page === "profile")
         && route.username.toLocaleLowerCase() === "username666";
       if (!isEggProfile && (rawFleshReloadCount > 0 || theme === "raw-flesh")) {
-        resetRawFleshProgress();
+        if (rawFleshReloadCount >= 16) setRawFleshEggStage(null);
+        else resetRawFleshProgress();
       } else if (isEggProfile) {
-        setRawFleshReloadCount(0);
-        setRawFleshEggStage("not-found");
+        if (rawFleshReloadCount >= 16 && theme === "raw-flesh") setRawFleshEggStage("unlocked");
+        else {
+          setRawFleshReloadCount(0);
+          setRawFleshEggStage("not-found");
+        }
       } else {
         setRawFleshEggStage(null);
       }
@@ -1009,18 +1100,9 @@ export default function App() {
 
   const activeAccentColor = siteStyle === "brutalist" ? customization.accentColor : "#2679b9";
 
-  if (isRawFleshTheme) {
-    return <RawFleshExperience elapsed={rawFleshElapsed} onCrash={() => {
-      if (user?.id) {
-        window.localStorage.setItem(`${RAW_FLESH_REWARD_PREFIX}${user.id}`, "true");
-        window.localStorage.setItem(`${RAW_FLESH_RELOAD_PREFIX}${user.id}`, "15");
-      }
-    }} projects={projects} reloadCount={rawFleshReloadCount} />;
-  }
-
   return (
     <div
-      className="app-layout"
+      className={`app-layout${isRawFleshTheme ? " raw-flesh-active" : ""}`}
       style={{
         "--accent-yellow": activeAccentColor,
         "--accent-orange": activeAccentColor,
@@ -1028,11 +1110,19 @@ export default function App() {
         "--brutal-yellow": activeAccentColor,
         "--brutal-orange": activeAccentColor,
         "--yellow": activeAccentColor,
+        "--raw-flesh-background": `url("${RawFleshBackground}")`,
+        "--egg-contrast": Math.min(2.2, 1 + Math.max(0, rawFleshReloadCount - 10) * 0.12),
         "--custom-home-background": theme === "dark"
           ? "var(--bg-main)"
           : customization.homeBackground
       }}
     >
+      {isRawFleshTheme && <RawFleshExperience elapsed={rawFleshElapsed} onCrash={() => {
+        if (!user?.id) return;
+        window.localStorage.setItem(`${RAW_FLESH_REWARD_PREFIX}${user.id}`, "true");
+        window.localStorage.removeItem(`${RAW_FLESH_RELOAD_PREFIX}${user.id}`);
+        window.localStorage.removeItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`);
+      }} reloadCount={rawFleshReloadCount} />}
       <div className="workspace">
         <header className="header">
           <div className="header-left">
@@ -1641,7 +1731,7 @@ function RawFleshProfileStage({ stage, projects, reloadCount }) {
   );
 }
 
-function RawFleshExperience({ elapsed, onCrash, projects, reloadCount }) {
+function RawFleshExperience({ elapsed, onCrash, reloadCount }) {
   const crashed = elapsed >= 120;
   const crashHandled = useRef(false);
 
@@ -1695,27 +1785,13 @@ function RawFleshExperience({ elapsed, onCrash, projects, reloadCount }) {
     window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
   }, [crashed, onCrash]);
 
-  const imageCount = Math.max(6, Math.min(24, 8 + Math.floor(elapsed / 4)));
   return (
-    <main className={`raw-flesh-screen${elapsed >= 60 ? " is-awakening" : ""}${crashed ? " is-crashed" : ""}`} style={{ "--flesh-intensity": Math.min(1, Math.max(0, (elapsed - 60) / 60)), filter: `contrast(${Math.min(2.2, 1 + Math.max(0, reloadCount - 10) * 0.12)})${crashed ? " saturate(1.8) brightness(.55)" : ""}` }}>
-      <div className="raw-flesh-wallpaper" style={{ backgroundImage: `url("${RawFleshBackground}")`, opacity: 0.72 + Math.min(1, Math.max(0, (elapsed - 60) / 60)) * 0.28 }} />
+    <div className={`raw-flesh-ambience${elapsed >= 60 ? " is-awakening" : ""}${crashed ? " is-crashed" : ""}`} style={{ "--flesh-intensity": Math.min(1, Math.max(0, (elapsed - 60) / 60)), filter: `contrast(${Math.min(2.2, 1 + Math.max(0, reloadCount - 10) * 0.12)})${crashed ? " saturate(1.8) brightness(.55)" : ""}` }}>
       <div className="raw-flesh-noise" aria-hidden="true" style={{ opacity: 0.04 + Math.min(1, Math.max(0, (elapsed - 60) / 60)) * 0.5 }} />
-      <nav className="raw-flesh-nav" aria-label="666" style={{ backgroundImage: `url("${RawFleshBackground}")` }}>
-        <span>666</span><div><span>666</span><span>666</span><span>666</span><span>666</span></div>
-      </nav>
-      <div className="raw-flesh-copy" aria-hidden="true">{Array.from({ length: imageCount }, (_, index) => <span key={index}>666 666 666 666 666 666 666 666</span>)}</div>
-      <div className="raw-flesh-project-wall" aria-hidden="true">
-        {(projects.length ? projects.slice(0, 8) : [1, 2, 3, 4]).map((project, index) => (
-          <div className="raw-flesh-project-tile" key={project.id ?? index}>
-            <img src={index % 2 ? RawRivGif : RawHorrorGif} alt="666" loading="lazy" />
-            <span className="raw-flesh-user-avatar">666</span><strong>666</strong>
-          </div>
-        ))}
-      </div>
       {elapsed >= 60 && <img className="raw-flesh-hand" src={RawFleshHand} alt="" />}
       <div className="raw-flesh-status">{crashed ? "666" : "666  •  666"}</div>
       {crashed && <div className="raw-flesh-crash"><strong>666</strong><button type="button" onClick={() => window.location.reload()}>666</button></div>}
-    </main>
+    </div>
   );
 }
 

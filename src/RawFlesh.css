@@ -1,15 +1,14 @@
 .raw-egg-page,
-.raw-flesh-screen {
+.raw-flesh-ambience {
   font-family: "Courier New", monospace;
   color: #fff1f1;
-  background: #090000;
 }
 
 .raw-egg-page {
   min-height: 70vh;
   padding: clamp(1rem, 4vw, 3rem);
   overflow: hidden;
-  background-image: radial-gradient(ellipse at center, #310000 0, #090000 68%);
+  background: radial-gradient(ellipse at center, #310000 0, #090000 68%);
 }
 
 .raw-egg-not-found {
@@ -19,6 +18,7 @@
   gap: 1rem;
   text-align: center;
 }
+
 .raw-egg-not-found:not(.is-haunted) {
   min-height: 68vh;
   padding: 2rem;
@@ -26,77 +26,155 @@
   font-family: Arial, Helvetica, sans-serif;
   background: none;
   animation: none;
+  filter: contrast(var(--egg-contrast, 1));
 }
-.raw-egg-not-found:not(.is-haunted), .raw-egg-not-found.is-haunted, .raw-egg-profile { filter: contrast(var(--egg-contrast, 1)); }
 
 .raw-egg-not-found > span {
   color: #e00016;
   font-size: clamp(5rem, 20vw, 12rem);
 }
+
 .raw-egg-not-found:not(.is-haunted) > span {
   color: inherit;
   font-size: clamp(2rem, 8vw, 4rem);
 }
 
-.raw-egg-profile.is-haunted, .raw-egg-not-found.is-haunted { animation: raw-egg-flicker 1.7s steps(2, end) infinite; }
+.raw-egg-not-found.is-haunted,
+.raw-egg-profile {
+  filter: contrast(var(--egg-contrast, 1));
+}
+
+.raw-egg-not-found.is-haunted { animation: raw-egg-flicker 1.7s steps(2, end) infinite; }
 .raw-egg-glitch-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .2; mix-blend-mode: screen; }
 .raw-egg-glitch-copy { position: absolute; color: #f00; font-size: clamp(3rem, 12vw, 9rem); animation: raw-egg-glitch 1.7s steps(2, end) infinite; }
-.raw-egg-banner {
-  height: clamp(8rem, 28vw, 17rem);
-  background: #5b0000 center / cover no-repeat, repeating-radial-gradient(circle at 50%, #810000 0 2px, #170000 3px 8px);
-  border: 2px solid #d90012;
-}
+.raw-egg-profile { min-height: 70vh; }
+.raw-egg-banner { height: clamp(8rem, 28vw, 17rem); background: #5b0000 center / cover no-repeat; border: 2px solid #d90012; }
 .raw-egg-identity { display: flex; align-items: center; gap: 1rem; margin: -2.5rem 1rem 1rem; position: relative; }
 .raw-egg-identity h1 { color: #ff1c2b; }
 .raw-egg-identity p, .raw-egg-about { color: #d7a1a1; }
-.raw-egg-avatar {
-  width: 5rem; aspect-ratio: 1; border: 3px solid #ff2525; border-radius: 50%; display: grid; place-items: center;
-  color: #fff; background: #b40012; font: 900 1.7rem "Courier New", monospace;
-}
+.raw-egg-avatar { width: 5rem; aspect-ratio: 1; border: 3px solid #ff2525; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #b40012; font: 900 1.7rem "Courier New", monospace; }
 .raw-egg-about { padding: 1rem; border-block: 1px solid #78000b; }
 .raw-egg-projects { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .8rem; margin-top: 1rem; }
 .raw-egg-project { min-width: 0; border: 1px solid #b00014; background: #170000; }
-.raw-egg-project img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: repeating-linear-gradient(130deg, #280000 0 5px, #b00014 6px 8px); }
+.raw-egg-project img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #280000; }
 .raw-egg-project strong { display: block; padding: .7rem; color: #ff2935; }
+
+/* Reload 10-15 distorts the site navigation and footer first. */
+:root[data-raw-flesh-stage="haunted"] .header,
+:root[data-raw-flesh-stage="haunted"] .site-footer,
+:root[data-raw-flesh-stage="unlocked"] .header,
+:root[data-raw-flesh-stage="unlocked"] .site-footer {
+  color: #ff0808 !important;
+  filter: contrast(var(--egg-contrast, 1));
+  animation: raw-egg-flicker 1.7s steps(2, end) infinite;
+}
+
+:root[data-raw-flesh-stage="haunted"] .header *,
+:root[data-raw-flesh-stage="haunted"] .site-footer *,
+:root[data-raw-flesh-stage="unlocked"] .header *,
+:root[data-raw-flesh-stage="unlocked"] .site-footer * { color: #ff0808 !important; }
+
+/* Raw Flesh colors and backgrounds cover every app route. */
+:root[data-raw-flesh="true"] body,
+body.raw-flesh-active {
+  overflow: hidden !important;
+  color: #ff1010 !important;
+  background: var(--raw-flesh-background) center / cover fixed !important;
+}
+
+.app-layout.raw-flesh-active {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  height: auto;
+  min-height: 100vh;
+  overflow: visible !important;
+  color: #ff1010 !important;
+  background: var(--raw-flesh-background) center / cover fixed !important;
+}
+
+.raw-flesh-active .workspace {
+  position: relative;
+  z-index: 1;
+  height: auto;
+  min-height: 100vh;
+  background: transparent !important;
+  pointer-events: none;
+}
+
+.raw-flesh-active .header {
+  color: #ff0808 !important;
+  background: var(--raw-flesh-background) center / cover !important;
+  border-color: #ff1010 !important;
+}
+
+.raw-flesh-active .header *,
+.raw-flesh-active .site-footer *,
+.raw-flesh-active .main-feed-container * { color: #ff1010 !important; }
+
+.raw-flesh-active .main-feed-container,
+.raw-flesh-active .site-footer { background: transparent !important; border-color: #f00 !important; }
+
+.raw-flesh-active .notifications-trigger,
+.raw-flesh-active .upload-project-trigger { display: none !important; }
+
+.raw-flesh-active .main-feed-container :is(section, article, .featured-card, .project-card, .chat-message, .notification-card, .shop-card) {
+  background-color: rgb(55 0 0 / 78%) !important;
+  border-color: #e00012 !important;
+}
+
+.raw-flesh-active :is(.profile-avatar, .header-profile, .chat-avatar-link, .project-comment-avatar-btn, .feed-avatar-frame-wrap) {
+  position: relative;
+  overflow: hidden;
+  border-radius: 50% !important;
+  color: #fff !important;
+  background: #bc0010 !important;
+}
+
+.raw-flesh-active :is(.profile-avatar, .header-profile, .chat-avatar-link, .project-comment-avatar-btn, .feed-avatar-frame-wrap) > img,
+.raw-flesh-active :is(.profile-avatar, .header-profile, .chat-avatar-link, .project-comment-avatar-btn, .feed-avatar-frame-wrap) > .avatar {
+  visibility: hidden !important;
+}
+
+.raw-flesh-active :is(.profile-avatar, .header-profile, .chat-avatar-link, .project-comment-avatar-btn, .feed-avatar-frame-wrap)::after {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #fff !important;
+  background: #bc0010;
+  content: "666";
+  font: 900 .85rem Arial, sans-serif;
+}
+
+.raw-flesh-ambience {
+  position: fixed;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.raw-flesh-noise { position: absolute; inset: 0; background-image: repeating-radial-gradient(circle at 40% 50%, transparent 0 2px, #ff0017 3px 4px, transparent 5px 7px); mix-blend-mode: screen; }
+.raw-flesh-ambience.is-awakening { animation: raw-flesh-shake .17s infinite; }
+.raw-flesh-hand { position: fixed; z-index: 55; width: min(55vw, 36rem); max-height: 70vh; object-fit: contain; right: 3vw; bottom: 2vh; animation: raw-hand-enter 2s ease-out both; }
+.raw-flesh-status { position: fixed; z-index: 55; top: 1rem; left: 1rem; color: #ff1010; font-weight: 900; letter-spacing: .3em; }
+.raw-flesh-ambience.is-crashed { z-index: 100000; pointer-events: auto; background: rgb(0 0 0 / 92%); }
+.raw-flesh-crash { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 2rem; }
+.raw-flesh-crash strong { color: #e00018; font-size: clamp(6rem, 30vw, 20rem); }
 .raw-flesh-crash button { padding: .8rem 1.2rem; color: #fff; background: #a00010; border: 1px solid #ff4752; font: 700 1rem "Courier New", monospace; }
 
-.raw-flesh-screen { position: fixed; z-index: 99999; inset: 0; overflow: hidden; isolation: isolate; background: #080000; animation: raw-flesh-red 60s linear forwards; }
-.raw-flesh-wallpaper, .raw-flesh-noise { position: absolute; inset: 0; pointer-events: none; }
-.raw-flesh-wallpaper { z-index: -2; background-position: center; background-size: cover; filter: saturate(1.6) contrast(1.2); }
-.raw-flesh-noise { z-index: -1; background-image: repeating-radial-gradient(circle at 40% 50%, transparent 0 2px, #ff0017 3px 4px, transparent 5px 7px); mix-blend-mode: screen; }
-.raw-flesh-nav { position: absolute; z-index: 3; inset: 0 0 auto; min-height: 3.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .6rem 1.2rem; color: #fff; background-position: center 18%; background-size: cover; border-bottom: 2px solid #e00018; }
-.raw-flesh-nav > span:first-child { font-weight: 900; font-size: 1.5rem; }
-.raw-flesh-nav > div { display: flex; gap: clamp(.5rem, 3vw, 2rem); }
-.raw-flesh-nav > div span { padding: .35rem .7rem; border: 1px solid rgb(255 20 35 / 75%); background: rgb(35 0 0 / 55%); }
-.raw-flesh-screen.is-awakening { animation: raw-flesh-shake .17s infinite, raw-flesh-red 60s linear forwards; }
-.raw-flesh-screen.is-crashed { animation: none; }
-.raw-flesh-copy { position: absolute; inset: -10%; display: flex; flex-direction: column; justify-content: space-around; transform: rotate(-9deg); color: rgb(255 0 18 / 22%); font-size: clamp(1rem, 4vw, 4rem); }
-.raw-flesh-project-wall { position: absolute; z-index: 1; inset: 14% 5% 8%; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(20vw, 10rem), 1fr)); gap: .6rem; overflow: hidden; opacity: .88; }
-.raw-flesh-project-tile { position: relative; min-width: 0; overflow: hidden; border: 1px solid rgb(255 0 20 / 75%); background: #270006; }
-.raw-flesh-project-tile > img { display: block; width: 100%; height: 100%; min-height: 5rem; object-fit: cover; filter: saturate(1.35) contrast(1.12); }
-.raw-flesh-project-tile > strong { position: absolute; right: .5rem; bottom: .25rem; color: #fff; font-size: clamp(1rem, 3vw, 2.5rem); }
-.raw-flesh-user-avatar { position: absolute; top: .4rem; left: .4rem; display: grid; place-items: center; width: clamp(2rem, 5vw, 3.5rem); aspect-ratio: 1; border: 2px solid #ff4952; border-radius: 50%; color: #fff; background: #ad0010; font-size: clamp(.7rem, 1.5vw, 1rem); }
-.raw-flesh-hand { position: absolute; z-index: 2; width: min(55vw, 36rem); max-height: 70vh; object-fit: contain; right: 3vw; bottom: 2vh; animation: raw-hand-enter 2s ease-out both; }
-.raw-flesh-status { position: absolute; top: 1rem; left: 1rem; color: #ff3741; font-weight: 900; letter-spacing: .3em; }
-.raw-flesh-crash { position: absolute; z-index: 5; inset: 0; display: grid; place-content: center; justify-items: center; gap: 2rem; background: rgb(0 0 0 / 92%); }
-.raw-flesh-crash strong { color: #e00018; font-size: clamp(6rem, 30vw, 20rem); }
-body.raw-flesh-active { overflow: hidden !important; }
 :root[data-site-style] .profile-avatar[data-avatar-frame="raw-flesh-666"],
 :root[data-site-style] .header-profile[data-avatar-frame="raw-flesh-666"],
 :root[data-site-style] .chat-avatar-link[data-avatar-frame="raw-flesh-666"],
 :root[data-site-style] .project-comment-avatar-btn[data-avatar-frame="raw-flesh-666"],
-:root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="raw-flesh-666"] {
-  border: 3px solid #f12 !important;
-  border-radius: 50% !important;
-}
+:root[data-site-style] .feed-avatar-frame-wrap[data-avatar-frame="raw-flesh-666"] { border: 3px solid #f12 !important; border-radius: 50% !important; }
 
 @keyframes raw-egg-flicker { 0%, 95%, 100% { opacity: 1; } 96% { opacity: .45; } 98% { opacity: .8; } }
 @keyframes raw-egg-glitch { 0%, 90%, 100% { transform: translate(0); opacity: .05; } 92% { transform: translate(15vw, -2vh); opacity: .9; } 96% { transform: translate(-10vw, 3vh); opacity: .7; } }
-@keyframes raw-flesh-red { from { background-color: #080000; } to { background-color: #790008; } }
 @keyframes raw-flesh-shake { 0%, 100% { transform: translate(0); } 25% { transform: translate(2px, -1px); } 50% { transform: translate(-2px, 1px); } 75% { transform: translate(1px, 2px); } }
-@keyframes raw-flesh-drift { to { transform: translate(5vw, -2vh) rotate(3deg); } }
 @keyframes raw-hand-enter { from { transform: translate(120%, 20%); opacity: 0; } to { transform: translate(0); opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .raw-egg-profile.is-haunted, .raw-egg-not-found.is-haunted, .raw-egg-glitch-copy, .raw-flesh-screen, .raw-flesh-screen.is-awakening, .raw-flesh-hand { animation-duration: 1ms !important; animation-iteration-count: 1 !important; }
+  .raw-egg-not-found.is-haunted, .raw-egg-glitch-copy, .raw-flesh-ambience, .raw-flesh-ambience.is-awakening, .raw-flesh-hand { animation-duration: 1ms !important; animation-iteration-count: 1 !important; }
 }
