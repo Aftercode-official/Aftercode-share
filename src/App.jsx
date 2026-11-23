@@ -13,6 +13,7 @@ import RawHorrorGif from "./assets/horror.gif";
 import RawRivGif from "./assets/Riv1cf.gif";
 import RawFleshBackground from "./assets/images.png";
 import RawFleshHand from "./assets/hand.png";
+import RawFleshHandMoving from "./assets/alt.png";
 import ProjectThumbnail from "./ProjectThumbnail.jsx";
 const ChatCenter = lazy(() => import("./ChatCenter.jsx"));
 const AdminPanel = lazy(() => import("./AdminPanel.jsx"));
@@ -373,9 +374,18 @@ export default function App() {
       if (!isChord && !isSequence) return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      const isEggProfile = (page === "user" || page === "profile")
-        && profileRouteUsername.toLocaleLowerCase() === "username666";
-      resetRawFleshProgress(isEggProfile ? "not-found" : null);
+      resetRawFleshProgress(null);
+      setPage("home");
+      setSelectedProject(null);
+      setSelectedUserId(null);
+      setProfileRouteUsername("");
+      setPeopleListRoute(null);
+      const url = new URL(window.location.href);
+      setRouteOnUrl(url, appRoutePath("/"));
+      if (USE_HASH_ROUTING) url.hash = "#/";
+      url.searchParams.delete("projectId");
+      url.searchParams.delete("project");
+      window.history.pushState({}, "", url);
       pressed.clear();
       lastZAt = 0;
     };
@@ -388,6 +398,8 @@ export default function App() {
   }, [isRawFleshTheme, page, profileRouteUsername, rawFleshEggStage, rawFleshReloadCount, resetRawFleshProgress, user?.id]);
 
   useEffect(() => {
+    const isCorruptionActive = isRawFleshTheme || rawFleshEggStage === "haunted" || rawFleshEggStage === "unlocked";
+    if (!isCorruptionActive) return undefined;
     const root = document.getElementById("root");
     if (!root) return undefined;
     const originalText = new Map();
@@ -1789,7 +1801,7 @@ function RawFleshExperience({ elapsed, onCrash, reloadCount }) {
         audioContext.resume().catch(() => {});
         ramp = window.setInterval(() => {
           if (!audioContext || !gain) return;
-          gain.gain.setTargetAtTime(Math.min(0.12, Math.max(0, (Date.now() - startedAt) / 1000 - 58) * 0.002), audioContext.currentTime, 0.4);
+          gain.gain.setTargetAtTime(Math.min(0.12, Math.max(0, (Date.now() - startedAt) / 1000 - 28) * 0.002), audioContext.currentTime, 0.4);
         }, 1000);
       }
     } catch {
@@ -1817,9 +1829,9 @@ function RawFleshExperience({ elapsed, onCrash, reloadCount }) {
   }, [crashed, onCrash]);
 
   return (
-    <div className={`raw-flesh-ambience${elapsed >= 60 ? " is-awakening" : ""}${crashed ? " is-crashed" : ""}`} style={{ "--flesh-intensity": Math.min(1, Math.max(0, (elapsed - 60) / 60)), filter: `contrast(${Math.min(2.2, 1 + Math.max(0, reloadCount - 10) * 0.12)})${crashed ? " saturate(1.8) brightness(.55)" : ""}` }}>
-      <div className="raw-flesh-noise" aria-hidden="true" style={{ opacity: 0.04 + Math.min(1, Math.max(0, (elapsed - 60) / 60)) * 0.5 }} />
-      {elapsed >= 60 && <img className="raw-flesh-hand" src={RawFleshHand} alt="" />}
+    <div className={`raw-flesh-ambience${elapsed >= 30 ? " is-awakening" : ""}${crashed ? " is-crashed" : ""}`} style={{ "--flesh-intensity": Math.min(1, Math.max(0, (elapsed - 30) / 60)), filter: `contrast(${Math.min(2.2, 1 + Math.max(0, reloadCount - 10) * 0.12)})${crashed ? " saturate(1.8) brightness(.55)" : ""}` }}>
+      <div className="raw-flesh-noise" aria-hidden="true" style={{ opacity: 0.04 + Math.min(1, Math.max(0, (elapsed - 30) / 60)) * 0.5 }} />
+      {elapsed >= 30 && <img className="raw-flesh-hand" src={elapsed < 32 ? RawFleshHandMoving : RawFleshHand} alt="" />}
       <div className="raw-flesh-status">{crashed ? "666" : "666  •  666"}</div>
       {crashed && <div className="raw-flesh-crash"><strong>666</strong><button type="button" onClick={() => window.location.reload()}>666</button></div>}
     </div>
