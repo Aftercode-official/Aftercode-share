@@ -785,6 +785,9 @@ export default function App() {
       setRawFleshReloadCount(savedReloadCount);
       setRawFleshEggStage(rawFleshStageForReloads(savedReloadCount));
       if (savedReloadCount >= 16) setTheme("raw-flesh");
+    } else {
+      setRawFleshEggStage(null);
+      if (theme === "raw-flesh") setTheme(savedTheme || "classic");
     }
     let pathname = appRoutePath("/");
     if (nextPage === "notifications") pathname = appRoutePath("/notification");
@@ -1029,11 +1032,18 @@ export default function App() {
       writeCustomizationCache(user?.id, nextCustomization);
       setIsCustomizeOpen(false);
       setMissionProgress("milestone_profile", nextCustomization.bio?.trim() && nextCustomization.avatarUrl?.trim() ? 1 : 0);
+      
+      // Reset raw flesh state if changing frame away from raw-flesh
+      if (nextCustomization.avatarFrame !== RAW_FLESH_FRAME_ID && rawFleshEggStage) {
+        setRawFleshEggStage(null);
+        if (theme === "raw-flesh") setTheme(savedTheme || "classic");
+      }
+      
       return true;
     } catch (error) {
       setCustomizationError(`Unable to save settings: ${error.message}`);
-      return false;
     }
+    return false;
   };
 
   useEffect(() => {
