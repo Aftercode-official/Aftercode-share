@@ -18,17 +18,11 @@ export default async function handler(req, res) {
   try {
     const client = createAdminClient();
 
-    const { data, error } = await client
+    const { data } = await client
       .from("profiles")
       .select("user_id, username")
       .ilike("username", username)
       .maybeSingle();
-
-    if (error) throw error;
-    if (!data) {
-      sendJson(res, 404, { error: "No account found with that username." });
-      return;
-    }
 
     sendJson(res, 200, { userId: data.user_id, username: data.username });
   } catch (error) {
