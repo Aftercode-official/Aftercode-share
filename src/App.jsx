@@ -1922,8 +1922,7 @@ function RawFleshProfileStage({ stage, projects, reloadCount }) {
         {(projects.length ? projects.slice(0, 8) : [1, 2, 3]).map((project, index) => (
           <div className="raw-egg-project" key={project.id ?? index}>
             <img src={index % 2 ? RawRivGif : RawHorrorGif} alt="666" loading="lazy" />
-            <span className="raw-egg-avatar">666</span>
-            <strong>666</strong>
+            <strong>{project.title ?? "666"}</strong>
           </div>
         ))}
       </div>
