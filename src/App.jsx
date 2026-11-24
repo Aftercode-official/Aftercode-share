@@ -232,7 +232,7 @@ function normalizeCustomization(saved = {}) {
   if (typeof saved.accentColor !== "string" || saved.accentColor.toLowerCase() === "#238a45") {
     normalized.accentColor = DEFAULT_CUSTOMIZATION.accentColor;
   }
-  if (!["none", "gold", "neon", "pixel", "bear", RAW_FLESH_FRAME_ID].includes(normalized.avatarFrame)
+  if (!["none", "gold", "neon", "pixel", "bear"].includes(normalized.avatarFrame)
     && !(typeof normalized.avatarFrame === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalized.avatarFrame))) {
     normalized.avatarFrame = DEFAULT_CUSTOMIZATION.avatarFrame;
   }
@@ -1034,7 +1034,7 @@ export default function App() {
       setMissionProgress("milestone_profile", nextCustomization.bio?.trim() && nextCustomization.avatarUrl?.trim() ? 1 : 0);
       
       // Reset raw flesh state if changing frame away from raw-flesh
-      if (nextCustomization.avatarFrame !== RAW_FLESH_FRAME_ID && rawFleshEggStage) {
+      if (rawFleshEggStage) {
         setRawFleshEggStage(null);
         if (theme === "raw-flesh") setTheme(savedTheme || "classic");
       }
@@ -1153,6 +1153,7 @@ export default function App() {
           });
           setCustomization(normalized);
           writeCustomizationCache(userId, normalized);
+          /*
           if (window.localStorage.getItem(`${RAW_FLESH_REWARD_PREFIX}${userId}`) === "true"
             && normalized.avatarFrame !== RAW_FLESH_FRAME_ID) {
             normalized = { ...normalized, avatarFrame: RAW_FLESH_FRAME_ID };
@@ -1164,6 +1165,7 @@ export default function App() {
               // Keep the loaded account profile visible even if the bonus frame sync fails.
             }
           }
+          */
           setCustomization(normalized);
           writeCustomizationCache(userId, normalized);
           return;
@@ -1279,6 +1281,8 @@ export default function App() {
           window.localStorage.setItem(`${RAW_FLESH_REWARD_PREFIX}${user.id}`, "true");
           window.localStorage.removeItem(`${RAW_FLESH_RELOAD_PREFIX}${user.id}`);
           window.localStorage.removeItem(`${RAW_FLESH_UNLOCK_PREFIX}${user.id}`);
+          // Frame removal requested: skipping reward assignment
+          /*
           const rewardCustomization = { ...customization, avatarFrame: RAW_FLESH_FRAME_ID };
           setCustomization(rewardCustomization);
           writeCustomizationCache(user.id, rewardCustomization);
@@ -1291,8 +1295,8 @@ export default function App() {
               selectedProject ? loadProjectInteraction(selectedProject) : Promise.resolve()
             ]).catch(() => {});
           }).catch(() => {
-            // Keep the frame equipped locally and retry syncing it on the next profile load.
           });
+          */
         }
         window.localStorage.setItem(THEME_STORAGE_KEY, "dark");
         const url = new URL(window.location.href);
