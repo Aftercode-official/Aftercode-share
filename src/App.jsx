@@ -951,11 +951,27 @@ export default function App() {
     apiRequest(`/api/profiles/lookup?username=${encodeURIComponent(profileRouteUsername)}`)
       .then(({ userId }) => {
         if (!isActive) return;
+        if (!userId) {
+          setDataError("");
+          setSelectedUserId(null);
+          setPage("not-found");
+          return;
+        }
         setSelectedUserId(userId);
         setPage(userId === user?.id ? "profile" : "user");
       })
       .catch((error) => {
-        if (isActive) setDataError(error.message);
+        if (!isActive) return;
+        const missingProfile = error.status === 404
+          || /profile not found/i.test(error.message || "")
+          || (error.status === 500 && !String(error.message || "").trim());
+        if (missingProfile) {
+          setDataError("");
+          setSelectedUserId(null);
+          setPage("not-found");
+          return;
+        }
+        setDataError(error.message);
       });
     return () => { isActive = false; };
   }, [profileRouteUsername, page, selectedUserId, user?.id]);
@@ -1032,13 +1048,13 @@ export default function App() {
       writeCustomizationCache(user?.id, nextCustomization);
       setIsCustomizeOpen(false);
       setMissionProgress("milestone_profile", nextCustomization.bio?.trim() && nextCustomization.avatarUrl?.trim() ? 1 : 0);
-      
+
       // Reset raw flesh state if changing frame away from raw-flesh
       if (rawFleshEggStage) {
         setRawFleshEggStage(null);
         if (theme === "raw-flesh") setTheme(savedTheme || "classic");
       }
-      
+
       return true;
     } catch (error) {
       setCustomizationError(`Unable to save settings: ${error.message}`);

@@ -76,6 +76,7 @@ export async function apiRequest(path, { method = "GET", body, authenticated = f
         window.dispatchEvent(new CustomEvent("aftercode:account-banned", { detail: { message: payload.error } }));
       }
       const requestError = new Error(payload?.error ?? `Request failed with status ${response.status}.`);
+      requestError.status = response.status;
       requestError.code = payload?.code;
       requestError.payload = payload;
       throw requestError;

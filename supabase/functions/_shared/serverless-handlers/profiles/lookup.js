@@ -11,22 +11,28 @@ export default async function handler(req, res) {
     : "";
 
   if (!username || username.length > 40) {
-    sendJson(res, 400, { error: "A valid username is required." });
+    sendJson(res, 400, { error: "" });
     return;
   }
 
   try {
     const client = createAdminClient();
 
-    const { data } = await client
+    const { data, error } = await client
       .from("profiles")
       .select("user_id, username")
       .ilike("username", username)
       .maybeSingle();
 
+    if (error) throw error;
+    if (!data?.user_id) {
+      sendJson(res, 404, { error: "" });
+      return;
+    }
+
     sendJson(res, 200, { userId: data.user_id, username: data.username });
   } catch (error) {
-    logApiError("Unable to look up username.", error);
-    sendJson(res, 500, { error: "Unable to look up username." });
+    logApiError("", error);
+    sendJson(res, 500, { error: "" });
   }
 }
