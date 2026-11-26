@@ -67,13 +67,16 @@ a {
 
 .app-layout {
   overflow: hidden;
-  background: repeating-linear-gradient(
+  background-image: var(--custom-background-image), repeating-linear-gradient(
     -45deg,
     var(--stripe) 0px,
     var(--stripe) 16px,
     var(--page) 16px,
     var(--page) 32px
   );
+  background-position: center, 0 0;
+  background-size: cover, auto;
+  background-attachment: fixed, scroll;
 }
 
 .workspace {
@@ -296,6 +299,10 @@ a {
   gap: 4px;
 }
 
+.appearance-option > div.is-single-option {
+  grid-template-columns: 1fr;
+}
+
 .appearance-option button {
   min-height: 32px;
   padding: 0 5px;
@@ -305,6 +312,33 @@ a {
   font-size: 9px;
   font-weight: 900;
   text-transform: uppercase;
+}
+
+.appearance-background-upload {
+  display: grid;
+  min-height: 32px;
+  place-items: center;
+  padding: 5px;
+  border: 1px solid var(--yellow);
+  background: var(--panel-2);
+  color: var(--yellow);
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.appearance-background-upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.appearance-background-error {
+  color: var(--red);
+  font-size: 10px;
+  line-height: 1.4;
 }
 
 .appearance-option button[aria-pressed="true"] {
@@ -1442,4 +1476,33 @@ a {
     animation: none !important;
     transition: none !important;
   }
+}
+
+:root[data-compatibility-mode="true"][data-site-style="brutalist"] *,
+:root[data-compatibility-mode="true"][data-site-style="brutalist"] *::before,
+:root[data-compatibility-mode="true"][data-site-style="brutalist"] *::after,
+:root[data-compatibility-mode="true"][data-site-style="classic"] *,
+:root[data-compatibility-mode="true"][data-site-style="classic"] *::before,
+:root[data-compatibility-mode="true"][data-site-style="classic"] *::after {
+  animation: none !important;
+  transition: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  text-shadow: none !important;
+  scroll-behavior: auto !important;
+}
+
+:root[data-compatibility-mode="true"] button:hover,
+:root[data-compatibility-mode="true"] button:active,
+:root[data-compatibility-mode="true"] a:hover,
+:root[data-compatibility-mode="true"] a:active,
+:root[data-compatibility-mode="true"] [role="button"]:hover,
+:root[data-compatibility-mode="true"] [role="button"]:active,
+:root[data-compatibility-mode="true"] .project-card:hover,
+:root[data-compatibility-mode="true"] .explore-project-card:hover,
+:root[data-compatibility-mode="true"] .featured-card:hover,
+:root[data-compatibility-mode="true"] .profile-project-card:hover,
+:root[data-compatibility-mode="true"] .notification-card:hover {
+  transform: none !important;
 }

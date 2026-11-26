@@ -35,8 +35,11 @@ import "./AvatarFrames.css";
 import "./RawFlesh.css";
 
 const THEME_STORAGE_KEY = "aftercode-share-theme";
+const AERO_THEME_STORAGE_KEY = "aftercode-share-theme-aero";
+const BRUTALIST_THEME_STORAGE_KEY = "aftercode-share-theme-brutalist";
 const SITE_STYLE_STORAGE_KEY = "aftercode-share-site-style";
 const COMPATIBILITY_MODE_STORAGE_KEY = "aftercode-share-compatibility-mode";
+const CUSTOM_BACKGROUND_STORAGE_KEY = "aftercode-share-custom-background-v1";
 const CUSTOMIZATION_STORAGE_KEY = "aftercode-share-customization";
 const CUSTOMIZATION_CACHE_PREFIX = "aftercode-share-customization-v1:";
 const PUBLIC_DATA_CACHE_KEY = "aftercode-share-public-data-v1";
@@ -309,7 +312,10 @@ export default function App() {
   const [projectInteractions, setProjectInteractions] = useState({});
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [theme, setTheme] = useState(() => {
-    const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    const savedSiteStyle = window.localStorage.getItem(SITE_STYLE_STORAGE_KEY) === "classic" ? "classic" : "brutalist";
+    if (savedSiteStyle === "classic") return "light";
+    const savedTheme = window.localStorage.getItem(BRUTALIST_THEME_STORAGE_KEY)
+      ?? window.localStorage.getItem(THEME_STORAGE_KEY);
     return savedTheme === "light" ? "light" : "dark";
   });
   const [siteStyle, setSiteStyle] = useState(() => (
@@ -318,12 +324,22 @@ export default function App() {
   const [compatibilityMode, setCompatibilityMode] = useState(() => (
     window.localStorage.getItem(COMPATIBILITY_MODE_STORAGE_KEY) === "true"
   ));
+  const [customBackground, setCustomBackground] = useState(() => window.localStorage.getItem(CUSTOM_BACKGROUND_STORAGE_KEY) || "");
+  const [backgroundError, setBackgroundError] = useState("");
   const [rawFleshEggStage, setRawFleshEggStage] = useState(null);
   const [rawFleshElapsed, setRawFleshElapsed] = useState(0);
   const [rawFleshReloadCount, setRawFleshReloadCount] = useState(0);
   const rawFleshAttemptedRef = useRef(false);
   const isRawFleshTheme = theme === "raw-flesh";
   const hasRawFleshFrame = Boolean(user?.id && window.localStorage.getItem(`${RAW_FLESH_REWARD_PREFIX}${user.id}`) === "true");
+
+  useEffect(() => {
+    if (isRestoringSession || user) return;
+    setTheme("dark");
+    setSiteStyle("brutalist");
+    setIsAppearanceMenuOpen(false);
+  }, [isRestoringSession, user]);
+
   const resetRawFleshProgress = useCallback((nextStage = null) => {
     if (user?.id) {
       window.localStorage.removeItem(`${RAW_FLESH_RELOAD_PREFIX}${user.id}`);
@@ -1065,7 +1081,11 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-  }, [theme]);
+    if (theme !== "raw-flesh") {
+      const key = siteStyle === "classic" ? AERO_THEME_STORAGE_KEY : BRUTALIST_THEME_STORAGE_KEY;
+      window.localStorage.setItem(key, theme);
+    }
+  }, [siteStyle, theme]);
 
   useEffect(() => {
     document.documentElement.dataset.siteStyle = siteStyle;
@@ -1076,6 +1096,20 @@ export default function App() {
     document.documentElement.dataset.compatibilityMode = compatibilityMode ? "true" : "false";
     window.localStorage.setItem(COMPATIBILITY_MODE_STORAGE_KEY, String(compatibilityMode));
   }, [compatibilityMode]);
+
+  useEffect(() => {
+    if (siteStyle === "classic" && theme !== "light") setTheme("light");
+  }, [siteStyle, theme]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty("--custom-background-image", customBackground ? `url("${customBackground}")` : "none");
+    try {
+      if (customBackground) window.localStorage.setItem(CUSTOM_BACKGROUND_STORAGE_KEY, customBackground);
+      else window.localStorage.removeItem(CUSTOM_BACKGROUND_STORAGE_KEY);
+    } catch {
+      setBackgroundError("Could not save this image in browser storage. Try a smaller file.");
+    }
+  }, [customBackground]);
 
   useEffect(() => {
     if (!supabase) {
@@ -1366,7 +1400,9 @@ export default function App() {
             <span className="visually-hidden">Search projects</span>
             <input
               className="search-input"
-              type="search"
+              type="text"
+              role="searchbox"
+              autoComplete="new-password"
               placeholder="Search projects, descriptions, #tags..."
               value={projectSearch}
               onChange={(event) => setProjectSearch(event.target.value)}
@@ -1377,7 +1413,7 @@ export default function App() {
           </label>
 
           <div className="header-right">
-          <div className="header-appearance-wrap">
+          {isLoggedIn && <div className="header-appearance-wrap">
             <button
               className={`icon-btn appearance-trigger${isAppearanceMenuOpen ? " is-active" : ""}`}
               type="button"
@@ -1395,21 +1431,53 @@ export default function App() {
               <div className="appearance-dropdown" aria-label="Appearance settings">
                 <fieldset className="appearance-option">
                   <legend>Color mode</legend>
-                  <div>
-                    <button type="button" aria-pressed={theme === "dark"} onClick={() => setTheme("dark")}>Dark</button>
+                  <div className={siteStyle === "classic" ? "is-single-option" : ""}>
+                    {siteStyle !== "classic" && <button type="button" aria-pressed={theme === "dark"} onClick={() => setTheme("dark")}>Dark</button>}
                     <button type="button" aria-pressed={theme === "light"} onClick={() => setTheme("light")}>Light</button>
                   </div>
                 </fieldset>
                 <fieldset className="appearance-option">
                   <legend>Interface</legend>
                   <div>
-                    <button type="button" aria-pressed={siteStyle === "brutalist"} onClick={() => setSiteStyle("brutalist")}>Brutalist</button>
-                    <button type="button" aria-pressed={siteStyle === "classic"} onClick={() => setSiteStyle("classic")}>Aero</button>
+                    <button type="button" aria-pressed={siteStyle === "brutalist"} onClick={() => {
+                      setSiteStyle("brutalist");
+                      const savedTheme = window.localStorage.getItem(BRUTALIST_THEME_STORAGE_KEY);
+                      setTheme(savedTheme === "light" ? "light" : "dark");
+                    }}>Brutalist</button>
+                    <button type="button" aria-pressed={siteStyle === "classic"} onClick={() => { setSiteStyle("classic"); setTheme("light"); }}>Aero</button>
                   </div>
                 </fieldset>
+                {isLoggedIn && <fieldset className="appearance-option">
+                  <legend>Custom background</legend>
+                  <label className="appearance-background-upload">
+                    Upload image
+                    <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      if (!["image/png", "image/jpeg", "image/webp", "image/gif", "image/avif"].includes(file.type)) {
+                        setBackgroundError("Choose an image file.");
+                        return;
+                      }
+                      if (file.size > 2 * 1024 * 1024) {
+                        setBackgroundError("Images must be 2 MB or smaller.");
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setBackgroundError("");
+                        setCustomBackground(String(reader.result || ""));
+                      };
+                      reader.onerror = () => setBackgroundError("Could not read this image.");
+                      reader.readAsDataURL(file);
+                      event.target.value = "";
+                    }} />
+                  </label>
+                  {customBackground && <button type="button" onClick={() => { setBackgroundError(""); setCustomBackground(""); }}>Remove background</button>}
+                  {backgroundError && <small className="appearance-background-error" role="status">{backgroundError}</small>}
+                </fieldset>}
               </div>
             )}
-          </div>
+          </div>}
           {isLoggedIn && (
             <>
               <button

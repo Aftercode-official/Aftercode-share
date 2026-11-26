@@ -827,7 +827,7 @@ export default function User({
                 />
                 <span>
                   <strong>Compatibility mode</strong>
-                  <small>Use simpler effects and solid surfaces for older browsers.</small>
+                  <small>Turn off animations, shadows, filters, and hover motion.</small>
                 </span>
               </label>
             </fieldset>

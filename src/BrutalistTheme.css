@@ -949,10 +949,14 @@ body {
 
 .app-layout {
   background:
+    var(--custom-background-image),
     linear-gradient(rgb(255 255 255 / 2%) 1px, transparent 1px),
     linear-gradient(90deg, rgb(255 255 255 / 2%) 1px, transparent 1px),
     var(--brutal-page) !important;
-  background-size: 32px 32px !important;
+  background-position: center center, 0 0, 0 0, 0 0 !important;
+  background-repeat: no-repeat, repeat, repeat, repeat !important;
+  background-size: cover, 32px 32px, 32px 32px, auto !important;
+  background-attachment: fixed, scroll, scroll, scroll !important;
 }
 
 .header {
@@ -1017,6 +1021,17 @@ select:focus {
   border-color: var(--brutal-yellow) !important;
   outline: 2px solid var(--brutal-yellow);
   outline-offset: 1px;
+}
+
+.header-center .search-input:focus {
+  background: var(--brutal-panel-2) !important;
+  color: var(--brutal-white) !important;
+  caret-color: var(--brutal-yellow);
+}
+
+.header-center .search-input::placeholder {
+  color: var(--brutal-muted) !important;
+  opacity: 1;
 }
 
 .scratch-home .timeline-card,
@@ -1571,4 +1586,34 @@ button:hover,
 :root[data-site-style="brutalist"] .chat-avatar-link .chat-avatar-fallback {
   width: 100% !important;
   height: 100% !important;
+}
+
+:root[data-site-style="brutalist"][data-theme="light"] .profile-dropdown {
+  border-color: var(--brutal-ink);
+  background: var(--brutal-panel);
+  box-shadow: 4px 4px 0 var(--brutal-ink);
+}
+
+:root[data-site-style="brutalist"][data-theme="light"] .profile-dropdown button:not(.profile-dropdown-signout) {
+  border-color: var(--brutal-ink);
+  background: var(--brutal-panel-2);
+  color: var(--brutal-ink);
+}
+
+:root[data-site-style="brutalist"][data-theme="light"] .profile-dropdown button:not(.profile-dropdown-signout):hover,
+:root[data-site-style="brutalist"][data-theme="light"] .profile-dropdown button:not(.profile-dropdown-signout):active {
+  border-color: var(--brutal-ink);
+  background: var(--brutal-yellow);
+  color: var(--brutal-ink);
+}
+
+:root[data-site-style="brutalist"][data-theme="light"] .profile-project-tabs button {
+  background: var(--brutal-panel-2) !important;
+  color: var(--brutal-ink) !important;
+}
+
+:root[data-site-style="brutalist"][data-theme="light"] .profile-project-tabs button[aria-selected="true"],
+:root[data-site-style="brutalist"][data-theme="light"] .profile-project-tabs button:hover {
+  background: var(--brutal-yellow) !important;
+  color: var(--brutal-ink) !important;
 }
