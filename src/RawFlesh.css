@@ -114,6 +114,23 @@ body.raw-flesh-active {
   background: var(--raw-flesh-background) center / cover fixed !important;
 }
 
+[data-egg-project="true"] body,
+[data-egg-project="true"] .app-layout,
+[data-egg-project="true"] .workspace,
+[data-egg-project="true"] .main-feed-container {
+  background: #8b0000 !important;
+  color: #ff1010 !important;
+}
+
+[data-egg-project="true"] .main-feed-container * { color: #ff1010 !important; }
+
+.loading-screen-egg {
+  background: #8b0000 !important;
+  color: #ff0000 !important;
+}
+.loading-screen-egg .loading-experience { color: #ff0000 !important; }
+.loading-screen-egg .loading-center-icon { filter: invert(1) sepia(1) saturate(5) hue-rotate(-50deg) !important; }
+
 .app-layout.raw-flesh-active {
   position: relative;
   z-index: 0;

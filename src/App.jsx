@@ -468,7 +468,7 @@ export default function App() {
     const originalSources = new Map();
     const originalFallbacks = new Map();
     const originalPlaceholders = new Map();
-    const isWholeSite = isRawFleshTheme;
+    const isWholeSite = isRawFleshTheme || (page === "project" && profileRouteUsername.toLocaleLowerCase() === "username666" && rawFleshEggStage !== null);
     const eligible = (node) => isWholeSite || Boolean(node.parentElement?.closest(".header, .site-footer"));
     const replaceVisibleContent = () => {
       const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -526,7 +526,7 @@ export default function App() {
         if (input.isConnected && placeholder !== null) input.setAttribute("placeholder", placeholder);
       }
     };
-  }, [isRawFleshTheme, rawFleshEggStage]);
+  }, [isRawFleshTheme, rawFleshEggStage, page, profileRouteUsername]);
 
   useEffect(() => {
     const handleAccountBanned = (event) => {
@@ -794,6 +794,7 @@ export default function App() {
         : "";
     const nextIsEggProfile = (nextPage === "user" || nextPage === "profile")
       && routeUsername.toLocaleLowerCase() === "username666";
+    const isNavigatingToProjectFromEgg = nextPage === "project" && isEggRoute;
     if (nextIsEggProfile) {
       const savedReloadCount = user?.id
         ? Number(window.localStorage.getItem(`${RAW_FLESH_RELOAD_PREFIX}${user.id}`) || 0)
@@ -801,6 +802,8 @@ export default function App() {
       setRawFleshReloadCount(savedReloadCount);
       setRawFleshEggStage(rawFleshStageForReloads(savedReloadCount));
       if (savedReloadCount >= 16) setTheme("raw-flesh");
+    } else if (isNavigatingToProjectFromEgg) {
+      // Keep egg context active while viewing a project from the username666 profile.
     } else {
       setRawFleshEggStage(null);
       if (theme === "raw-flesh") setTheme(savedTheme || "classic");
@@ -1289,7 +1292,7 @@ export default function App() {
     };
   }, [user?.id]);
 
-  if (isRestoringSession || isInitialDataLoading) return <LoadingScreen siteStyle={siteStyle} />;
+  if (isRestoringSession || isInitialDataLoading) return <LoadingScreen siteStyle={siteStyle} eggTheme={isEggRoute} />;
 
   if (accountBanNotice) {
     return (
@@ -1304,14 +1307,17 @@ export default function App() {
   const activeAccentColor = siteStyle === "brutalist" ? customization.accentColor : "#2679b9";
   const isUsername666Route = (page === "user" || page === "profile")
     && profileRouteUsername.toLocaleLowerCase() === "username666";
+  const isEggRoute = profileRouteUsername.toLocaleLowerCase() === "username666" && rawFleshEggStage !== null;
   const isFleshNotFound = isUsername666Route && (rawFleshEggStage === "haunted" || rawFleshEggStage === "glitch");
   const isGlitchNotFound = isUsername666Route && rawFleshEggStage === "glitch";
   const showSiteNotFound = page === "not-found"
     || (isUsername666Route && (rawFleshEggStage === "not-found" || isFleshNotFound));
+  const showEggErrLogo = isUsername666Route && rawFleshEggStage !== "not-found";
 
   return (
-    <div
-      className={`app-layout${isRawFleshTheme ? " raw-flesh-active" : ""}`}
+      <div
+        className={`app-layout${isRawFleshTheme ? " raw-flesh-active" : ""}`}
+        data-egg-project={isEggRoute && page === "project" ? "true" : undefined}
       style={{
         "--accent-yellow": activeAccentColor,
         "--accent-orange": activeAccentColor,
@@ -1371,9 +1377,9 @@ export default function App() {
         <header className="header">
           <div className="header-left">
             <button className="topbar-brand" type="button" onClick={() => navigateTo("home")}>
-              <img
-                className="logo"
-                src={isUsername666Route ? ErrLogo : LogoIcon}
+                <img
+                  className="logo"
+                  src={showEggErrLogo ? ErrLogo : LogoIcon}
                 alt="Aftercode"
                 width="180"
                 height="59"
@@ -1585,10 +1591,10 @@ export default function App() {
             />
           ) : (
             <>
-          {rawFleshEggStage && isUsername666Route
-            && <RawFleshProfileStage stage={rawFleshEggStage} projects={projects} reloadCount={rawFleshReloadCount} />}
+{rawFleshEggStage && isUsername666Route
+  && <RawFleshProfileStage stage={rawFleshEggStage} projects={projects} reloadCount={rawFleshReloadCount} onOpenProject={openProject} />}
           <Suspense fallback={siteStyle === "classic"
-            ? <LoadingScreen siteStyle={siteStyle} inline />
+            ? <LoadingScreen siteStyle={siteStyle} inline eggTheme={isEggRoute} />
             : <p className="featured-empty">Loading page...</p>}>
           {rawFleshEggStage ? null : <User
           key={`${page}-${isCustomizeOpen}-${selectedUserId ?? ""}`}
@@ -1990,7 +1996,7 @@ export default function App() {
   );
 }
 
-function RawFleshProfileStage({ stage, projects, reloadCount }) {
+function RawFleshProfileStage({ stage, projects, reloadCount, onOpenProject }) {
   if (stage === "guest") {
     return <section className="raw-egg-page raw-egg-not-found"><span>404</span><h1>Profile not found</h1><p>Sign in to view this profile.</p></section>;
   }
@@ -2004,7 +2010,7 @@ function RawFleshProfileStage({ stage, projects, reloadCount }) {
       <p className="raw-egg-about">666</p>
       <div className="raw-egg-projects">
         {(projects.length ? projects.slice(0, 8) : [1, 2, 3]).map((project, index) => (
-          <div className="raw-egg-project" key={project.id ?? index}>
+          <div className="raw-egg-project" key={project.id ?? index} onClick={() => onOpenProject?.(project)} role="button" tabIndex={0}>
             <img src={index % 2 ? RawRivGif : RawHorrorGif} alt="666" loading="lazy" />
             <strong>{project.title ?? "666"}</strong>
           </div>
@@ -2071,10 +2077,10 @@ function RawFleshExperience({ elapsed, onCrash, onCrashComplete, reloadCount }) 
   }, [crashed, onCrash]);
 
   return (
-    <div className={`raw-flesh-ambience${elapsed >= 30 ? " is-awakening" : ""}${crashed ? " is-crashed" : ""}`} style={{ "--flesh-intensity": Math.min(1, Math.max(0, (elapsed - 30) / 60)), filter: `contrast(${Math.min(2.2, 1 + Math.max(0, reloadCount - 10) * 0.12)})` }}>
-      {elapsed >= 30 && <img className="raw-flesh-static" src={RawFleshStatic} alt="" style={{ opacity: Math.min(0.72, Math.max(0, (elapsed - 30) / 90 * 0.72)) }} />}
-      <div className="raw-flesh-noise" aria-hidden="true" style={{ opacity: 0.04 + Math.min(1, Math.max(0, (elapsed - 30) / 60)) * 0.5 }} />
-      {elapsed >= 30 && <img className="raw-flesh-hand" src={elapsed < 32 ? RawFleshHandMoving : RawFleshHand} alt="" />}
+    <div className={`raw-flesh-ambience${elapsed >= 60 ? " is-awakening" : ""}${crashed ? " is-crashed" : ""}`} style={{ "--flesh-intensity": Math.min(1, Math.max(0, (elapsed - 60) / 60)), filter: `contrast(${Math.min(2.2, 1 + Math.max(0, reloadCount - 10) * 0.12)})` }}>
+      {elapsed >= 60 && <img className="raw-flesh-static" src={RawFleshStatic} alt="" style={{ opacity: Math.min(0.72, Math.max(0, (elapsed - 60) / 90 * 0.72)) }} />}
+      <div className="raw-flesh-noise" aria-hidden="true" style={{ opacity: 0.04 + Math.min(1, Math.max(0, (elapsed - 60) / 60)) * 0.5 }} />
+      {elapsed >= 60 && <img className="raw-flesh-hand" src={elapsed < 62 ? RawFleshHandMoving : RawFleshHand} alt="" />}
       <div className="raw-flesh-status">{crashed ? "666" : "666  •  666"}</div>
       {crashed && <div className="raw-flesh-crash"><img src={RawFleshEnd} alt="" /></div>}
     </div>
