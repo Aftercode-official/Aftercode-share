@@ -1373,7 +1373,7 @@ export default function App() {
             <button className="topbar-brand" type="button" onClick={() => navigateTo("home")}>
               <img
                 className="logo"
-                src={isFleshNotFound ? ErrLogo : LogoIcon}
+                src={isUsername666Route ? ErrLogo : LogoIcon}
                 alt="Aftercode"
                 width="180"
                 height="59"
